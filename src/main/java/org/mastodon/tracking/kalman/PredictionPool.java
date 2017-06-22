@@ -49,5 +49,5 @@ class PredictionPool extends Pool< Prediction, ByteMappedElement >
 	protected Prediction createEmptyRef()
 	{
 		return new Prediction( this );
-	};
+	}
 }

@@ -1,13 +1,12 @@
 package org.mastodon.tracking.kalman;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
 
+import org.mastodon.collection.ObjectRefMap;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
+import org.mastodon.collection.RefMaps;
 import org.mastodon.collection.RefRefMap;
 import org.mastodon.collection.ref.RefArrayList;
 import org.mastodon.collection.ref.RefObjectHashMap;
@@ -30,13 +29,10 @@ import net.imglib2.algorithm.Algorithm;
 import net.imglib2.algorithm.Benchmark;
 
 /**
- * TODO Rewrite in a proper manner to avoid using RefPool instance as key of Map
- * to Objects. It is not clean.
- *
  * @author Jean-Yves Tinevez
  *
- * @param <V>
- * @param <E>
+ * @param <V> the type of vertices in the graph.
+ * @param <E> the type of edges in the graph.
  */
 public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable< V >, E extends Edge< V > > implements Algorithm, Benchmark
 {
@@ -234,7 +230,8 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 
 		// The master map that contains the currently active KFs.
 
-		final Map< CVMKalmanFilter, V > kalmanFiltersMap = new HashMap< CVMKalmanFilter, V >( orphanSpots.size() );
+		final ObjectRefMap< CVMKalmanFilter, V > kalmanFiltersMap =
+				RefMaps.createObjectRefMap( graph.vertices(), orphanSpots.size() );
 
 		/*
 		 * Then loop over time, starting from second frame.
@@ -246,15 +243,14 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 		int p = 0;
 		for ( int tp = secondFrame; tp <= maxTimepoint - 1; tp++ )
 		{
-			System.out.println( "\n\nLinking frame " + ( tp - 1 ) + " to frame " + tp ); // DEBUG
-
 			p++;
 
 			/*
 			 * Predict for all Kalman filters, and use it to generate linking
 			 * candidates.
 			 */
-			final RefObjectHashMap< Prediction, CVMKalmanFilter > predictionMap = new RefObjectHashMap<>( predictionPool, kalmanFiltersMap.size() );
+			final RefObjectHashMap< Prediction, CVMKalmanFilter > predictionMap =
+					new RefObjectHashMap<>( predictionPool, kalmanFiltersMap.size() );
 			final Prediction pref = predictionPool.createRef();
 			for ( final CVMKalmanFilter kf : kalmanFiltersMap.keySet() )
 			{
@@ -265,9 +261,7 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 			predictionPool.releaseRef( pref );
 
 			final RefArrayList< Prediction > predictions = new RefArrayList<>( predictionPool, predictionMap.size() );
-			final Iterator< Prediction > it = predictionMap.keySet().iterator();
-			while ( it.hasNext() )
-				predictions.add( it.next() );
+			predictions.addAll( predictionMap.keySet() );
 
 			/*
 			 * The KF for which we could not find a measurement in the target
@@ -284,8 +278,6 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 			final RefList< V > measurements = generateSpotList( tp );
 			if ( !predictions.isEmpty() && !measurements.isEmpty() )
 			{
-				System.out.println( "\nLinking predictions with measurements." ); // DEBUG
-
 				// Only link measurements to predictions if we have predictions.
 				final JaqamanLinkingCostMatrixCreator< Prediction, V > crm = new JaqamanLinkingCostMatrixCreator<>(
 						predictions, measurements, CF, maxCost, ALTERNATIVE_COST_FACTOR, PERCENTILE );
@@ -299,26 +291,22 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 
 				// Deal with found links.
 				orphanSpots = RefCollections.createRefList( orphanSpots, measurements.size() );
-				for ( final V v : measurements )
-					orphanSpots.add( v );
+				orphanSpots.addAll( measurements );
 
 				for ( final Prediction cm : agnts.keySet() )
 				{
 					final CVMKalmanFilter kf = predictionMap.get( cm );
 
 					// Create links for found match.
-					final V source = kalmanFiltersMap.get( kf );
-					final V target = agnts.get( cm );
-
-					System.out.println( "  linking source " + source + " to  " + target ); // DEBUG
-
+					final V source = kalmanFiltersMap.get( kf, vref1 );
+					final V target = agnts.get( cm, vref2 );
 					edgeCreator.createEdge( source, target );
 
 					// Update Kalman filter
 					kf.update( toMeasurement( target ) );
 
 					// Update Kalman track spot
-					kalmanFiltersMap.put( kf, target );
+					kalmanFiltersMap.put( kf, target, vref1 );
 
 					// Remove from orphan set
 					orphanSpots.remove( target );
@@ -337,8 +325,6 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 			if ( !previousOrphanSpots.isEmpty() && !orphanSpots.isEmpty() )
 			{
 
-				System.out.println( "\nDealing with orphans of the previous frame." ); // DEBUG
-
 				/*
 				 * We now deal with orphans of the previous frame. We try to
 				 * find them a target from the list of spots that are not
@@ -346,7 +332,8 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 				 * spots of this frame.
 				 */
 
-				final JaqamanLinkingCostMatrixCreator< V, V > ic = new JaqamanLinkingCostMatrixCreator<>( previousOrphanSpots, orphanSpots, nucleatingCostFunction, maxInitialCost, ALTERNATIVE_COST_FACTOR, PERCENTILE );
+				final JaqamanLinkingCostMatrixCreator< V, V > ic =
+						new JaqamanLinkingCostMatrixCreator<>( previousOrphanSpots, orphanSpots, nucleatingCostFunction, maxInitialCost, ALTERNATIVE_COST_FACTOR, PERCENTILE );
 				final JaqamanLinker< V, V > newLinker = new JaqamanLinker<>( ic, previousOrphanSpots, orphanSpots );
 				if ( !newLinker.checkInput() || !newLinker.process() )
 				{
@@ -356,10 +343,9 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 				final RefRefMap< V, V > newAssignments = newLinker.getResult();
 
 				// Build links and new KFs from these links.
-				final V vref = graph.vertexRef();
 				for ( final V source : newAssignments.keySet() )
 				{
-					final V target = newAssignments.get( source );
+					final V target = newAssignments.get( source, vref1 );
 
 					// Remove from orphan collection.
 					orphanSpots.remove( target );
@@ -370,14 +356,11 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 					// We trust the initial state a lot.
 
 					// Store filter and source
-					kalmanFiltersMap.put( kt, target );
-
-					System.out.println( "  linking source " + source + " to " + target ); // DEBUG
+					kalmanFiltersMap.put( kt, target, vref2 );
 
 					// Add edge to the graph.
 					edgeCreator.createEdge( source, target );
 				}
-				graph.releaseRef( vref );
 			}
 			previousOrphanSpots = orphanSpots;
 

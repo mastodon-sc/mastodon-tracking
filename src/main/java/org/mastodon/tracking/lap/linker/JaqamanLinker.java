@@ -109,7 +109,7 @@ public class JaqamanLinker< K extends Comparable< K >, J extends Comparable< J >
 		final RefList< J > matrixCols = costMatrixCreator.getTargetList();
 
 		assignments = RefMaps.createRefRefMap( keyPool, valuePool );
-		costs = RefCollections.createRefDoubleMap( keyPool, Double.NaN );
+		costs = RefMaps.createRefDoubleMap( keyPool, Double.NaN );
 
 		if ( matrixCols.isEmpty() || matrixRows.isEmpty() )
 		{

@@ -3,21 +3,20 @@ package org.mastodon.tracking;
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
-import java.util.Map;
 
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.revised.mamut.WindowManager;
+import org.mastodon.revised.model.feature.FeatureProjection;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.spatial.SpatioTemporalIndex;
-import org.mastodon.tracking.lap.LAPUtils;
-import org.mastodon.tracking.lap.SparseLAPTracker;
+import org.mastodon.tracking.kalman.KalmanTracker;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
@@ -114,43 +113,44 @@ public class Sandbox
 		 * Let's track them.
 		 */
 
-		final Map< String, Object > settings = LAPUtils.getDefaultLAPSettingsMap();
 		final EdgeCreator< Spot, Link > edgeCreator = edgeCreator( model.getGraph() );
-		final SparseLAPTracker< Spot, Link > tracker = new SparseLAPTracker<>(
-				model.getSpatioTemporalIndex(),
-				model.getGraphFeatureModel(),
-				model.getGraph(),
-				edgeCreator,
-				minTimepoint, maxTimepoint, settings );
-		tracker.setProgressListener( ProgressListeners.defaultLogger() );
-		tracker.setNumThreads( 1 );
 
-//		final FeatureProjection< Spot > radiuses = new FeatureProjection< Spot >()
-//		{
-//
-//			@Override
-//			public double value( final Spot obj )
-//			{
-//				return Math.sqrt( obj.getBoundingSphereRadiusSquared() );
-//			}
-//
-//			@Override
-//			public boolean isSet( final Spot obj )
-//			{
-//				return true;
-//			}
-//		};
-//		final KalmanTracker< Spot, Link > tracker = new KalmanTracker<>(
+		//		final Map< String, Object > settings = LAPUtils.getDefaultLAPSettingsMap();
+//		final SparseLAPTracker< Spot, Link > tracker = new SparseLAPTracker<>(
 //				model.getSpatioTemporalIndex(),
+//				model.getGraphFeatureModel(),
 //				model.getGraph(),
 //				edgeCreator,
-//				radiuses,
-//				minTimepoint,
-//				maxTimepoint,
-//				TrackerKeys.DEFAULT_LINKING_MAX_DISTANCE,
-//				TrackerKeys.DEFAULT_GAP_CLOSING_MAX_FRAME_GAP,
-//				TrackerKeys.DEFAULT_LINKING_MAX_DISTANCE );
+//				minTimepoint, maxTimepoint, settings );
 //		tracker.setProgressListener( ProgressListeners.defaultLogger() );
+//		tracker.setNumThreads( 1 );
+
+		final FeatureProjection< Spot > radiuses = new FeatureProjection< Spot >()
+		{
+
+			@Override
+			public double value( final Spot obj )
+			{
+				return Math.sqrt( obj.getBoundingSphereRadiusSquared() );
+			}
+
+			@Override
+			public boolean isSet( final Spot obj )
+			{
+				return true;
+			}
+		};
+		final KalmanTracker< Spot, Link > tracker = new KalmanTracker<>(
+				model.getSpatioTemporalIndex(),
+				model.getGraph(),
+				edgeCreator,
+				radiuses,
+				minTimepoint,
+				maxTimepoint,
+				TrackerKeys.DEFAULT_LINKING_MAX_DISTANCE,
+				TrackerKeys.DEFAULT_GAP_CLOSING_MAX_FRAME_GAP,
+				TrackerKeys.DEFAULT_LINKING_MAX_DISTANCE );
+		tracker.setProgressListener( ProgressListeners.defaultLogger() );
 
 		System.out.println( "\n\nTracking with " + tracker );
 		if ( !tracker.checkInput() || !tracker.process() )

@@ -61,6 +61,11 @@
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.mastodon</groupId>
+			<artifactId>mastodon-collection</artifactId>
+			<version>1.0.0-beta-4-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<mailingLists>
