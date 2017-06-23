@@ -167,7 +167,9 @@ public class DetectionUtil
 	public static AffineTransform3D getTransform( final SpimDataMinimal spimData, final int timepoint, final int setup, final int level )
 	{
 		final ViewId viewId = new ViewId( timepoint, setup );
-		final AffineTransform3D transform = spimData.getViewRegistrations().getViewRegistration( viewId ).getModel();
+		final AffineTransform3D transform = new AffineTransform3D();
+		transform.set(spimData.getViewRegistrations().getViewRegistration( viewId ).getModel() );
+
 		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
 		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
 		{
@@ -177,6 +179,29 @@ public class DetectionUtil
 			transform.concatenate( mipmapTransform );
 		}
 		return transform;
+	}
+
+	public static double getResolutionLevelScale( final SpimDataMinimal spimData, final int timepoint, final int setup, final int level )
+	{
+		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
+		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
+		{
+			final BasicMultiResolutionSetupImgLoader< ? > loader = ( ( BasicMultiResolutionImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
+			final AffineTransform3D[] mipmapTransforms = loader.getMipmapTransforms();
+			final AffineTransform3D t = mipmapTransforms[ level ];
+			double scale = Affine3DHelpers.extractScale( t, 0 );
+			for ( int axis = 1; axis < t.numDimensions(); axis++ )
+			{
+				final double sc = Affine3DHelpers.extractScale( t, axis );
+				if ( sc > scale )
+					scale = sc;
+			}
+			return scale;
+		}
+		else
+		{
+			return 1.;
+		}
 	}
 
 	/**
@@ -237,4 +262,5 @@ public class DetectionUtil
 
 	private DetectionUtil()
 	{}
+
 }

@@ -7,7 +7,7 @@ import java.util.Locale;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import org.mastodon.revised.mamut.WindowManager;
+import org.mastodon.revised.mamut.MainWindow;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
@@ -29,7 +29,8 @@ public class DetectionSandbox
 		/*
 		 * Load SpimData
 		 */
-		final String bdvFile = "samples/datasethdf5.xml";
+//		final String bdvFile = "samples/datasethdf5.xml";
+		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 		SpimDataMinimal sd = null;
 		try
 		{
@@ -48,24 +49,20 @@ public class DetectionSandbox
 		final Model model = new Model();
 		final ModelGraph graph = model.getGraph();
 
-		final double radius = 6.;
-		final double threshold = 100.;
+		final double radius = 18.; // 6.;
+		final double threshold = 200.; // 100.;
 		final int setup = 0;
 		final DoGDetector detector = new DoGDetector(spimData, graph, radius, threshold , setup, minTimepoint, maxTimepoint);
-		detector.setNumThreads( 1 );
+		detector.setNumThreads();
 		if (!detector.checkInput() || !detector.process())
 		{
 			System.out.println( "Problem encountered during detection: " + detector.getErrorMessage() );
 			return;
 		}
-
+		model.getGraphFeatureModel().declareFeature( detector.getQualityFeature() );
 		System.out.println( "Detection completed in " + detector.getProcessingTime() + " ms." );
-		System.out.println( graph );
 
-
-		final WindowManager wm = new WindowManager( null, bdvFile, spimData, model, getInputTriggerConfig() );
-		wm.getCreateTrackSchemeAction().actionPerformed( null );
-		wm.getCreateBdvAction().actionPerformed( null );
+		new MainWindow( model, spimData, bdvFile, getInputTriggerConfig() ).setVisible( true );
 	}
 
 
