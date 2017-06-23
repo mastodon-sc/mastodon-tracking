@@ -54,7 +54,11 @@
 			<groupId>org.scijava</groupId>
 			<artifactId>scijava-plugins-commands</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>net.imglib2</groupId>
+			<artifactId>imglib2-algorithm-fft</artifactId>
+		</dependency>
+		
 		<!-- Test dependencies -->
 		<dependency>
 			<groupId>junit</groupId>

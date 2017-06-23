@@ -52,7 +52,7 @@ public class DetectionSandbox
 		final double radius = 18.; // 6.;
 		final double threshold = 200.; // 100.;
 		final int setup = 0;
-		final DoGDetector detector = new DoGDetector(spimData, graph, radius, threshold , setup, minTimepoint, maxTimepoint);
+		final LoGDetector detector = new LoGDetector(spimData, graph, radius, threshold , setup, minTimepoint, maxTimepoint);
 		detector.setNumThreads();
 		if (!detector.checkInput() || !detector.process())
 		{
@@ -61,6 +61,7 @@ public class DetectionSandbox
 		}
 		model.getGraphFeatureModel().declareFeature( detector.getQualityFeature() );
 		System.out.println( "Detection completed in " + detector.getProcessingTime() + " ms." );
+		System.out.println( "Found " + graph.vertices().size() + " spots." );
 
 		new MainWindow( model, spimData, bdvFile, getInputTriggerConfig() ).setVisible( true );
 	}

@@ -35,7 +35,7 @@ public class DoGDetector implements Algorithm, MultiThreaded, Benchmark
 	/**
 	 * The minimal diameter size, in pixel, under which we stop down-sampling.
 	 */
-	private static final double MIN_SPOT_PIXEL_SIZE = 5d;
+	private static final double MIN_SPOT_PIXEL_SIZE = 10d;
 
 	private long processingTime;
 
