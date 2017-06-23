@@ -1,11 +1,18 @@
 package org.mastodon.detection;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
+import org.mastodon.properties.DoublePropertyMap;
+import org.mastodon.revised.model.feature.Feature;
+import org.mastodon.revised.model.feature.FeatureProjectors;
+import org.mastodon.revised.model.feature.FeatureTarget;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 
 import bdv.ViewerImgLoader;
+import bdv.ViewerSetupImgLoader;
+import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.util.Affine3DHelpers;
 import mpicbg.spim.data.generic.sequence.BasicViewDescription;
@@ -31,6 +38,12 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
+/**
+ * Difference of Gaussian detector.
+ *
+ * @author Tobias Pietzsch
+ * @author Jean-Yves Tinevez
+ */
 public class DoGDetector implements Algorithm, MultiThreaded, Benchmark
 {
 	/** The minimal diameter size, in pixel, under which we stop down-sampling. */
@@ -55,6 +68,8 @@ public class DoGDetector implements Algorithm, MultiThreaded, Benchmark
 	private final int maxTimepoint;
 
 	private final ModelGraph graph;
+
+	private Feature< Spot, Double, DoublePropertyMap< Spot > > qualityFeature;
 
 	public DoGDetector( final SpimDataMinimal spimData , final ModelGraph graph, final double radius, final double threshold, final int setup, final int minTimepoint, final int maxTimepoint)
 	{
@@ -85,23 +100,26 @@ public class DoGDetector implements Algorithm, MultiThreaded, Benchmark
 	public boolean process()
 	{
 		final long start = System.currentTimeMillis();
+
+		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
+		final ViewerSetupImgLoader< ?, ? > loader = ( ( ViewerImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
+		final int numMipmapLevels = loader.numMipmapLevels();
+		final AffineTransform3D[] mipmapTransforms = loader.getMipmapTransforms();
+
+		final DoublePropertyMap< Spot > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
+
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
 		{
 			// Check if there is some data at this timepoint.
 			final BasicViewDescription< BasicViewSetup > vd = spimData.getSequenceDescription().getViewDescriptions().get( new ViewId( tp, setup ) );
 			if (  null == vd || !vd.isPresent() )
-			{
-				System.out.println( "No data found for tp = " + tp + ", setup = " + setup ); // DEBUG
 				continue;
-			}
 
 			/*
 			 * Determine optimal level for detection.
 			 */
 
-			final int numMipmapLevels = ( ( ViewerImgLoader ) spimData.getSequenceDescription().getImgLoader() ).getSetupImgLoader( setup ).numMipmapLevels();
 			int level = 0;
-			final AffineTransform3D transform = new AffineTransform3D();
 			while ( level < numMipmapLevels - 1 )
 			{
 
@@ -110,27 +128,25 @@ public class DoGDetector implements Algorithm, MultiThreaded, Benchmark
 				 * If at this scale the spot is too small, then we stop.
 				 */
 
-				transform.set( spimData.getViewRegistrations().getViewRegistration( tp, setup ).getModel() );
-				double scale = Affine3DHelpers.extractScale( transform, 0 );
-				for ( int axis = 1; axis < transform.numDimensions(); axis++ )
+				final AffineTransform3D t = mipmapTransforms[level];
+				double scale = Affine3DHelpers.extractScale( t, 0 );
+				for ( int axis = 1; axis < t.numDimensions(); axis++ )
 				{
-					final double sc = Affine3DHelpers.extractScale( transform, axis );
+					final double sc = Affine3DHelpers.extractScale( t, axis );
 					if ( sc > scale )
-					{
 						scale = sc;
-					}
 				}
 
 				final double diameterInPix = 2 * radius / scale;
 				if ( diameterInPix < MIN_SPOT_PIXEL_SIZE )
-				{
 					break;
-				}
+
 				level++;
 			}
-			System.out.println( "Picked up level " + level + " out of " + numMipmapLevels + " levels."); // DEBUG
-			System.out.println( "Transform at this level is " + transform ); // DEBUG
-//			transform.set( 5., 2, 2 );
+			final ViewId viewId = new ViewId( tp, setup);
+			final AffineTransform3D transform = spimData.getViewRegistrations().getViewRegistration( viewId ).getModel();
+			final AffineTransform3D mipmapTransform = mipmapTransforms[ level ];
+			transform.concatenate( mipmapTransform );
 
 			/*
 			 * Load and extends image data.
@@ -161,8 +177,8 @@ public class DoGDetector implements Algorithm, MultiThreaded, Benchmark
 			final DogDetection< FloatType > DOG = new DogDetection<>(
 					source,
 					interval, pixelSize, sigmaSmaller, sigmaLarger, ExtremaType.MINIMA, threshold, true );
+			DOG.setNumThreads( numThreads );
 			final ArrayList< RefinedPeak< Point > > refinedPeaks = DOG.getSubpixelPeaks();
-			System.out.println("At tp = " +tp + " found  " + refinedPeaks.size() + " initial spots");
 
 			final Spot ref = graph.vertexRef();
 			final double normalization = 1.0 / ( sigmaLarger / sigmaSmaller - 1.0 );
@@ -178,14 +194,24 @@ public class DoGDetector implements Algorithm, MultiThreaded, Benchmark
 				transform.apply( p, sp );
 				sp.localize( pos );
 				final Spot spot = graph.addVertex( ref ).init(tp, pos , radius );
-				System.out.println( "  kept spot " + spot + " with Quality = " + normalizedValue ); // DEBUG
+				quality.set( spot, normalizedValue );
 			}
 			graph.releaseRef( ref );
 		}
 
+		this.qualityFeature =
+				new Feature< Spot, Double, DoublePropertyMap< Spot > >(
+						"Detection quality", FeatureTarget.VERTEX, quality,
+						Collections.singletonMap( "Detection quality", FeatureProjectors.project( quality ) ) );
+
 		final long end = System.currentTimeMillis();
 		this.processingTime = end - start;
 		return true;
+	}
+
+	public Feature< Spot, Double, DoublePropertyMap< Spot > > getQualityFeature()
+	{
+		return qualityFeature;
 	}
 
 	@Override

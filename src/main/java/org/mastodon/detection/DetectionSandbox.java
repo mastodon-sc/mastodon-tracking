@@ -52,6 +52,7 @@ public class DetectionSandbox
 		final double threshold = 100.;
 		final int setup = 0;
 		final DoGDetector detector = new DoGDetector(spimData, graph, radius, threshold , setup, minTimepoint, maxTimepoint);
+		detector.setNumThreads( 1 );
 		if (!detector.checkInput() || !detector.process())
 		{
 			System.out.println( "Problem encountered during detection: " + detector.getErrorMessage() );
