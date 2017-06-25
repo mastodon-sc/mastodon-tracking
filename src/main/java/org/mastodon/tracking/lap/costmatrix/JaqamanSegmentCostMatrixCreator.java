@@ -18,6 +18,7 @@ import static org.mastodon.tracking.lap.LAPUtils.checkParameter;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -58,7 +59,7 @@ import net.imglib2.algorithm.MultiThreaded;
  * @author Jean-Yves Tinevez - 2014
  *
  */
-public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoint & RealLocalizable & Comparable< V >, E extends Edge< V > > implements CostMatrixCreator< V, V >, MultiThreaded
+public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > > implements CostMatrixCreator< V, V >, MultiThreaded
 {
 
 	private static final String BASE_ERROR_MESSAGE = "[JaqamanSegmentCostMatrixCreator] ";
@@ -83,16 +84,18 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 
 	private final FeatureModel< V, E > featureModel;
 
+	private final Comparator< V > spotComparator;
+
 	/**
 	 * Instantiates a cost matrix creator for the top-left quadrant of the
 	 * segment linking cost matrix.
-	 *
 	 */
-	public JaqamanSegmentCostMatrixCreator( final ReadOnlyGraph< V, E > graph, final FeatureModel< V, E > featureModel, final Map< String, Object > settings )
+	public JaqamanSegmentCostMatrixCreator( final ReadOnlyGraph< V, E > graph, final FeatureModel< V, E > featureModel, final Map< String, Object > settings, final Comparator< V > spotComparator )
 	{
 		this.graph = graph;
 		this.featureModel = featureModel;
 		this.settings = settings;
+		this.spotComparator = spotComparator;
 		setNumThreads();
 	}
 
@@ -332,8 +335,7 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 							}
 						}
 					}
-				}
-						);
+				} );
 			}
 			executorS.shutdown();
 			try
@@ -366,7 +368,8 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 		else
 		{
 
-			final DefaultCostMatrixCreator< V, V > creator = new DefaultCostMatrixCreator< V, V >( sources, targets, linkCosts.toArray(), alternativeCostFactor, percentile );
+			final DefaultCostMatrixCreator< V, V > creator = new DefaultCostMatrixCreator< V, V >(
+					sources, targets, linkCosts.toArray(), alternativeCostFactor, percentile, spotComparator, spotComparator );
 			if ( !creator.checkInput() || !creator.process() )
 			{
 				errorMessage = "Linking track segments: " + creator.getErrorMessage();

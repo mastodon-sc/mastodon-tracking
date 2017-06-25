@@ -10,6 +10,7 @@ import static org.mastodon.tracking.TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.tracking.lap.LAPUtils.checkFeatureMap;
 import static org.mastodon.tracking.lap.LAPUtils.checkParameter;
 
+import java.util.Comparator;
 import java.util.Map;
 
 import org.mastodon.collection.RefRefMap;
@@ -60,7 +61,7 @@ import net.imglib2.algorithm.MultiThreaded;
  * The class itself uses a sparse version of the cost matrix and a solver that
  * can exploit it. Therefore it is optimized for memory usage rather than speed.
  */
-public class SparseLAPSegmentTracker< V extends Vertex< E > & HasTimepoint & RealLocalizable & Comparable< V >, E extends Edge< V > > implements Algorithm, Benchmark, MultiThreaded
+public class SparseLAPSegmentTracker< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > > implements Algorithm, Benchmark, MultiThreaded
 {
 
 	private static final String BASE_ERROR_MESSAGE = "[SparseLAPSegmentTracker] ";
@@ -71,6 +72,8 @@ public class SparseLAPSegmentTracker< V extends Vertex< E > & HasTimepoint & Rea
 
 	private final Map< String, Object > settings;
 
+	private final Comparator< V > spotComparator;
+
 	private String errorMessage;
 
 	private long processingTime;
@@ -80,11 +83,13 @@ public class SparseLAPSegmentTracker< V extends Vertex< E > & HasTimepoint & Rea
 	private ProgressListener logger = ProgressListeners.voidLogger();
 
 
-	public SparseLAPSegmentTracker( final Graph< V, E > graph, final FeatureModel< V, E > featureModel, final Map< String, Object > settings )
+
+	public SparseLAPSegmentTracker( final Graph< V, E > graph, final FeatureModel< V, E > featureModel, final Map< String, Object > settings, final Comparator< V > spotComparator )
 	{
 		this.graph = graph;
 		this.featureModel = featureModel;
 		this.settings = settings;
+		this.spotComparator = spotComparator;
 		setNumThreads();
 	}
 
@@ -127,7 +132,8 @@ public class SparseLAPSegmentTracker< V extends Vertex< E > & HasTimepoint & Rea
 		 */
 
 		logger.showStatus( "Creating the segment linking cost matrix..." );
-		final JaqamanSegmentCostMatrixCreator< V, E > costMatrixCreator = new JaqamanSegmentCostMatrixCreator<>( graph, featureModel, settings );
+		final JaqamanSegmentCostMatrixCreator< V, E > costMatrixCreator = new JaqamanSegmentCostMatrixCreator<>(
+				graph, featureModel, settings, spotComparator );
 		costMatrixCreator.setNumThreads( numThreads );
 		final JaqamanLinker< V, V > linker = new JaqamanLinker<>( costMatrixCreator, graph.vertices(), graph.vertices() );
 		if ( !linker.checkInput() || !linker.process() )

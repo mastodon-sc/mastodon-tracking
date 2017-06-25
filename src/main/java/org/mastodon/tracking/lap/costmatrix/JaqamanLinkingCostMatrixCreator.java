@@ -1,5 +1,7 @@
 package org.mastodon.tracking.lap.costmatrix;
 
+import java.util.Comparator;
+
 import org.mastodon.collection.RefCollection;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
@@ -18,7 +20,7 @@ import gnu.trove.list.array.TDoubleArrayList;
  * @param <K>
  * @param <J>
  */
-public class JaqamanLinkingCostMatrixCreator< K extends Comparable< K >, J extends Comparable< J >> implements CostMatrixCreator< K, J >
+public class JaqamanLinkingCostMatrixCreator< K, J > implements CostMatrixCreator< K, J >
 {
 
 	private static final String BASE_ERROR_MSG = "[JaqamanLinkingCostMatrixCreator] ";
@@ -51,12 +53,24 @@ public class JaqamanLinkingCostMatrixCreator< K extends Comparable< K >, J exten
 
 	private final RefCollection< J > targetPool;
 
-	public JaqamanLinkingCostMatrixCreator( final RefCollection< K > sources, final RefCollection< J > targets, final CostFunction< K, J > costFunction, final double costThreshold, final double alternativeCostFactor, final double percentile )
+	private final Comparator< K > sourceComparator;
+
+	private final Comparator< J > targetComparator;
+
+	public JaqamanLinkingCostMatrixCreator(
+			final RefCollection< K > sources,
+			final RefCollection< J > targets,
+			final CostFunction< K, J > costFunction,
+			final double costThreshold,
+			final double alternativeCostFactor,
+			final double percentile,
+			final Comparator< K > sourceComparator,
+			final Comparator< J > targetComparator )
 	{
-		this( sources, targets, costFunction, costThreshold, alternativeCostFactor, percentile, sources, targets );
+		this( sources, targets, costFunction, costThreshold, alternativeCostFactor, percentile, sources, targets, sourceComparator, targetComparator );
 	}
 
-	public JaqamanLinkingCostMatrixCreator( final Iterable< K > sources, final Iterable< J > targets, final CostFunction< K, J > costFunction, final double costThreshold, final double alternativeCostFactor, final double percentile, final RefCollection< K > sourcePool, final RefCollection< J > targetPool )
+	public JaqamanLinkingCostMatrixCreator( final Iterable< K > sources, final Iterable< J > targets, final CostFunction< K, J > costFunction, final double costThreshold, final double alternativeCostFactor, final double percentile, final RefCollection< K > sourcePool, final RefCollection< J > targetPool, final Comparator< K > sourceComparator, final Comparator< J > targetComparator )
 	{
 		this.sources = sources;
 		this.targets = targets;
@@ -66,6 +80,8 @@ public class JaqamanLinkingCostMatrixCreator< K extends Comparable< K >, J exten
 		this.percentile = percentile;
 		this.sourcePool = sourcePool;
 		this.targetPool = targetPool;
+		this.sourceComparator = sourceComparator;
+		this.targetComparator = targetComparator;
 	}
 
 	@Override
@@ -128,7 +144,14 @@ public class JaqamanLinkingCostMatrixCreator< K extends Comparable< K >, J exten
 		else
 		{
 
-			final DefaultCostMatrixCreator< K, J > cmCreator = new DefaultCostMatrixCreator< K, J >( accSources, accTargets, costs.toArray(), alternativeCostFactor, percentile );
+			final DefaultCostMatrixCreator< K, J > cmCreator = new DefaultCostMatrixCreator< K, J >(
+					accSources,
+					accTargets,
+					costs.toArray(),
+					alternativeCostFactor,
+					percentile,
+					sourceComparator,
+					targetComparator );
 			if ( !cmCreator.checkInput() || !cmCreator.process() )
 			{
 				errorMessage = cmCreator.getErrorMessage();

@@ -9,6 +9,7 @@ import static org.mastodon.tracking.lap.LAPUtils.checkMapKeys;
 import static org.mastodon.tracking.lap.LAPUtils.checkParameter;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,7 +37,7 @@ import net.imglib2.algorithm.MultiThreadedBenchmarkAlgorithm;
 import net.imglib2.multithreading.SimpleMultiThreading;
 
 @SuppressWarnings( "deprecation" )
-public class SparseLAPFrameToFrameTracker< V extends Vertex< E > & HasTimepoint & RealLocalizable & Comparable< V >, E extends Edge< V > > extends MultiThreadedBenchmarkAlgorithm
+public class SparseLAPFrameToFrameTracker< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > > extends MultiThreadedBenchmarkAlgorithm
 {
 	private final static String BASE_ERROR_MESSAGE = "[SparseLAPFrameToFrameTracker] ";
 
@@ -54,6 +55,8 @@ public class SparseLAPFrameToFrameTracker< V extends Vertex< E > & HasTimepoint 
 
 	private final EdgeCreator< V, E > edgeCreator;
 
+	private final Comparator< V > spotComparator;
+
 	private ProgressListener logger = ProgressListeners.voidLogger();
 
 	/*
@@ -67,7 +70,8 @@ public class SparseLAPFrameToFrameTracker< V extends Vertex< E > & HasTimepoint 
 			final EdgeCreator< V, E > edgeCreator,
 			final int minTimepoint,
 			final int maxTimepoint,
-			final Map< String, Object > settings )
+			final Map< String, Object > settings,
+			final Comparator< V > spotComparator )
 	{
 		this.spots = spots;
 		this.featureModel = featureModel;
@@ -76,6 +80,7 @@ public class SparseLAPFrameToFrameTracker< V extends Vertex< E > & HasTimepoint 
 		this.minTimepoint = minTimepoint;
 		this.maxTimepoint = maxTimepoint;
 		this.settings = settings;
+		this.spotComparator = spotComparator;
 	}
 
 	/*
@@ -171,6 +176,7 @@ public class SparseLAPFrameToFrameTracker< V extends Vertex< E > & HasTimepoint 
 		{
 			threads[ ithread ] = new Thread( BASE_ERROR_MESSAGE + " thread " + ( 1 + ithread ) + "/" + threads.length )
 			{
+
 				@Override
 				public void run()
 				{
@@ -196,7 +202,9 @@ public class SparseLAPFrameToFrameTracker< V extends Vertex< E > & HasTimepoint 
 						 */
 
 						final JaqamanLinkingCostMatrixCreator< V, V > creator = new JaqamanLinkingCostMatrixCreator<>(
-								sources, targets, costFunction, costThreshold, alternativeCostFactor, 1d, graph.vertices(), graph.vertices() );
+								sources, targets, costFunction, costThreshold, alternativeCostFactor, 1d,
+								graph.vertices(), graph.vertices(),
+								spotComparator, spotComparator );
 						final JaqamanLinker< V, V > linker = new JaqamanLinker< V, V >( creator, graph.vertices(), graph.vertices() );
 						if ( !linker.checkInput() || !linker.process() )
 						{

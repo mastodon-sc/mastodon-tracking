@@ -22,6 +22,7 @@ import static org.mastodon.tracking.lap.LAPUtils.checkMapKeys;
 import static org.mastodon.tracking.lap.LAPUtils.checkParameter;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +40,7 @@ import org.mastodon.tracking.ProgressListeners;
 import net.imglib2.RealLocalizable;
 import net.imglib2.algorithm.MultiThreadedBenchmarkAlgorithm;
 
-public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocalizable & Comparable< V >, E extends Edge< V > > extends MultiThreadedBenchmarkAlgorithm
+public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > > extends MultiThreadedBenchmarkAlgorithm
 {
 	private final static String BASE_ERROR_MESSAGE = "[SparseLAPTracker] ";
 
@@ -56,6 +57,7 @@ public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocali
 
 	private final int maxTimepoint;
 
+	private final Comparator< V>  spotComparator;
 
 	private final EdgeCreator< V, E > edgeCreator;
 
@@ -72,7 +74,8 @@ public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocali
 			final EdgeCreator< V, E > edgeCreator,
 			final int minTimepoint,
 			final int maxTimepoint,
-			final Map< String, Object > settings )
+			final Map< String, Object > settings,
+			final Comparator< V > spotComparator )
 	{
 		this.spots = spots;
 		this.graph = graph;
@@ -80,6 +83,7 @@ public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocali
 		this.minTimepoint = minTimepoint;
 		this.maxTimepoint = maxTimepoint;
 		this.settings = settings;
+		this.spotComparator = spotComparator;
 	}
 
 	/*
@@ -153,7 +157,8 @@ public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocali
 		ftfSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, settings.get( KEY_ALTERNATIVE_LINKING_COST_FACTOR ) );
 		ftfSettings.put( KEY_LINKING_FEATURE_PENALTIES, settings.get( KEY_LINKING_FEATURE_PENALTIES ) );
 
-		final SparseLAPFrameToFrameTracker< V, E > frameToFrameLinker = new SparseLAPFrameToFrameTracker<>( spots, featureModel, graph, edgeCreator, minTimepoint, maxTimepoint, ftfSettings );
+		final SparseLAPFrameToFrameTracker< V, E > frameToFrameLinker = new SparseLAPFrameToFrameTracker<>(
+				spots, featureModel, graph, edgeCreator, minTimepoint, maxTimepoint, ftfSettings, spotComparator );
 		frameToFrameLinker.setNumThreads( numThreads );
 		frameToFrameLinker.setProgressListener( logger );
 
@@ -187,7 +192,7 @@ public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocali
 		slSettings.put( KEY_CUTOFF_PERCENTILE, settings.get( KEY_CUTOFF_PERCENTILE ) );
 
 		// Solve.
-		final SparseLAPSegmentTracker< V, E > segmentLinker = new SparseLAPSegmentTracker<>( graph, featureModel, slSettings );
+		final SparseLAPSegmentTracker< V, E > segmentLinker = new SparseLAPSegmentTracker<>( graph, featureModel, slSettings, spotComparator );
 		segmentLinker.setNumThreads( numThreads );
 		segmentLinker.setProgressListener( logger );
 

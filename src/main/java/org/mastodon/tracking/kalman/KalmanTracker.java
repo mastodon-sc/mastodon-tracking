@@ -1,6 +1,7 @@
 package org.mastodon.tracking.kalman;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 
 import org.mastodon.collection.ObjectRefMap;
@@ -34,7 +35,7 @@ import net.imglib2.algorithm.Benchmark;
  * @param <V> the type of vertices in the graph.
  * @param <E> the type of edges in the graph.
  */
-public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable< V >, E extends Edge< V > > implements Algorithm, Benchmark
+public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends Edge< V > > implements Algorithm, Benchmark
 {
 
 	private static final double ALTERNATIVE_COST_FACTOR = 1.05d;
@@ -65,7 +66,10 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 
 	private final EdgeCreator< V, E > edgeCreator;
 
+	private final Comparator< V > spotComparator;
+
 	private ProgressListener logger = ProgressListeners.voidLogger();
+
 
 	/*
 	 * CONSTRUCTOR
@@ -80,7 +84,8 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 			final int maxTimepoint,
 			final double maxSearchRadius,
 			final int maxFrameGap,
-			final double initialSearchRadius )
+			final double initialSearchRadius,
+			final Comparator<V> spotComparator )
 	{
 		this.spots = spots;
 		this.graph = graph;
@@ -91,6 +96,7 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 		this.maxSearchRadius = maxSearchRadius;
 		this.maxFrameGap = maxFrameGap;
 		this.initialSearchRadius = initialSearchRadius;
+		this.spotComparator = spotComparator;
 	}
 
 	/*
@@ -199,6 +205,15 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 		 */
 
 		final PredictionPool predictionPool = new PredictionPool( orphanSpots.size() );
+		final Comparator< Prediction > predictionComparator = new Comparator< Prediction >()
+		{
+
+			@Override
+			public int compare( final Prediction o1, final Prediction o2 )
+			{
+				return o1.getInternalPoolIndex() - o2.getInternalPoolIndex();
+			}
+		};
 
 		/*
 		 * Estimate Kalman filter variances.
@@ -280,7 +295,7 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 			{
 				// Only link measurements to predictions if we have predictions.
 				final JaqamanLinkingCostMatrixCreator< Prediction, V > crm = new JaqamanLinkingCostMatrixCreator<>(
-						predictions, measurements, CF, maxCost, ALTERNATIVE_COST_FACTOR, PERCENTILE );
+						predictions, measurements, CF, maxCost, ALTERNATIVE_COST_FACTOR, PERCENTILE, predictionComparator, spotComparator );
 				final JaqamanLinker< Prediction, V > linker = new JaqamanLinker<>( crm, predictions, measurements );
 				if ( !linker.checkInput() || !linker.process() )
 				{
@@ -333,7 +348,15 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable & Comparable
 				 */
 
 				final JaqamanLinkingCostMatrixCreator< V, V > ic =
-						new JaqamanLinkingCostMatrixCreator<>( previousOrphanSpots, orphanSpots, nucleatingCostFunction, maxInitialCost, ALTERNATIVE_COST_FACTOR, PERCENTILE );
+						new JaqamanLinkingCostMatrixCreator<>(
+								previousOrphanSpots,
+								orphanSpots,
+								nucleatingCostFunction,
+								maxInitialCost,
+								ALTERNATIVE_COST_FACTOR, PERCENTILE,
+								spotComparator,
+								spotComparator );
+
 				final JaqamanLinker< V, V > newLinker = new JaqamanLinker<>( ic, previousOrphanSpots, orphanSpots );
 				if ( !newLinker.checkInput() || !newLinker.process() )
 				{

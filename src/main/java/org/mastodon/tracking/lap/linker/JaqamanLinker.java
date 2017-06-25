@@ -26,7 +26,7 @@ import net.imglib2.util.Util;
  * @param <J>
  *            the type of the target objects to link.
  */
-public class JaqamanLinker< K extends Comparable< K >, J extends Comparable< J > > extends BenchmarkAlgorithm implements OutputAlgorithm< RefRefMap< K, J > >
+public class JaqamanLinker< K , J > extends BenchmarkAlgorithm implements OutputAlgorithm< RefRefMap< K, J > >
 {
 	private RefRefMap< K, J > assignments;
 

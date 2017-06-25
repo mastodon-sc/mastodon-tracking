@@ -19,8 +19,11 @@ import net.imglib2.util.Util;
  * @author Jean-Yves Tinevez - 2014
  *
  * @param <K>
+ *            the type of row elements.
+ * @param <J>
+ *            the type of column elements.
  */
-public class DefaultCostMatrixCreator< K extends Comparable< K >, J extends Comparable< J > > implements CostMatrixCreator< K, J >
+public class DefaultCostMatrixCreator< K, J > implements CostMatrixCreator< K, J >
 {
 
 	private static final String BASE_ERROR_MESSAGE = "[DefaultCostMatrixCreator] ";
@@ -47,13 +50,26 @@ public class DefaultCostMatrixCreator< K extends Comparable< K >, J extends Comp
 
 	private final double percentile;
 
-	public DefaultCostMatrixCreator( final RefList< K > rows, final RefList< J > cols, final double[] costs, final double alternativeCostFactor, final double percentile )
+	private final Comparator< K > rowComparator;
+
+	private final Comparator< J > colComparator;
+
+	public DefaultCostMatrixCreator(
+			final RefList< K > rows,
+			final RefList< J > cols,
+			final double[] costs,
+			final double alternativeCostFactor,
+			final double percentile,
+			final Comparator< K > rowComparator,
+			final Comparator< J > colComparator )
 	{
 		this.rows = rows;
 		this.cols = cols;
 		this.costs = costs;
 		this.alternativeCostFactor = alternativeCostFactor;
 		this.percentile = percentile;
+		this.rowComparator = rowComparator;
+		this.colComparator = colComparator;
 	}
 
 
@@ -106,21 +122,21 @@ public class DefaultCostMatrixCreator< K extends Comparable< K >, J extends Comp
 		tmpSet1.addAll( rows );
 		uniqueRows = RefCollections.createRefList( rows, tmpSet1.size() );
 		uniqueRows.addAll( tmpSet1 );
-		uniqueRows.sort( Comparator.naturalOrder() );
+		uniqueRows.sort( rowComparator );
 
 		final RefSet< J > tmpSet2 = RefCollections.createRefSet( cols, cols.size() );
 		tmpSet2.addAll( cols );
 		uniqueCols = RefCollections.createRefList( cols, tmpSet2.size() );
 		uniqueCols.addAll( tmpSet2 );
-		uniqueCols.sort( Comparator.naturalOrder() );
+		uniqueCols.sort( colComparator );
 
 		final List< Assignment > assignments = new ArrayList< Assignment >( costs.length );
 		for ( int i = 0; i < costs.length; i++ )
 		{
 			final K rowObj = rows.get( i );
 			final J colObj = cols.get( i );
-			final int r = Collections.binarySearch( uniqueRows, rowObj );
-			final int c = Collections.binarySearch( uniqueCols, colObj );
+			final int r = Collections.binarySearch( uniqueRows, rowObj, rowComparator );
+			final int c = Collections.binarySearch( uniqueCols, colObj, colComparator );
 			assignments.add( new Assignment( r, c, costs[ i ] ) );
 		}
 		Collections.sort( assignments );
