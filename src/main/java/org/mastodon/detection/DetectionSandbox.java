@@ -2,14 +2,22 @@ package org.mastodon.detection;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.revised.mamut.MainWindow;
+import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
+import org.mastodon.revised.model.mamut.Spot;
+import org.mastodon.tracking.EdgeCreator;
+import org.mastodon.tracking.ProgressListeners;
+import org.mastodon.tracking.lap.LAPUtils;
+import org.mastodon.tracking.lap.SparseLAPTracker;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
@@ -30,7 +38,8 @@ public class DetectionSandbox
 		 * Load SpimData
 		 */
 //		final String bdvFile = "samples/datasethdf5.xml";
-		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+//		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 		SpimDataMinimal sd = null;
 		try
 		{
@@ -62,6 +71,40 @@ public class DetectionSandbox
 		model.getGraphFeatureModel().declareFeature( detector.getQualityFeature() );
 		System.out.println( "Detection completed in " + detector.getProcessingTime() + " ms." );
 		System.out.println( "Found " + graph.vertices().size() + " spots." );
+
+
+		/*
+		 * Let's track them.
+		 */
+
+		final EdgeCreator< Spot, Link > edgeCreator = edgeCreator( model.getGraph() );
+		final Comparator< Spot > spotComparator = new Comparator< Spot >()
+		{
+
+			@Override
+			public int compare( final Spot o1, final Spot o2 )
+			{
+				return o1.getInternalPoolIndex() - o2.getInternalPoolIndex();
+			}
+		};
+
+		final Map< String, Object > settings = LAPUtils.getDefaultLAPSettingsMap();
+		final SparseLAPTracker< Spot, Link > tracker = new SparseLAPTracker<>(
+				model.getSpatioTemporalIndex(),
+				model.getGraphFeatureModel(),
+				model.getGraph(),
+				edgeCreator,
+				minTimepoint, maxTimepoint, settings, spotComparator );
+		tracker.setProgressListener( ProgressListeners.defaultLogger() );
+		tracker.setNumThreads( 1 );
+
+		System.out.println( "\n\nTracking with " + tracker );
+		if ( !tracker.checkInput() || !tracker.process() )
+		{
+			System.out.println( "Tracking failed: " + tracker.getErrorMessage() );
+			return;
+		}
+		System.out.println( "Tracking completed in " + tracker.getProcessingTime() + " ms." );
 
 		new MainWindow( model, spimData, bdvFile, getInputTriggerConfig() ).setVisible( true );
 	}
@@ -104,5 +147,19 @@ public class DetectionSandbox
 
 		return conf;
 	}
+
+	private static EdgeCreator< Spot, Link > edgeCreator( final ModelGraph graph )
+	{
+		final Link ref = graph.edgeRef();
+		return new EdgeCreator< Spot, Link >()
+		{
+
+			@Override
+			public Link createEdge( final Spot source, final Spot target )
+			{
+				return graph.addEdge( source, target, ref ).init();
+			}
+		};
+	};
 
 }
