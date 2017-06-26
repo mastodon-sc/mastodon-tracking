@@ -1,16 +1,13 @@
 package org.mastodon.detection;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.feature.FeatureProjectors;
 import org.mastodon.revised.model.feature.FeatureTarget;
-import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 
 import bdv.spimdata.SequenceDescriptionMinimal;
@@ -23,14 +20,10 @@ import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHints;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.Point;
-import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealPoint;
 import net.imglib2.algorithm.localextrema.LocalExtrema;
 import net.imglib2.algorithm.localextrema.LocalExtrema.LocalNeighborhoodCheck;
-import net.imglib2.algorithm.localextrema.RefinedPeak;
-import net.imglib2.algorithm.localextrema.SubpixelLocalization;
 import net.imglib2.converter.Converters;
 import net.imglib2.converter.RealFloatConverter;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -274,83 +267,17 @@ public class DetectionUtil
 		}
 	}
 
-
-	public static final void findLocalMaxima(
-			final ModelGraph graph,
-			final DoublePropertyMap< Spot > quality,
+	public static final List< Point > findLocalMaxima(
 			final RandomAccessibleInterval< FloatType > source,
-			final AffineTransform3D transform,
 			final double threshold,
-			final double radius,
-			final boolean doSubPixelLocalization,
-			final int timepoint,
-			final int numThreads )
+			final ExecutorService service )
 	{
-		/*
-		 * Find maxima.
-		 */
-
 		final FloatType val = new FloatType();
 		val.setReal( threshold );
 		final LocalNeighborhoodCheck< Point, FloatType > localNeighborhoodCheck = new LocalExtrema.MaximumCheck< FloatType >( val );
-		final IntervalView< FloatType > dogWithBorder = Views.interval( Views.extendMirrorSingle( source ), Intervals.expand( source, 1 ) );
-		final ExecutorService service = Executors.newFixedThreadPool( numThreads );
-		final List< Point > peaks = LocalExtrema.findLocalExtrema( dogWithBorder, localNeighborhoodCheck, service );
-		service.shutdown();
-
-		if ( peaks.isEmpty() )
-			return;
-
-		if ( doSubPixelLocalization )
-		{
-
-			/*
-			 * Sub-pixel localize them.
-			 */
-
-			final SubpixelLocalization< Point, FloatType > spl = new SubpixelLocalization< Point, FloatType >( source.numDimensions() );
-			spl.setNumThreads( numThreads );
-			spl.setReturnInvalidPeaks( true );
-			spl.setCanMoveOutside( true );
-			spl.setAllowMaximaTolerance( true );
-			spl.setMaxNumMoves( 10 );
-			final ArrayList< RefinedPeak< Point >> refined = spl.process( peaks, dogWithBorder, source );
-
-			final RandomAccess< FloatType > ra = source.randomAccess();
-			final Spot ref = graph.vertexRef();
-			final double[] pos = new double[3];
-			final RealPoint point = RealPoint.wrap( pos );
-			for ( final RefinedPeak< Point > refinedPeak : refined )
-			{
-				point.setPosition( refinedPeak );
-				transform.apply( refinedPeak, point );
-				final Spot spot = graph.addVertex( ref ).init( timepoint, pos, radius );
-
-				ra.setPosition( refinedPeak.getOriginalPeak() );
-				final double q = ra.get().getRealDouble();
-				quality.set( spot, q );
-			}
-			graph.releaseRef( ref );
-
-		}
-		else
-		{
-			final RandomAccess< FloatType > ra = source.randomAccess();
-			final double[] pos = new double[ 3 ];
-			final RealPoint point = RealPoint.wrap( pos );
-			final Spot ref = graph.vertexRef();
-			for ( final Point peak : peaks )
-			{
-				transform.apply( peak, point );
-				final Spot spot = graph.addVertex( ref ).init( timepoint, pos, radius );
-
-				ra.setPosition( peak );
-				final double q = ra.get().getRealDouble();
-				quality.set( spot, q );
-			}
-			graph.releaseRef( ref );
-
-		}
+		final IntervalView< FloatType > extended = Views.interval( Views.extendMirrorSingle( source ), Intervals.expand( source, 1 ) );
+		final List< Point > peaks = LocalExtrema.findLocalExtrema( extended, localNeighborhoodCheck, service );
+		return peaks;
 	}
 
 	private DetectionUtil()

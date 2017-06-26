@@ -24,22 +24,36 @@ import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import mpicbg.spim.data.SpimDataException;
+import net.imagej.ImageJ;
+import net.imagej.ops.OpService;
+import net.imagej.ops.special.hybrid.Hybrids;
+import net.imglib2.algorithm.Benchmark;
 
 public class DetectionSandbox
 {
 
+	/**
+	 * @param args
+	 * @throws ClassNotFoundException
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws UnsupportedLookAndFeelException
+	 */
 	public static void main( final String[] args ) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException
 	{
 		Locale.setDefault( Locale.US );
 		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
 		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
+		final ImageJ ij = new ImageJ();
+		ij.launch( args );
+		final OpService ops = ij.op();
 
 		/*
 		 * Load SpimData
 		 */
-//		final String bdvFile = "samples/datasethdf5.xml";
+		final String bdvFile = "samples/datasethdf5.xml";
 //		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+//		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 		SpimDataMinimal sd = null;
 		try
 		{
@@ -58,20 +72,23 @@ public class DetectionSandbox
 		final Model model = new Model();
 		final ModelGraph graph = model.getGraph();
 
-		final double radius = 18.; // 6.;
-		final double threshold = 200.; // 100.;
+		final double radius = 6.;
+		final double threshold = 1000.;
 		final int setup = 0;
-		final LoGDetector detector = new LoGDetector(spimData, graph, radius, threshold , setup, minTimepoint, maxTimepoint);
-		detector.setNumThreads();
-		if (!detector.checkInput() || !detector.process())
-		{
-			System.out.println( "Problem encountered during detection: " + detector.getErrorMessage() );
-			return;
-		}
-		model.getGraphFeatureModel().declareFeature( detector.getQualityFeature() );
-		System.out.println( "Detection completed in " + detector.getProcessingTime() + " ms." );
-		System.out.println( "Found " + graph.vertices().size() + " spots." );
 
+//		final Class< DoGDetector > cl = DoGDetector.class;
+		final Class< LoGDetector > cl = LoGDetector.class;
+		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl , graph, spimData,
+				setup, radius, threshold, minTimepoint, maxTimepoint);
+		detector.compute( spimData, graph );
+
+		model.getGraphFeatureModel().declareFeature( detector.getQualityFeature() );
+		if (detector instanceof Benchmark)
+		{
+			final Benchmark bm = ( Benchmark ) detector;
+			System.out.println( "Detection completed in " + bm.getProcessingTime() + " ms." );
+		}
+		System.out.println( "Found " + graph.vertices().size() + " spots." );
 
 		/*
 		 * Let's track them.
@@ -99,11 +116,11 @@ public class DetectionSandbox
 		tracker.setNumThreads( 1 );
 
 		System.out.println( "\n\nTracking with " + tracker );
-		if ( !tracker.checkInput() || !tracker.process() )
-		{
-			System.out.println( "Tracking failed: " + tracker.getErrorMessage() );
-			return;
-		}
+//		if ( !tracker.checkInput() || !tracker.process() )
+//		{
+//			System.out.println( "Tracking failed: " + tracker.getErrorMessage() );
+//			return;
+//		}
 		System.out.println( "Tracking completed in " + tracker.getProcessingTime() + " ms." );
 
 		new MainWindow( model, spimData, bdvFile, getInputTriggerConfig() ).setVisible( true );
