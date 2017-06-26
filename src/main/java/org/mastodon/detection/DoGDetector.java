@@ -137,18 +137,6 @@ public class DoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGr
 			final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );
 
 			/*
-			 * Find scale to express radius in pixel units.
-			 */
-
-			double scale = Affine3DHelpers.extractScale( transform, 0 );
-			for ( int axis = 1; axis < transform.numDimensions(); axis++ )
-			{
-				final double sc = Affine3DHelpers.extractScale( transform, axis );
-				if ( sc > scale )
-					scale = sc;
-			}
-
-			/*
 			 * Load and extends image data.
 			 */
 
@@ -162,17 +150,18 @@ public class DoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGr
 			 * Process image.
 			 */
 
-			final int stepsPerOctave = 4;
-			final double k = Math.pow( 2.0, 1.0 / stepsPerOctave );
-			final double sigma = radius / Math.sqrt( 3 ) / scale;
-			final double sigmaSmaller = sigma;
-			final double sigmaLarger = k * sigmaSmaller;
-			final double normalization = 1.0 / ( sigmaLarger / sigmaSmaller - 1.0 );
-
 			final double xs = Affine3DHelpers.extractScale( transform, 0 );
 			final double ys = Affine3DHelpers.extractScale( transform, 1 );
 			final double zs = Affine3DHelpers.extractScale( transform, 2 );
 			final double[] pixelSize = new double[] { 1, ys / xs, zs / xs };
+			final double scale = xs;
+
+			final int stepsPerOctave = 4;
+			final double k = Math.pow( 2.0, 1.0 / stepsPerOctave );
+			final double sigma = radius / Math.sqrt( img.numDimensions() ) / scale;
+			final double sigmaSmaller = sigma;
+			final double sigmaLarger = k * sigmaSmaller;
+			final double normalization = 1.0 / ( sigmaLarger / sigmaSmaller - 1.0 );
 
 			final DogDetection< FloatType > dog = new DogDetection<>(
 					source,
