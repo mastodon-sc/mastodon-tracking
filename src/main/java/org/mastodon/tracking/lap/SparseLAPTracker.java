@@ -192,7 +192,7 @@ public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocali
 		slSettings.put( KEY_CUTOFF_PERCENTILE, settings.get( KEY_CUTOFF_PERCENTILE ) );
 
 		// Solve.
-		final SparseLAPSegmentTracker< V, E > segmentLinker = new SparseLAPSegmentTracker<>( graph, featureModel, slSettings, spotComparator );
+		final SparseLAPSegmentTracker< V, E > segmentLinker = new SparseLAPSegmentTracker<>( graph, edgeCreator, featureModel, slSettings, spotComparator );
 		segmentLinker.setNumThreads( numThreads );
 		segmentLinker.setProgressListener( logger );
 

@@ -20,6 +20,7 @@ import org.mastodon.graph.Vertex;
 import org.mastodon.revised.mamut.ProgressListener;
 import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.spatial.HasTimepoint;
+import org.mastodon.tracking.EdgeCreator;
 import org.mastodon.tracking.ProgressListeners;
 import org.mastodon.tracking.lap.costmatrix.JaqamanSegmentCostMatrixCreator;
 import org.mastodon.tracking.lap.linker.JaqamanLinker;
@@ -82,11 +83,20 @@ public class SparseLAPSegmentTracker< V extends Vertex< E > & HasTimepoint & Rea
 
 	private ProgressListener logger = ProgressListeners.voidLogger();
 
+	private final EdgeCreator< V, E > edgeCreator;
 
 
-	public SparseLAPSegmentTracker( final Graph< V, E > graph, final FeatureModel< V, E > featureModel, final Map< String, Object > settings, final Comparator< V > spotComparator )
+
+	public SparseLAPSegmentTracker(
+			final Graph< V, E > graph,
+			final EdgeCreator< V, E  > edgeCreator,
+			final FeatureModel< V, E >
+			featureModel,
+			final Map< String, Object > settings,
+			final Comparator< V > spotComparator )
 	{
 		this.graph = graph;
+		this.edgeCreator = edgeCreator;
 		this.featureModel = featureModel;
 		this.settings = settings;
 		this.spotComparator = spotComparator;
@@ -156,7 +166,7 @@ public class SparseLAPSegmentTracker< V extends Vertex< E > & HasTimepoint & Rea
 		for ( final V source : assignment.keySet() )
 		{
 			final V target = assignment.get( source, vref );
-			graph.addEdge( source, target, eref );
+			edgeCreator.createEdge( source, target );
 		}
 		graph.releaseRef( eref );
 		graph.releaseRef( vref );
