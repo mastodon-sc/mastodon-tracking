@@ -9,6 +9,7 @@
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
 		<version>16.1.0</version>
+		<relativePath />
 	</parent>
 
 	<groupId>net.trndy</groupId>
@@ -31,20 +32,56 @@
 	</licenses>
 
 	<dependencies>
+
+		<!-- BDV deps -->
+		
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>bigdataviewer-core</artifactId>
 			<version>4.0.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>spim_data</artifactId>
+		</dependency>
+
+		<!-- Mastodon deps -->
+
+		<dependency>
 			<groupId>net.trackmate</groupId>
 			<artifactId>trackmate</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
-			<groupId>sc.fiji</groupId>
-			<artifactId>spim_data</artifactId>
+			<groupId>org.mastodon</groupId>
+			<artifactId>mastodon-collection</artifactId>
+			<version>1.0.0-beta-4-SNAPSHOT</version>
 		</dependency>
+		
+		<!-- ImgLib2 deps -->
+
+		<dependency>
+			<groupId>net.imglib2</groupId>
+			<artifactId>imglib2-algorithm-fft</artifactId>
+		</dependency>
+		
+		<!-- ImageJ deps -->
+	
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej-ops</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej-legacy</artifactId>
+		</dependency>
+		
+		<!-- SciJava deps -->
+		
 		<dependency>
 			<groupId>org.scijava</groupId>
 			<artifactId>ui-behaviour</artifactId>
@@ -54,10 +91,6 @@
 			<groupId>org.scijava</groupId>
 			<artifactId>scijava-plugins-commands</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>net.imglib2</groupId>
-			<artifactId>imglib2-algorithm-fft</artifactId>
-		</dependency>
 		
 		<!-- Test dependencies -->
 		<dependency>
@@ -65,11 +98,7 @@
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.mastodon</groupId>
-			<artifactId>mastodon-collection</artifactId>
-			<version>1.0.0-beta-4-SNAPSHOT</version>
-		</dependency>
+		
 	</dependencies>
 
 	<mailingLists>

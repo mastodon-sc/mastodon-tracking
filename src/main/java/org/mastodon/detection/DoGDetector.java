@@ -6,18 +6,22 @@ import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
+import org.scijava.ItemIO;
+import org.scijava.app.StatusService;
+import org.scijava.plugin.Parameter;
+import org.scijava.plugin.Plugin;
+import org.scijava.thread.ThreadService;
 
 import bdv.spimdata.SpimDataMinimal;
 import bdv.util.Affine3DHelpers;
+import net.imagej.ops.special.hybrid.AbstractUnaryHybridCF;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.Point;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealPoint;
-import net.imglib2.algorithm.Algorithm;
 import net.imglib2.algorithm.Benchmark;
-import net.imglib2.algorithm.MultiThreaded;
 import net.imglib2.algorithm.dog.DogDetection;
 import net.imglib2.algorithm.dog.DogDetection.ExtremaType;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
@@ -30,34 +34,59 @@ import net.imglib2.type.numeric.real.FloatType;
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
  */
-public class DoGDetector implements Algorithm, MultiThreaded, Benchmark
+@Plugin( type = SpotDetectorOp.class )
+public class DoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGraph > implements SpotDetectorOp, Benchmark
 {
+
+	@Parameter
+	private ThreadService threadService;
+
+	@Parameter
+	private StatusService statusService;
+
 	/**
 	 * The minimal diameter size, in pixel, under which we stop down-sampling.
 	 */
 	private static final double MIN_SPOT_PIXEL_SIZE = 10d;
 
-	private long processingTime;
+	/**
+	 * The id of the setup in the provided SpimData object to process.
+	 */
+	@Parameter( required = true )
+	private int setup = 0;
 
-	private int numThreads;
+	/**
+	 * the expected radius (in units of the global coordinate system) of blobs
+	 * to detect.
+	 */
+	@Parameter( required = true )
+	private double radius = 5.;
 
-	private String errorMessage;
+	/**
+	 * The quality threshold below which spots will be rejected.
+	 */
+	@Parameter
+	private double threshold = 0.;
 
-	private final SpimDataMinimal spimData;
+	/**
+	 * The min time-point to process, inclusive.
+	 */
+	@Parameter
+	private int minTimepoint = 0;
 
-	private final double radius;
+	/**
+	 * The max time-point to process, inclusive.
+	 */
+	@Parameter
+	private int maxTimepoint = 0;
 
-	private final double threshold;
-
-	private final int setup;
-
-	private final int minTimepoint;
-
-	private final int maxTimepoint;
-
-	private final ModelGraph graph;
-
+	/**
+	 * The quality feature provided by this detector.
+	 */
+	@Parameter( type = ItemIO.OUTPUT )
 	private Feature< Spot, Double, DoublePropertyMap< Spot > > qualityFeature;
+
+	private long processingTime;
 
 	/**
 	 * Instantiates a new DoG-based detector.
@@ -71,7 +100,7 @@ public class DoGDetector implements Algorithm, MultiThreaded, Benchmark
 	 *            the expected radius (in units of the global coordinate system)
 	 *            of blobs to detect.
 	 * @param threshold
-	 *            the quality threshold below which spots will be rejected.
+	 *
 	 * @param setup
 	 *            the setup id in the data.
 	 * @param minTimepoint
@@ -79,30 +108,21 @@ public class DoGDetector implements Algorithm, MultiThreaded, Benchmark
 	 * @param maxTimepoint
 	 *            the max time-point to process, inclusive.
 	 */
-	public DoGDetector( final SpimDataMinimal spimData, final ModelGraph graph, final double radius, final double threshold, final int setup, final int minTimepoint, final int maxTimepoint )
+
+	@Override
+	public ModelGraph createOutput( final SpimDataMinimal input )
 	{
-		this.spimData = spimData;
-		this.graph = graph;
-		this.radius = radius;
-		this.threshold = threshold;
-		this.setup = setup;
-		this.minTimepoint = minTimepoint;
-		this.maxTimepoint = maxTimepoint;
+		return new ModelGraph();
 	}
 
 	@Override
-	public boolean checkInput()
-	{
-		return true;
-	}
-
-	@Override
-	public boolean process()
+	public void compute( final SpimDataMinimal spimData, final ModelGraph graph )
 	{
 		final long start = System.currentTimeMillis();
 
 		final DoublePropertyMap< Spot > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
 
+		statusService.showStatus( "DoG detection." );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
 		{
 			// Check if there is some data at this timepoint.
@@ -156,8 +176,14 @@ public class DoGDetector implements Algorithm, MultiThreaded, Benchmark
 
 			final DogDetection< FloatType > dog = new DogDetection<>(
 					source,
-					interval, pixelSize, sigmaSmaller, sigmaLarger, ExtremaType.MINIMA, threshold / normalization, true );
-			dog.setNumThreads( numThreads );
+					interval,
+					pixelSize,
+					sigmaSmaller,
+					sigmaLarger,
+					ExtremaType.MINIMA,
+					threshold / normalization,
+					true );
+			dog.setExecutorService( threadService.getExecutorService() );
 			final ArrayList< RefinedPeak< Point > > refinedPeaks = dog.getSubpixelPeaks();
 
 			final Spot ref = graph.vertexRef();
@@ -172,24 +198,20 @@ public class DoGDetector implements Algorithm, MultiThreaded, Benchmark
 				quality.set( spot, normalizedValue );
 			}
 			graph.releaseRef( ref );
-		}
 
+			statusService.showProgress( tp, maxTimepoint - minTimepoint + 1 );
+		}
 		this.qualityFeature = DetectionUtil.getQualityFeature( quality );
 
 		final long end = System.currentTimeMillis();
 		this.processingTime = end - start;
-		return true;
-	}
-
-	public Feature< Spot, Double, DoublePropertyMap< Spot > > getQualityFeature()
-	{
-		return qualityFeature;
+		statusService.clearStatus();
 	}
 
 	@Override
-	public String getErrorMessage()
+	public Feature< Spot, Double, DoublePropertyMap< Spot > > getQualityFeature()
 	{
-		return errorMessage;
+		return qualityFeature;
 	}
 
 	@Override
@@ -197,23 +219,4 @@ public class DoGDetector implements Algorithm, MultiThreaded, Benchmark
 	{
 		return processingTime;
 	}
-
-	@Override
-	public int getNumThreads()
-	{
-		return numThreads;
-	}
-
-	@Override
-	public void setNumThreads()
-	{
-		this.numThreads = Runtime.getRuntime().availableProcessors();
-	}
-
-	@Override
-	public void setNumThreads( final int numThreads )
-	{
-		this.numThreads = numThreads;
-	}
-
 }
