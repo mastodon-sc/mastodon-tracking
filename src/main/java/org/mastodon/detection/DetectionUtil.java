@@ -8,7 +8,6 @@ import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.feature.FeatureProjectors;
 import org.mastodon.revised.model.feature.FeatureTarget;
-import org.mastodon.revised.model.mamut.Spot;
 
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
@@ -60,9 +59,9 @@ public class DetectionUtil
 	 *            the model.
 	 * @return the quality feature.
 	 */
-	public static final Feature< Spot, Double, DoublePropertyMap< Spot > > getQualityFeature( final DoublePropertyMap< Spot > quality )
+	public static final <V> Feature< V, Double, DoublePropertyMap< V > > getQualityFeature( final DoublePropertyMap< V > quality )
 	{
-		return new Feature< Spot, Double, DoublePropertyMap< Spot > >(
+		return new Feature< V, Double, DoublePropertyMap< V > >(
 				QUALITY_FEATURE_NAME, FeatureTarget.VERTEX, quality,
 				Collections.singletonMap( QUALITY_FEATURE_NAME, FeatureProjectors.project( quality ) ) );
 	}

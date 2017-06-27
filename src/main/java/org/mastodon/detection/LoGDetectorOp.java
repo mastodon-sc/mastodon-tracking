@@ -2,11 +2,9 @@ package org.mastodon.detection;
 
 import java.util.List;
 
+import org.mastodon.graph.Graph;
+import org.mastodon.graph.Vertex;
 import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.model.feature.Feature;
-import org.mastodon.revised.model.mamut.ModelGraph;
-import org.mastodon.revised.model.mamut.Spot;
-import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -15,10 +13,10 @@ import org.scijava.thread.ThreadService;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.util.Affine3DHelpers;
 import net.imagej.ops.special.function.Functions;
-import net.imagej.ops.special.hybrid.AbstractUnaryHybridCF;
 import net.imglib2.Point;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.algorithm.Benchmark;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
@@ -31,9 +29,16 @@ import net.imglib2.view.Views;
  *
  * @author Jean-Yves Tinevez
  */
-@Plugin( type = SpotDetectorOp.class )
-public class LoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGraph > implements SpotDetectorOp, Benchmark
+@Plugin( type = DetectorOp.class )
+public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
+		extends AbstractDetectorOp< V >
+		implements DetectorOp< V >, Benchmark
 {
+
+	/**
+	 * The minimal diameter size, in pixel, under which we stop down-sampling.
+	 */
+	private static final double MIN_SPOT_PIXEL_SIZE = 10d;
 
 	@Parameter
 	private ThreadService threadService;
@@ -41,65 +46,16 @@ public class LoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGr
 	@Parameter
 	private StatusService statusService;
 
-	/**
-	 * The minimal diameter size, in pixel, under which we stop down-sampling.
-	 */
-	private static final double MIN_SPOT_PIXEL_SIZE = 10d;
-
-	/**
-	 * The id of the setup in the provided SpimData object to process.
-	 */
-	@Parameter( required = true )
-	private int setup = 0;
-
-	/**
-	 * the expected radius (in units of the global coordinate system) of blobs
-	 * to detect.
-	 */
-	@Parameter( required = true )
-	private double radius = 5.;
-
-	/**
-	 * The quality threshold below which spots will be rejected.
-	 */
-	@Parameter
-	private double threshold = 0.;
-
-	/**
-	 * The min time-point to process, inclusive.
-	 */
-	@Parameter
-	private int minTimepoint = 0;
-
-	/**
-	 * The max time-point to process, inclusive.
-	 */
-	@Parameter
-	private int maxTimepoint = 0;
-
-	/**
-	 * The quality feature provided by this detector.
-	 */
-	@Parameter( type = ItemIO.OUTPUT )
-	private Feature< Spot, Double, DoublePropertyMap< Spot > > qualityFeature;
-
 	private long processingTime;
 
 	private final boolean doSubpixelLocalization = true;
 
 	@Override
-	public ModelGraph createOutput( final SpimDataMinimal spimData )
-	{
-		return new ModelGraph();
-	}
-
-	@SuppressWarnings( { "unchecked" } )
-	@Override
-	public void compute( final SpimDataMinimal spimData, final ModelGraph graph )
+	public void mutate1( final Graph< V, ? > graph, final SpimDataMinimal spimData )
 	{
 		final long start = System.currentTimeMillis();
 
-		final DoublePropertyMap< Spot > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
+		final DoublePropertyMap< V > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
 		statusService.showStatus( "LoG detection" );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
 		{
@@ -131,6 +87,7 @@ public class LoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGr
 			final double[] calibration = new double[] { xs, ys, zs };
 
 			final RandomAccessibleInterval< FloatType > kernel = createLoGKernel( radius, img.numDimensions(), calibration );
+			@SuppressWarnings( "unchecked" )
 			final RandomAccessibleInterval< FloatType > output = ops().filter().convolve( img, kernel );
 
 			/*
@@ -156,27 +113,27 @@ public class LoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGr
 			if ( doSubpixelLocalization )
 			{
 				final int maxNumMoves = 10;
-				final boolean  allowMaximaTolerance = true;
+				final boolean allowMaximaTolerance = true;
 				final boolean returnInvalidPeaks = true;
-				@SuppressWarnings( "rawtypes" )
+				@SuppressWarnings( { "rawtypes", "unchecked" } )
 				final SubpixelLocalization< Point, FloatType > subpixel =
 						( SubpixelLocalization ) Functions.binary( ops(), SubpixelLocalization.class,
 								List.class, output, peaks,
-								output, maxNumMoves , allowMaximaTolerance , returnInvalidPeaks  );
+								output, maxNumMoves, allowMaximaTolerance, returnInvalidPeaks );
 				final List< RefinedPeak< Point > > refined = subpixel.calculate( output, peaks );
 
 				final RandomAccess< FloatType > ra = output.randomAccess();
-				final Spot ref = graph.vertexRef();
+				final V ref = graph.vertexRef();
 				final double[] pos = new double[ 3 ];
 				final RealPoint point = RealPoint.wrap( pos );
 				for ( final RefinedPeak< Point > refinedPeak : refined )
 				{
-					point.setPosition( refinedPeak );
-					transform.apply( refinedPeak, point );
-					final Spot spot = graph.addVertex( ref ).init( tp, pos, radius );
-
 					ra.setPosition( refinedPeak.getOriginalPeak() );
 					final double q = ra.get().getRealDouble();
+
+					point.setPosition( refinedPeak );
+					transform.apply( refinedPeak, point );
+					final V spot = vertexCreator.createVertex( graph, ref, pos, radius, tp, q );
 					quality.set( spot, q );
 				}
 				graph.releaseRef( ref );
@@ -186,14 +143,14 @@ public class LoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGr
 				final RandomAccess< FloatType > ra = output.randomAccess();
 				final double[] pos = new double[ 3 ];
 				final RealPoint point = RealPoint.wrap( pos );
-				final Spot ref = graph.vertexRef();
+				final V ref = graph.vertexRef();
 				for ( final Point peak : peaks )
 				{
-					transform.apply( peak, point );
-					final Spot spot = graph.addVertex( ref ).init( tp, pos, radius );
-
 					ra.setPosition( peak );
 					final double q = ra.get().getRealDouble();
+
+					transform.apply( peak, point );
+					final V spot = vertexCreator.createVertex( graph, ref, pos, radius, tp, q );
 					quality.set( spot, q );
 				}
 				graph.releaseRef( ref );
@@ -207,12 +164,6 @@ public class LoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGr
 		final long end = System.currentTimeMillis();
 		this.processingTime = end - start;
 		statusService.clearStatus();
-	}
-
-	@Override
-	public Feature< Spot, Double, DoublePropertyMap< Spot > > getQualityFeature()
-	{
-		return qualityFeature;
 	}
 
 	@Override

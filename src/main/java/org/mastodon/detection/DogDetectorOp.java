@@ -2,11 +2,9 @@ package org.mastodon.detection;
 
 import java.util.ArrayList;
 
+import org.mastodon.graph.Graph;
+import org.mastodon.graph.Vertex;
 import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.model.feature.Feature;
-import org.mastodon.revised.model.mamut.ModelGraph;
-import org.mastodon.revised.model.mamut.Spot;
-import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -14,12 +12,12 @@ import org.scijava.thread.ThreadService;
 
 import bdv.spimdata.SpimDataMinimal;
 import bdv.util.Affine3DHelpers;
-import net.imagej.ops.special.hybrid.AbstractUnaryHybridCF;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.Point;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.algorithm.Benchmark;
 import net.imglib2.algorithm.dog.DogDetection;
@@ -34,8 +32,10 @@ import net.imglib2.type.numeric.real.FloatType;
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
  */
-@Plugin( type = SpotDetectorOp.class )
-public class DoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGraph > implements SpotDetectorOp, Benchmark
+@Plugin( type = DetectorOp.class )
+public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
+		extends AbstractDetectorOp< V >
+		implements DetectorOp< V >, Benchmark
 {
 
 	@Parameter
@@ -49,78 +49,14 @@ public class DoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGr
 	 */
 	private static final double MIN_SPOT_PIXEL_SIZE = 10d;
 
-	/**
-	 * The id of the setup in the provided SpimData object to process.
-	 */
-	@Parameter( required = true )
-	private int setup = 0;
-
-	/**
-	 * the expected radius (in units of the global coordinate system) of blobs
-	 * to detect.
-	 */
-	@Parameter( required = true )
-	private double radius = 5.;
-
-	/**
-	 * The quality threshold below which spots will be rejected.
-	 */
-	@Parameter
-	private double threshold = 0.;
-
-	/**
-	 * The min time-point to process, inclusive.
-	 */
-	@Parameter
-	private int minTimepoint = 0;
-
-	/**
-	 * The max time-point to process, inclusive.
-	 */
-	@Parameter
-	private int maxTimepoint = 0;
-
-	/**
-	 * The quality feature provided by this detector.
-	 */
-	@Parameter( type = ItemIO.OUTPUT )
-	private Feature< Spot, Double, DoublePropertyMap< Spot > > qualityFeature;
-
 	private long processingTime;
 
-	/**
-	 * Instantiates a new DoG-based detector.
-	 *
-	 * @param spimData
-	 *            the {@link SpimDataMinimal} linking to the image data.
-	 * @param graph
-	 *            the model graph. Spots found by the detector will be added to
-	 *            it. It is not modified otherwise.
-	 * @param radius
-	 *            the expected radius (in units of the global coordinate system)
-	 *            of blobs to detect.
-	 * @param threshold
-	 *
-	 * @param setup
-	 *            the setup id in the data.
-	 * @param minTimepoint
-	 *            the min time-point to process, inclusive.
-	 * @param maxTimepoint
-	 *            the max time-point to process, inclusive.
-	 */
-
 	@Override
-	public ModelGraph createOutput( final SpimDataMinimal input )
-	{
-		return new ModelGraph();
-	}
-
-	@Override
-	public void compute( final SpimDataMinimal spimData, final ModelGraph graph )
+	public void mutate1( final Graph< V, ? > graph, final SpimDataMinimal spimData )
 	{
 		final long start = System.currentTimeMillis();
 
-		final DoublePropertyMap< Spot > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
+		final DoublePropertyMap< V > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
 
 		statusService.showStatus( "DoG detection." );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
@@ -175,7 +111,7 @@ public class DoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGr
 			dog.setExecutorService( threadService.getExecutorService() );
 			final ArrayList< RefinedPeak< Point > > refinedPeaks = dog.getSubpixelPeaks();
 
-			final Spot ref = graph.vertexRef();
+			final V ref = graph.vertexRef();
 			final double[] pos = new double[ 3 ];
 			final RealPoint sp = RealPoint.wrap( pos );
 			for ( final RefinedPeak< Point > p : refinedPeaks )
@@ -183,7 +119,7 @@ public class DoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGr
 				final double value = p.getValue();
 				final double normalizedValue = -value * normalization;
 				transform.apply( p, sp );
-				final Spot spot = graph.addVertex( ref ).init( tp, pos, radius );
+				final V spot = vertexCreator.createVertex( graph, ref, pos, radius, tp, normalizedValue );
 				quality.set( spot, normalizedValue );
 			}
 			graph.releaseRef( ref );
@@ -195,12 +131,6 @@ public class DoGDetector extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGr
 		final long end = System.currentTimeMillis();
 		this.processingTime = end - start;
 		statusService.clearStatus();
-	}
-
-	@Override
-	public Feature< Spot, Double, DoublePropertyMap< Spot > > getQualityFeature()
-	{
-		return qualityFeature;
 	}
 
 	@Override

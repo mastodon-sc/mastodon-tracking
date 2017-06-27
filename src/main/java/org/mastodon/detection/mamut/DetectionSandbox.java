@@ -1,4 +1,4 @@
-package org.mastodon.detection;
+package org.mastodon.detection.mamut;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,14 +9,14 @@ import java.util.Map;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import org.mastodon.linking.EdgeCreator;
+import org.mastodon.linking.ParticleLinkerOp;
+import org.mastodon.linking.kalman.KalmanTracker;
 import org.mastodon.revised.mamut.MainWindow;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
-import org.mastodon.tracking.EdgeCreator;
-import org.mastodon.tracking.ParticleLinkerOp;
-import org.mastodon.tracking.kalman.KalmanTracker;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
@@ -76,8 +76,8 @@ public class DetectionSandbox
 		final double threshold = 1000.;
 		final int setup = 0;
 
-		final Class< DoGDetector > cl = DoGDetector.class;
-//		final Class< LoGDetector > cl = LoGDetector.class;
+//		final Class< DoGDetectorMamut > cl = DoGDetectorMamut.class;
+		final Class< LoGDetectorMamut > cl = LoGDetectorMamut.class;
 		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl, graph, spimData,
 				setup, radius, threshold, minTimepoint, maxTimepoint );
 		detector.compute( spimData, graph );
