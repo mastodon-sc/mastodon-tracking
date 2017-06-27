@@ -145,6 +145,17 @@ public class SparseCostMatrix
 		}
 	}
 
+	public SparseCostMatrix()
+	{
+		this.start = new int[] {};
+		this.number = new int[] {};
+		this.cc = new double[] {};
+		this.kk = new int[] {};
+		this.nRows = 0;
+		this.nCols = 0;
+		this.cardinality = 0;
+	}
+
 	@Override
 	public String toString()
 	{

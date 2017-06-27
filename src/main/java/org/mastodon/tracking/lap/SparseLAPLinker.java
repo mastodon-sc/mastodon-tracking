@@ -1,7 +1,5 @@
 package org.mastodon.tracking.lap;
 
-
-
 import static org.mastodon.tracking.TrackerKeys.KEY_ALLOW_GAP_CLOSING;
 import static org.mastodon.tracking.TrackerKeys.KEY_ALLOW_TRACK_MERGING;
 import static org.mastodon.tracking.TrackerKeys.KEY_ALLOW_TRACK_SPLITTING;
@@ -22,7 +20,6 @@ import static org.mastodon.tracking.lap.LAPUtils.checkMapKeys;
 import static org.mastodon.tracking.lap.LAPUtils.checkParameter;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,75 +27,36 @@ import java.util.Map;
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
-import org.mastodon.revised.mamut.ProgressListener;
-import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.spatial.HasTimepoint;
 import org.mastodon.spatial.SpatioTemporalIndex;
-import org.mastodon.tracking.EdgeCreator;
-import org.mastodon.tracking.ProgressListeners;
+import org.mastodon.tracking.AbstractParticleLinkerOp;
+import org.mastodon.tracking.ParticleLinkerOp;
+import org.scijava.ItemIO;
+import org.scijava.plugin.Parameter;
+import org.scijava.plugin.Plugin;
 
+import net.imagej.ops.special.inplace.Inplaces;
 import net.imglib2.RealLocalizable;
-import net.imglib2.algorithm.MultiThreadedBenchmarkAlgorithm;
+import net.imglib2.algorithm.Benchmark;
 
-public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > > extends MultiThreadedBenchmarkAlgorithm
+@Plugin( type = ParticleLinkerOp.class )
+public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > >
+	extends AbstractParticleLinkerOp< V, E >
+	implements Benchmark
 {
 	private final static String BASE_ERROR_MESSAGE = "[SparseLAPTracker] ";
 
-
-	private final SpatioTemporalIndex< V > spots;
-
-	private FeatureModel< V, E > featureModel;
-
-	private final Graph< V, E > graph;
-
-	private final Map< String, Object > settings;
-
-	private final int minTimepoint;
-
-	private final int maxTimepoint;
-
-	private final Comparator< V>  spotComparator;
-
-	private final EdgeCreator< V, E > edgeCreator;
-
-	private ProgressListener logger = ProgressListeners.voidLogger();
-
-	/*
-	 * CONSTRUCTOR
-	 */
-
-	public SparseLAPTracker(
-			final SpatioTemporalIndex< V > spots,
-			final FeatureModel< V, E > featureModel,
-			final Graph< V, E > graph,
-			final EdgeCreator< V, E > edgeCreator,
-			final int minTimepoint,
-			final int maxTimepoint,
-			final Map< String, Object > settings,
-			final Comparator< V > spotComparator )
-	{
-		this.spots = spots;
-		this.graph = graph;
-		this.edgeCreator = edgeCreator;
-		this.minTimepoint = minTimepoint;
-		this.maxTimepoint = maxTimepoint;
-		this.settings = settings;
-		this.spotComparator = spotComparator;
-	}
+	@Parameter( type = ItemIO.OUTPUT )
+	private long processingTime;
 
 	/*
 	 * METHODS
 	 */
 
 	@Override
-	public boolean checkInput()
+	public void mutate1( final Graph< V, E > graph, final SpatioTemporalIndex< V > spots )
 	{
-		return true;
-	}
-
-	@Override
-	public boolean process()
-	{
+		ok = false;
 
 		/*
 		 * Check input now.
@@ -107,14 +65,14 @@ public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocali
 		if ( maxTimepoint <= minTimepoint )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + "Max timepoint <= min timepoint.";
-			return false;
+			return;
 		}
 
 		// Check that the objects list itself isn't null
 		if ( null == spots )
 		{
-			errorMessage = BASE_ERROR_MESSAGE + "The spot collection is null.";
-			return false;
+			errorMessage = BASE_ERROR_MESSAGE + "The spot index is null.";
+			return;
 		}
 
 		// Check that at least one inner collection contains an object.
@@ -130,14 +88,14 @@ public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocali
 		if ( empty )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + "The spot collection is empty.";
-			return false;
+			return;
 		}
 		// Check parameters
 		final StringBuilder errorHolder = new StringBuilder();
 		if ( !checkSettingsValidity( settings, errorHolder ) )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + "Incorrect settings map:\n" + errorHolder.toString();
-			return false;
+			return;
 		}
 
 		/*
@@ -150,22 +108,21 @@ public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocali
 		 * 1. Frame to frame linking.
 		 */
 
-
 		// Prepare settings object
 		final Map< String, Object > ftfSettings = new HashMap< String, Object >();
 		ftfSettings.put( KEY_LINKING_MAX_DISTANCE, settings.get( KEY_LINKING_MAX_DISTANCE ) );
 		ftfSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, settings.get( KEY_ALTERNATIVE_LINKING_COST_FACTOR ) );
 		ftfSettings.put( KEY_LINKING_FEATURE_PENALTIES, settings.get( KEY_LINKING_FEATURE_PENALTIES ) );
 
-		final SparseLAPFrameToFrameTracker< V, E > frameToFrameLinker = new SparseLAPFrameToFrameTracker<>(
-				spots, featureModel, graph, edgeCreator, minTimepoint, maxTimepoint, ftfSettings, spotComparator );
-		frameToFrameLinker.setNumThreads( numThreads );
-		frameToFrameLinker.setProgressListener( logger );
-
-		if ( !frameToFrameLinker.checkInput() || !frameToFrameLinker.process() )
+		@SuppressWarnings( "unchecked" )
+		final SparseLAPFrameToFrameLinker<V,E> frameToFrameLinker = ( SparseLAPFrameToFrameLinker< V, E > ) Inplaces.binary1( ops(), SparseLAPFrameToFrameLinker.class,
+				graph, spots,
+				ftfSettings, featureModel, minTimepoint, maxTimepoint, spotComparator, edgeCreator );
+		frameToFrameLinker.mutate1( graph, spots );
+		if ( !frameToFrameLinker.wasSuccessful() )
 		{
 			errorMessage = frameToFrameLinker.getErrorMessage();
-			return false;
+			return;
 		}
 
 		/*
@@ -192,22 +149,21 @@ public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocali
 		slSettings.put( KEY_CUTOFF_PERCENTILE, settings.get( KEY_CUTOFF_PERCENTILE ) );
 
 		// Solve.
-		final SparseLAPSegmentTracker< V, E > segmentLinker = new SparseLAPSegmentTracker<>( graph, edgeCreator, featureModel, slSettings, spotComparator );
-		segmentLinker.setNumThreads( numThreads );
-		segmentLinker.setProgressListener( logger );
-
-		if ( !segmentLinker.checkInput() || !segmentLinker.process() )
+		@SuppressWarnings( { "unchecked", "rawtypes" } )
+		final SparseLAPSegmentLinker< V, E > segmentLinker = ( SparseLAPSegmentLinker ) Inplaces.binary1( ops(), SparseLAPSegmentLinker.class,
+				graph, spots,
+				slSettings, featureModel, minTimepoint, maxTimepoint, spotComparator, edgeCreator );
+		segmentLinker.mutate1( graph, spots );
+		if ( !segmentLinker.wasSuccessful() )
 		{
 			errorMessage = segmentLinker.getErrorMessage();
-			return false;
+			return ;
 		}
 
-		logger.showStatus( "LAP tracking done." );
-		logger.showProgress( 1, 1 );
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
-
-		return true;
+		statusService.clearStatus();
+		ok = true;
 	}
 
 	private static final boolean checkSettingsValidity( final Map< String, Object > settings, final StringBuilder str )
@@ -262,8 +218,22 @@ public class SparseLAPTracker< V extends Vertex< E > & HasTimepoint & RealLocali
 		return ok;
 	}
 
-	public void setProgressListener( final ProgressListener logger )
+	@Override
+	public long getProcessingTime()
 	{
-		this.logger = logger;
+		return processingTime;
 	}
+
+	@Override
+	public boolean wasSuccessful()
+	{
+		return ok;
+	}
+
+	@Override
+	public String getErrorMessage()
+	{
+		return errorMessage;
+	}
+
 }

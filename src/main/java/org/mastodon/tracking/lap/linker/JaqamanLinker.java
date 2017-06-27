@@ -9,7 +9,7 @@ import org.mastodon.collection.RefList;
 import org.mastodon.collection.RefMaps;
 import org.mastodon.collection.RefRefMap;
 import org.mastodon.collection.RefSet;
-import org.mastodon.tracking.lap.costmatrix.CostMatrixCreator;
+import org.mastodon.tracking.lap.costmatrix.CostMatrixCreatorOp;
 
 import net.imglib2.algorithm.BenchmarkAlgorithm;
 import net.imglib2.algorithm.OutputAlgorithm;
@@ -32,7 +32,7 @@ public class JaqamanLinker< K , J > extends BenchmarkAlgorithm implements Output
 
 	private RefDoubleMap< K > costs;
 
-	private final CostMatrixCreator< K, J > costMatrixCreator;
+	private final CostMatrixCreatorOp< K, J > costMatrixCreator;
 
 	private final RefCollection< K > keyPool;
 
@@ -45,7 +45,7 @@ public class JaqamanLinker< K , J > extends BenchmarkAlgorithm implements Output
 	 * @param costMatrixCreator
 	 *            the class in charge of creating linking costs.
 	 */
-	public JaqamanLinker( final CostMatrixCreator< K, J > costMatrixCreator, final RefCollection< K > keyPool, final RefCollection< J > valuePool )
+	public JaqamanLinker( final CostMatrixCreatorOp< K, J > costMatrixCreator, final RefCollection< K > keyPool, final RefCollection< J > valuePool )
 	{
 		this.costMatrixCreator = costMatrixCreator;
 		this.keyPool = keyPool;
@@ -96,15 +96,12 @@ public class JaqamanLinker< K , J > extends BenchmarkAlgorithm implements Output
 		 * Generate the cost matrix
 		 */
 
-//		logger.setStatus( "Creating the main cost matrix..." );
-		if ( !costMatrixCreator.checkInput() || !costMatrixCreator.process() )
+		final SparseCostMatrix tl = costMatrixCreator.calculate();
+		if ( null == tl )
 		{
 			errorMessage = costMatrixCreator.getErrorMessage();
 			return false;
 		}
-//		logger.setProgress( 0.5 );
-
-		final SparseCostMatrix tl = costMatrixCreator.getResult();
 		final RefList< K > matrixRows = costMatrixCreator.getSourceList();
 		final RefList< J > matrixCols = costMatrixCreator.getTargetList();
 
@@ -121,8 +118,6 @@ public class JaqamanLinker< K , J > extends BenchmarkAlgorithm implements Output
 		/*
 		 * Complement the cost matrix with alternative no linking cost matrix.
 		 */
-
-//		logger.setStatus( "Completing the cost matrix..." );
 
 		final int nCols = tl.getNCols();
 		final int nRows = tl.getNRows();
@@ -170,12 +165,10 @@ public class JaqamanLinker< K , J > extends BenchmarkAlgorithm implements Output
 		 * Stitch them together
 		 */
 		final SparseCostMatrix full = ( tl.hcat( tr ) ).vcat( bl.hcat( br ) );
-//		logger.setProgress( 0.6 );
 
 		/*
 		 * Solve the full cost matrix.
 		 */
-//		logger.setStatus( "Solving the cost matrix..." );
 		final LAPJV solver = new LAPJV( full );
 		if ( !solver.checkInput() || !solver.process() )
 		{
@@ -198,8 +191,6 @@ public class JaqamanLinker< K , J > extends BenchmarkAlgorithm implements Output
 			}
 		}
 
-//		logger.setProgress( 1 );
-//		logger.setStatus( "" );
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
 

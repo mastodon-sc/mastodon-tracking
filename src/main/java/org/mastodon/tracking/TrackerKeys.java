@@ -63,7 +63,7 @@ public class TrackerKeys
 	 * particles. Expected values should be a
 	 * <code>Map&lt;String, Double&gt;</code> where the map keys are spot
 	 * feature names.
-	 * 
+	 *
 	 * @see fiji.plugin.trackmate.Spot#getFeature(String)
 	 */
 	public static final String KEY_LINKING_FEATURE_PENALTIES = "LINKING_FEATURE_PENALTIES";
@@ -115,7 +115,7 @@ public class TrackerKeys
 	 * gap-closing events. Expected values should be a
 	 * <code>Map&lt;String, Double&gt;</code> where the map keys are spot
 	 * feature names.
-	 * 
+	 *
 	 * @see fiji.plugin.trackmate.Spot#getFeature(String)
 	 */
 	public static final String KEY_GAP_CLOSING_FEATURE_PENALTIES = "GAP_CLOSING_FEATURE_PENALTIES";
@@ -151,7 +151,7 @@ public class TrackerKeys
 	 * merging events. Expected values should be a
 	 * <code>Map&lt;String, Double&gt;</code> where the map keys are spot
 	 * feature names.
-	 * 
+	 *
 	 * @see fiji.plugin.trackmate.Spot#getFeature(String)
 	 */
 	public static final String KEY_MERGING_FEATURE_PENALTIES = "MERGING_FEATURE_PENALTIES";
@@ -192,7 +192,7 @@ public class TrackerKeys
 	 * splitting events. Expected values should be a
 	 * <code>Map&lt;String, Double&gt;</code> where the map keys are spot
 	 * feature names.
-	 * 
+	 *
 	 * @see fiji.plugin.trackmate.Spot#getFeature(String)
 	 */
 	public static final String KEY_SPLITTING_FEATURE_PENALTIES = "SPLITTING_FEATURE_PENALTIES";
@@ -233,4 +233,16 @@ public class TrackerKeys
 
 	/** A default value for the {@value #KEY_BLOCKING_VALUE} parameter. */
 	public static final double DEFAULT_BLOCKING_VALUE = Double.POSITIVE_INFINITY;
+
+	public static final String KEY_KALMAN_SEARCH_RADIUS = "KALMAN_SEARCH_RADIUS";
+
+	public static final double DEFAULT_MAX_SEARCH_RADIUS = 10d;
+
+	/**
+	 * The position accuracy or standard deviation on positions, used to
+	 * initialize the Kalman filter.
+	 */
+	public static final String KEY_POSITION_SIGMA = "POSITION_SIGMA";
+
+	public static final double DEFAULT_POSITION_SIGMA = DEFAULT_MAX_SEARCH_RADIUS / 10.;
 }

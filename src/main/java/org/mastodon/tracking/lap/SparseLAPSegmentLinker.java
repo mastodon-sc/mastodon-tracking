@@ -1,6 +1,5 @@
 package org.mastodon.tracking.lap;
 
-
 import static org.mastodon.tracking.TrackerKeys.KEY_ALLOW_GAP_CLOSING;
 import static org.mastodon.tracking.TrackerKeys.KEY_ALLOW_TRACK_MERGING;
 import static org.mastodon.tracking.TrackerKeys.KEY_ALLOW_TRACK_SPLITTING;
@@ -10,31 +9,28 @@ import static org.mastodon.tracking.TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.tracking.lap.LAPUtils.checkFeatureMap;
 import static org.mastodon.tracking.lap.LAPUtils.checkParameter;
 
-import java.util.Comparator;
 import java.util.Map;
 
 import org.mastodon.collection.RefRefMap;
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
-import org.mastodon.revised.mamut.ProgressListener;
-import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.spatial.HasTimepoint;
-import org.mastodon.tracking.EdgeCreator;
-import org.mastodon.tracking.ProgressListeners;
+import org.mastodon.spatial.SpatioTemporalIndex;
+import org.mastodon.tracking.AbstractParticleLinkerOp;
 import org.mastodon.tracking.lap.costmatrix.JaqamanSegmentCostMatrixCreator;
 import org.mastodon.tracking.lap.linker.JaqamanLinker;
+import org.mastodon.tracking.lap.linker.SparseCostMatrix;
+import org.scijava.plugin.Plugin;
 
+import net.imagej.ops.special.function.Functions;
 import net.imglib2.RealLocalizable;
-import net.imglib2.algorithm.Algorithm;
 import net.imglib2.algorithm.Benchmark;
-import net.imglib2.algorithm.MultiThreaded;
 
 /**
  * This class tracks deals with the second step of tracking according to the LAP
- * tracking framework formulated by Jaqaman, K. et al.
- * "Robust single-particle tracking in live-cell time-lapse sequences." Nature
- * Methods, 2008.
+ * tracking framework formulated by Jaqaman, K. et al. "Robust single-particle
+ * tracking in live-cell time-lapse sequences." Nature Methods, 2008.
  *
  * <p>
  * In this tracking framework, tracking is divided into two steps:
@@ -49,8 +45,10 @@ import net.imglib2.algorithm.MultiThreaded;
  * matrix corresponding to the following events: Track segments can be:
  * <ul>
  * <li>Linked end-to-tail (gap closing)</li>
- * <li>Split (the start of one track is linked to the middle of another track)</li>
- * <li>Merged (the end of one track is linked to the middle of another track</li>
+ * <li>Split (the start of one track is linked to the middle of another
+ * track)</li>
+ * <li>Merged (the end of one track is linked to the middle of another
+ * track</li>
  * <li>Terminated (track ends)</li>
  * <li>Initiated (track starts)</li>
  * </ul>
@@ -62,56 +60,21 @@ import net.imglib2.algorithm.MultiThreaded;
  * The class itself uses a sparse version of the cost matrix and a solver that
  * can exploit it. Therefore it is optimized for memory usage rather than speed.
  */
-public class SparseLAPSegmentTracker< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > > implements Algorithm, Benchmark, MultiThreaded
+@Plugin( type = SparseLAPSegmentLinker.class )
+public class SparseLAPSegmentLinker< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > >
+		extends AbstractParticleLinkerOp< V, E >
+		implements Benchmark
 {
 
-	private static final String BASE_ERROR_MESSAGE = "[SparseLAPSegmentTracker] ";
-
-	private final FeatureModel< V, E > featureModel;
-
-	private final Graph< V, E > graph;
-
-	private final Map< String, Object > settings;
-
-	private final Comparator< V > spotComparator;
-
-	private String errorMessage;
+	private static final String BASE_ERROR_MESSAGE = "[SparseLAPSegmentLinker] ";
 
 	private long processingTime;
 
-	private int numThreads;
-
-	private ProgressListener logger = ProgressListeners.voidLogger();
-
-	private final EdgeCreator< V, E > edgeCreator;
-
-
-
-	public SparseLAPSegmentTracker(
-			final Graph< V, E > graph,
-			final EdgeCreator< V, E  > edgeCreator,
-			final FeatureModel< V, E >
-			featureModel,
-			final Map< String, Object > settings,
-			final Comparator< V > spotComparator )
-	{
-		this.graph = graph;
-		this.edgeCreator = edgeCreator;
-		this.featureModel = featureModel;
-		this.settings = settings;
-		this.spotComparator = spotComparator;
-		setNumThreads();
-	}
-
 	@Override
-	public boolean checkInput()
+	public void mutate1( final Graph< V, E > graph, final SpatioTemporalIndex< V > spots )
 	{
-		return true;
-	}
+		ok = false;
 
-	@Override
-	public boolean process()
-	{
 		/*
 		 * Check input now.
 		 */
@@ -120,7 +83,7 @@ public class SparseLAPSegmentTracker< V extends Vertex< E > & HasTimepoint & Rea
 		if ( null == graph )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + "The input graph is null.";
-			return false;
+			return;
 		}
 
 		// Check parameters
@@ -128,7 +91,7 @@ public class SparseLAPSegmentTracker< V extends Vertex< E > & HasTimepoint & Rea
 		if ( !checkSettingsValidity( settings, errorHolder ) )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + errorHolder.toString();
-			return false;
+			return;
 		}
 
 		/*
@@ -141,41 +104,44 @@ public class SparseLAPSegmentTracker< V extends Vertex< E > & HasTimepoint & Rea
 		 * Top-left costs.
 		 */
 
-		logger.showStatus( "Creating the segment linking cost matrix..." );
-		final JaqamanSegmentCostMatrixCreator< V, E > costMatrixCreator = new JaqamanSegmentCostMatrixCreator<>(
+		statusService.showStatus( "Creating the segment linking cost matrix..." );
+
+		@SuppressWarnings( "unchecked" )
+		final JaqamanSegmentCostMatrixCreator< V, E > costMatrixCreator =
+				( JaqamanSegmentCostMatrixCreator< V, E > ) Functions.nullary( ops(), JaqamanSegmentCostMatrixCreator.class, SparseCostMatrix.class,
 				graph, featureModel, settings, spotComparator );
-		costMatrixCreator.setNumThreads( numThreads );
 		final JaqamanLinker< V, V > linker = new JaqamanLinker<>( costMatrixCreator, graph.vertices(), graph.vertices() );
 		if ( !linker.checkInput() || !linker.process() )
 		{
 			errorMessage = linker.getErrorMessage();
-			return false;
+			return;
 		}
-
 
 		/*
 		 * Create links in graph.
 		 */
 
-		logger.showProgress( 9, 10 );
-		logger.showStatus( "Creating links..." );
-
+		statusService.showProgress( 9, 10 );
+		statusService.showStatus( "Creating links..." );
 		final RefRefMap< V, V > assignment = linker.getResult();
-		final E eref = graph.edgeRef();
-		final V vref = graph.vertexRef();
-		for ( final V source : assignment.keySet() )
+		synchronized ( graph )
 		{
-			final V target = assignment.get( source, vref );
-			edgeCreator.createEdge( source, target );
-		}
-		graph.releaseRef( eref );
-		graph.releaseRef( vref );
 
-		logger.showProgress( 1, 1 );
-		logger.showStatus( "" );
+			final E eref = graph.edgeRef();
+			final V vref = graph.vertexRef();
+			for ( final V source : assignment.keySet() )
+			{
+				final V target = assignment.get( source, vref );
+				edgeCreator.createEdge( source, target );
+			}
+			graph.releaseRef( eref );
+			graph.releaseRef( vref );
+		}
+
+		statusService.clearStatus();
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
-		return true;
+		ok = true;
 	}
 
 	@Override
@@ -217,25 +183,9 @@ public class SparseLAPSegmentTracker< V extends Vertex< E > & HasTimepoint & Rea
 	}
 
 	@Override
-	public void setNumThreads()
+	public boolean wasSuccessful()
 	{
-		this.numThreads = Runtime.getRuntime().availableProcessors();
+		return ok;
 	}
 
-	@Override
-	public void setNumThreads( final int numThreads )
-	{
-		this.numThreads = numThreads;
-	}
-
-	@Override
-	public int getNumThreads()
-	{
-		return numThreads;
-	}
-
-	public void setProgressListener( final ProgressListener logger )
-	{
-		this.logger = logger;
-	}
 }

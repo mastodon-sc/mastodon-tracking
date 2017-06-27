@@ -21,9 +21,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Future;
 
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
@@ -36,10 +37,16 @@ import org.mastodon.tracking.lap.costfunction.CostFunction;
 import org.mastodon.tracking.lap.costfunction.FeaturePenaltyCostFunction;
 import org.mastodon.tracking.lap.costfunction.SquareDistCostFunction;
 import org.mastodon.tracking.lap.linker.SparseCostMatrix;
+import org.scijava.ItemIO;
+import org.scijava.plugin.Parameter;
+import org.scijava.plugin.Plugin;
+import org.scijava.thread.ThreadService;
 
 import gnu.trove.list.array.TDoubleArrayList;
+import net.imagej.ops.special.function.AbstractNullaryFunctionOp;
+import net.imagej.ops.special.function.Functions;
 import net.imglib2.RealLocalizable;
-import net.imglib2.algorithm.MultiThreaded;
+import net.imglib2.algorithm.Benchmark;
 
 /**
  * This class generates the top-left quadrant of the LAP segment linking cost
@@ -56,71 +63,56 @@ import net.imglib2.algorithm.MultiThreaded;
  * <li>Costs are based on square distance +/- feature penalties.
  * </ul>
  *
- * @author Jean-Yves Tinevez - 2014
+ * @author Jean-Yves Tinevez - 2014 - 2017
  *
  */
-public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > > implements CostMatrixCreator< V, V >, MultiThreaded
+@Plugin( type = JaqamanSegmentCostMatrixCreator.class )
+public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > >
+		extends AbstractNullaryFunctionOp< SparseCostMatrix >
+		implements CostMatrixCreatorOp< V, V >, Benchmark
 {
 
-	private static final String BASE_ERROR_MESSAGE = "[JaqamanSegmentCostMatrixCreator] ";
+	private static String BASE_ERROR_MESSAGE = "[JaqamanSegmentCostMatrixCreator] ";
 
-	private final Map< String, Object > settings;
+	@Parameter
+	private ThreadService threadService;
+
+	@Parameter( type = ItemIO.INPUT )
+	private ReadOnlyGraph< V, E > graph;
+
+	@Parameter( type = ItemIO.INPUT )
+	private FeatureModel< V, E > featureModel;
+
+	@Parameter( type = ItemIO.INPUT )
+	private Map< String, Object > settings;
+
+	@Parameter( type = ItemIO.INPUT )
+	private Comparator< V > spotComparator;
 
 	private String errorMessage;
 
-	private SparseCostMatrix scm;
-
 	private long processingTime;
 
+	@Parameter( type = ItemIO.OUTPUT )
 	private RefList< V > uniqueSources;
 
+	@Parameter( type = ItemIO.OUTPUT )
 	private RefList< V > uniqueTargets;
 
+	@Parameter( type = ItemIO.OUTPUT )
 	private double alternativeCost = -1;
 
-	private int numThreads;
-
-	private final ReadOnlyGraph< V, E > graph;
-
-	private final FeatureModel< V, E > featureModel;
-
-	private final Comparator< V > spotComparator;
-
-	/**
-	 * Instantiates a cost matrix creator for the top-left quadrant of the
-	 * segment linking cost matrix.
-	 */
-	public JaqamanSegmentCostMatrixCreator( final ReadOnlyGraph< V, E > graph, final FeatureModel< V, E > featureModel, final Map< String, Object > settings, final Comparator< V > spotComparator )
-	{
-		this.graph = graph;
-		this.featureModel = featureModel;
-		this.settings = settings;
-		this.spotComparator = spotComparator;
-		setNumThreads();
-	}
-
 	@Override
-	public boolean checkInput()
+	public SparseCostMatrix calculate()
 	{
+		final long start = System.currentTimeMillis();
+
 		final StringBuilder str = new StringBuilder();
 		if ( !checkSettingsValidity( settings, str ) )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + "Incorrect settings map:\n" + str.toString();
-			return false;
+			return null;
 		}
-		return true;
-	}
-
-	@Override
-	public String getErrorMessage()
-	{
-		return errorMessage;
-	}
-
-	@Override
-	public boolean process()
-	{
-		final long start = System.currentTimeMillis();
 
 		/*
 		 * Extract parameters
@@ -160,10 +152,7 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 
 		// Do we have to work?
 		if ( !allowGapClosing && !allowSplitting && !allowMerging )
-		{
-			scm = new SparseCostMatrix( new double[ 0 ], new int[ 0 ], new int[ 0 ], 0 );
-			return true;
-		}
+			return new SparseCostMatrix( new double[ 0 ], new int[ 0 ], new int[ 0 ], 0 );
 
 		/*
 		 * Find segment ends, starts and middle points.
@@ -198,8 +187,8 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 		/*
 		 * Sources and targets.
 		 */
-		final RefList< V > sources = RefCollections.createRefList( graph.vertices() );
-		final RefList< V > targets = RefCollections.createRefList( graph.vertices() );
+		final List< V > sources = RefCollections.createRefList( graph.vertices() );
+		final List< V > targets = RefCollections.createRefList( graph.vertices() );
 		// Corresponding costs.
 		final TDoubleArrayList linkCosts = new TDoubleArrayList();
 
@@ -208,106 +197,122 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 		 * (gap-closing) then the segment middles (merging).
 		 */
 
-		final ExecutorService executorGCM = Executors.newFixedThreadPool( numThreads );
-		for ( final V source : segmentEnds )
+		final ExecutorService service = threadService.getExecutorService();
+		final ArrayList< Future< Void > > futures1 = new ArrayList<>();
+
+		final int numSources = segmentEnds.size();
+		if ( numSources > 0 )
 		{
-			executorGCM.submit( new Runnable()
+			final int numThreads = Runtime.getRuntime().availableProcessors();
+			final int numTasks = numThreads <= 1 ? 1 : ( int ) Math.min( numSources, numThreads * 20 );
+			final int taskSize = numSources / numTasks;
+
+			for ( int taskNum = 0; taskNum < numTasks; ++taskNum )
 			{
-				@Override
-				public void run()
+				final int fromIndex = taskNum * taskSize;
+				final int toIndex = ( taskNum == numTasks - 1 ) ? numSources : fromIndex + taskSize;
+				final List< V > subList = segmentEnds.subList( fromIndex, toIndex );
+				futures1.add( service.submit( new Callable< Void >()
 				{
-					final int sourceFrame = source.getTimepoint();
-
-					/*
-					 * Iterate over segment starts - GAP-CLOSING.
-					 */
-
-					if ( allowGapClosing )
+					@Override
+					public Void call()
 					{
-						for ( final V target : segmentStarts )
+						for ( final V source : subList )
 						{
-							// Check frame interval, must be within user
-							// specification.
-							final int targetFrame = target.getTimepoint();
-							final int tdiff = targetFrame - sourceFrame;
-							if ( tdiff < 1 || tdiff > maxFrameInterval )
+							final int sourceFrame = source.getTimepoint();
+
+							/*
+							 * Iterate over segment starts - GAP-CLOSING.
+							 */
+
+							if ( allowGapClosing )
 							{
-								continue;
+								for ( final V target : segmentStarts )
+								{
+									// Check frame interval, must be within user
+									// specification.
+									final int targetFrame = target.getTimepoint();
+									final int tdiff = targetFrame - sourceFrame;
+									if ( tdiff < 1 || tdiff > maxFrameInterval )
+										continue;
+
+									// Check max distance
+									final double cost = gcCostFunction.linkingCost( source, target );
+									if ( cost > gcCostThreshold )
+										continue;
+
+									synchronized ( lock )
+									{
+										sources.add( source );
+										targets.add( target );
+										linkCosts.add( cost );
+									}
+								}
+
 							}
 
-							// Check max distance
-							final double cost = gcCostFunction.linkingCost( source, target );
-							if ( cost > gcCostThreshold )
-							{
-								continue;
-							}
+							/*
+							 * Iterate over middle points - MERGING.
+							 */
 
-							synchronized ( lock )
+							if ( allowMerging )
 							{
-								sources.add( source );
-								targets.add( target );
-								linkCosts.add( cost );
+								for ( final V target : allMiddles )
+								{
+									// Check frame interval, must be 1.
+									final int targetFrame = target.getTimepoint();
+									final int tdiff = targetFrame - sourceFrame;
+									if ( tdiff != 1 )
+										continue;
+
+									// Check max distance
+									final double cost = mCostFunction.linkingCost( source, target );
+									if ( cost > mCostThreshold )
+										continue;
+
+									synchronized ( lock )
+									{
+										sources.add( source );
+										targets.add( target );
+										linkCosts.add( cost );
+									}
+								}
 							}
 						}
+						return null;
 					}
-
-					/*
-					 * Iterate over middle points - MERGING.
-					 */
-
-					if ( allowMerging )
-					{
-						for ( final V target : allMiddles )
-						{
-							// Check frame interval, must be 1.
-							final int targetFrame = target.getTimepoint();
-							final int tdiff = targetFrame - sourceFrame;
-							if ( tdiff != 1 )
-							{
-								continue;
-							}
-
-							// Check max distance
-							final double cost = mCostFunction.linkingCost( source, target );
-							if ( cost > mCostThreshold )
-							{
-								continue;
-							}
-
-							synchronized ( lock )
-							{
-								sources.add( source );
-								targets.add( target );
-								linkCosts.add( cost );
-							}
-						}
-					}
+				} ) );
+			}
+			for ( final Future< Void > f : futures1 )
+			{
+				try
+				{
+					f.get();
 				}
-			} );
-		}
-		executorGCM.shutdown();
-		try
-		{
-			executorGCM.awaitTermination( 1, TimeUnit.DAYS );
-		}
-		catch ( final InterruptedException e )
-		{
-			errorMessage = BASE_ERROR_MESSAGE + e.getMessage();
-			return false;
+				catch ( final InterruptedException e )
+				{
+					e.printStackTrace();
+				}
+				catch ( final ExecutionException e )
+				{
+					e.printStackTrace();
+				}
+			}
 		}
 
 		/*
 		 * Iterate over middle points targeting segment starts - SPLITTING
 		 */
+		final ArrayList< Future< Void > > futures2 = new ArrayList<>( allMiddles.size() );
 		if ( allowSplitting )
 		{
-			final ExecutorService executorS = Executors.newFixedThreadPool( numThreads );
 			for ( final V source : allMiddles )
 			{
-				executorS.submit( new Runnable()
+				futures2.add( service.submit( new Callable< Void >()
 				{
+
 					@Override
-					public void run()
+					public Void call()
 					{
 						final int sourceFrame = source.getTimepoint();
 						for ( final V target : segmentStarts )
@@ -334,17 +339,24 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 								linkCosts.add( cost );
 							}
 						}
+						return null;
 					}
-				} );
+				} ) );
 			}
-			executorS.shutdown();
-			try
+			for ( final Future< Void > f : futures2 )
 			{
-				executorS.awaitTermination( 1, TimeUnit.DAYS );
-			}
-			catch ( final InterruptedException e )
-			{
-				errorMessage = BASE_ERROR_MESSAGE + e.getMessage();
+				try
+				{
+					f.get();
+				}
+				catch ( final InterruptedException e )
+				{
+					e.printStackTrace();
+				}
+				catch ( final ExecutionException e )
+				{
+					e.printStackTrace();
+				}
 			}
 		}
 		linkCosts.trimToSize();
@@ -354,40 +366,47 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 		 * empty.
 		 */
 
+		final SparseCostMatrix scm;
 		if ( sources.isEmpty() || targets.isEmpty() )
 		{
 
 			uniqueSources.clear();
 			uniqueTargets.clear();
 			alternativeCost = Double.NaN;
-			scm = null;
+			scm = new SparseCostMatrix();
 			/*
-			 * CAREFUL! We return null if no acceptable links are found.
+			 * CAREFUL! We return an empty matrix if no acceptable links are found.
 			 */
 		}
 		else
 		{
-
-			final DefaultCostMatrixCreator< V, V > creator = new DefaultCostMatrixCreator< V, V >(
-					sources, targets, linkCosts.toArray(), alternativeCostFactor, percentile, spotComparator, spotComparator );
-			if ( !creator.checkInput() || !creator.process() )
+			@SuppressWarnings( "unchecked" )
+			final DefaultCostMatrixCreatorOp< V, V > creator = ( DefaultCostMatrixCreatorOp< V, V > ) Functions.nullary( ops(),
+					DefaultCostMatrixCreatorOp.class, SparseCostMatrix.class,
+					sources,
+					targets,
+					linkCosts.toArray(),
+					alternativeCostFactor,
+					percentile,
+					spotComparator,
+					spotComparator );
+			scm = creator.calculate();
+			if ( null == scm )
 			{
 				errorMessage = "Linking track segments: " + creator.getErrorMessage();
-				return false;
+				return null;
 			}
 			/*
 			 * Compute the alternative cost from the cost array
 			 */
 			alternativeCost = creator.computeAlternativeCosts();
-
-			scm = creator.getResult();
 			uniqueSources = creator.getSourceList();
 			uniqueTargets = creator.getTargetList();
 		}
 
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
-		return true;
+		return scm;
 	}
 
 	protected CostFunction< V, V > getCostFunctionFor( final Map< String, Double > featurePenalties )
@@ -398,12 +417,6 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 		else
 			costFunction = new FeaturePenaltyCostFunction< V >( featurePenalties, featureModel );
 		return costFunction;
-	}
-
-	@Override
-	public SparseCostMatrix getResult()
-	{
-		return scm;
 	}
 
 	@Override
@@ -434,6 +447,12 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 	public long getProcessingTime()
 	{
 		return processingTime;
+	}
+
+	@Override
+	public String getErrorMessage()
+	{
+		return errorMessage;
 	}
 
 	private static final boolean checkSettingsValidity( final Map< String, Object > settings, final StringBuilder str )
@@ -481,23 +500,4 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 
 		return ok;
 	}
-
-	@Override
-	public void setNumThreads()
-	{
-		this.numThreads = Runtime.getRuntime().availableProcessors();
-	}
-
-	@Override
-	public void setNumThreads( final int numThreads )
-	{
-		this.numThreads = numThreads;
-	}
-
-	@Override
-	public int getNumThreads()
-	{
-		return numThreads;
-	}
-
 }

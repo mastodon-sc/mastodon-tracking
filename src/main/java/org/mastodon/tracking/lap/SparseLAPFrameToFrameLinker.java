@@ -1,6 +1,5 @@
 package org.mastodon.tracking.lap;
 
-
 import static org.mastodon.tracking.TrackerKeys.KEY_ALTERNATIVE_LINKING_COST_FACTOR;
 import static org.mastodon.tracking.TrackerKeys.KEY_LINKING_FEATURE_PENALTIES;
 import static org.mastodon.tracking.TrackerKeys.KEY_LINKING_MAX_DISTANCE;
@@ -9,9 +8,12 @@ import static org.mastodon.tracking.lap.LAPUtils.checkMapKeys;
 import static org.mastodon.tracking.lap.LAPUtils.checkParameter;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -19,83 +21,44 @@ import org.mastodon.collection.RefRefMap;
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
-import org.mastodon.revised.mamut.ProgressListener;
-import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.spatial.HasTimepoint;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.spatial.SpatioTemporalIndex;
-import org.mastodon.tracking.EdgeCreator;
-import org.mastodon.tracking.ProgressListeners;
+import org.mastodon.tracking.AbstractParticleLinkerOp;
 import org.mastodon.tracking.lap.costfunction.CostFunction;
 import org.mastodon.tracking.lap.costfunction.FeaturePenaltyCostFunction;
 import org.mastodon.tracking.lap.costfunction.SquareDistCostFunction;
 import org.mastodon.tracking.lap.costmatrix.JaqamanLinkingCostMatrixCreator;
 import org.mastodon.tracking.lap.linker.JaqamanLinker;
+import org.mastodon.tracking.lap.linker.SparseCostMatrix;
+import org.scijava.plugin.Parameter;
+import org.scijava.plugin.Plugin;
+import org.scijava.thread.ThreadService;
 
+import net.imagej.ops.special.function.Functions;
 import net.imglib2.RealLocalizable;
-import net.imglib2.algorithm.MultiThreadedBenchmarkAlgorithm;
-import net.imglib2.multithreading.SimpleMultiThreading;
+import net.imglib2.algorithm.Benchmark;
 
-@SuppressWarnings( "deprecation" )
-public class SparseLAPFrameToFrameTracker< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > > extends MultiThreadedBenchmarkAlgorithm
+@Plugin( type = SparseLAPFrameToFrameLinker.class )
+public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > >
+		extends AbstractParticleLinkerOp< V, E >
+		implements Benchmark
 {
-	private final static String BASE_ERROR_MESSAGE = "[SparseLAPFrameToFrameTracker] ";
+	private final static String BASE_ERROR_MESSAGE = "[SparseLAPFrameToFrameLinker] ";
 
-	private final SpatioTemporalIndex< V > spots;
+	@Parameter
+	private ThreadService threadService;
 
-	private final Map< String, Object > settings;
-
-	private final Graph< V, E > graph;
-
-	private final int minTimepoint;
-
-	private final int maxTimepoint;
-
-	private final FeatureModel< V, E > featureModel;
-
-	private final EdgeCreator< V, E > edgeCreator;
-
-	private final Comparator< V > spotComparator;
-
-	private ProgressListener logger = ProgressListeners.voidLogger();
-
-	/*
-	 * CONSTRUCTOR
-	 */
-
-	public SparseLAPFrameToFrameTracker(
-			final SpatioTemporalIndex< V > spots,
-			final FeatureModel< V, E > featureModel,
-			final Graph< V, E > graph,
-			final EdgeCreator< V, E > edgeCreator,
-			final int minTimepoint,
-			final int maxTimepoint,
-			final Map< String, Object > settings,
-			final Comparator< V > spotComparator )
-	{
-		this.spots = spots;
-		this.featureModel = featureModel;
-		this.graph = graph;
-		this.edgeCreator = edgeCreator;
-		this.minTimepoint = minTimepoint;
-		this.maxTimepoint = maxTimepoint;
-		this.settings = settings;
-		this.spotComparator = spotComparator;
-	}
+	private long processingTime;
 
 	/*
 	 * METHODS
 	 */
 
 	@Override
-	public boolean checkInput()
+	public void mutate1( final Graph< V, E > graph, final SpatioTemporalIndex< V > spots )
 	{
-		return true;
-	}
-
-	@Override
-	public boolean process()
-	{
+		ok = false;
 		/*
 		 * Check input now.
 		 */
@@ -103,14 +66,14 @@ public class SparseLAPFrameToFrameTracker< V extends Vertex< E > & HasTimepoint 
 		if ( maxTimepoint <= minTimepoint )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + "Max timepoint <= min timepoint.";
-			return false;
+			return;
 		}
 
 		// Check that the objects list itself isn't null
 		if ( null == spots )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + "The spot collection is null.";
-			return false;
+			return;
 		}
 
 		// Check that at least one inner collection contains an object.
@@ -126,7 +89,7 @@ public class SparseLAPFrameToFrameTracker< V extends Vertex< E > & HasTimepoint 
 		if ( empty )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + "The spot collection is empty.";
-			return false;
+			return;
 		}
 
 		// Check parameters
@@ -134,7 +97,7 @@ public class SparseLAPFrameToFrameTracker< V extends Vertex< E > & HasTimepoint 
 		if ( !checkSettingsValidity( settings, errorHolder ) )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + errorHolder.toString();
-			return false;
+			return;
 		}
 
 		/*
@@ -155,96 +118,103 @@ public class SparseLAPFrameToFrameTracker< V extends Vertex< E > & HasTimepoint 
 		final Map< String, Double > featurePenalties = ( Map< String, Double > ) settings.get( KEY_LINKING_FEATURE_PENALTIES );
 		final CostFunction< V, V > costFunction;
 		if ( null == featurePenalties || featurePenalties.isEmpty() )
-		{
 			costFunction = new SquareDistCostFunction<>();
-		}
 		else
-		{
 			costFunction = new FeaturePenaltyCostFunction<>( featurePenalties, featureModel );
-		}
+
 		final Double maxDist = ( Double ) settings.get( KEY_LINKING_MAX_DISTANCE );
 		final double costThreshold = maxDist * maxDist;
 		final double alternativeCostFactor = ( Double ) settings.get( KEY_ALTERNATIVE_LINKING_COST_FACTOR );
 
 		// Prepare threads
-		final Thread[] threads = SimpleMultiThreading.newThreads( numThreads );
-		final AtomicInteger progress = new AtomicInteger();
-		// Prepare the thread array
-		final AtomicInteger ai = new AtomicInteger( 0 );
-		final AtomicBoolean ok = new AtomicBoolean( true );
-		for ( int ithread = 0; ithread < threads.length; ithread++ )
+		final AtomicInteger progress = new AtomicInteger( 0 );
+		final AtomicBoolean aok = new AtomicBoolean( true );
+		statusService.showStatus( "Frame to frame linking..." );
+		final ArrayList< Future< Void > > futures = new ArrayList<>( framePairs.size() );
+		final ExecutorService service = threadService.getExecutorService();
+		for ( int fp = 0; fp < framePairs.size(); fp++ )
 		{
-			threads[ ithread ] = new Thread( BASE_ERROR_MESSAGE + " thread " + ( 1 + ithread ) + "/" + threads.length )
+			final int i = fp;
+			futures.add( service.submit( new Callable< Void >()
 			{
-
 				@Override
-				public void run()
+				public Void call()
 				{
-					for ( int i = ai.getAndIncrement(); i < framePairs.size(); i = ai.getAndIncrement() )
+					if ( !aok.get() )
+						return null;
+
+					// Get frame pairs
+					final int frame0 = framePairs.get( i )[ 0 ];
+					final int frame1 = framePairs.get( i )[ 1 ];
+
+					final SpatialIndex< V > sources = spots.getSpatialIndex( frame0 );
+					final SpatialIndex< V > targets = spots.getSpatialIndex( frame1 );
+
+					if ( sources.isEmpty() || targets.isEmpty() )
+						return null;
+
+					/*
+					 * Run the linker.
+					 */
+
+					@SuppressWarnings( "unchecked" )
+					final JaqamanLinkingCostMatrixCreator< V, V > creator = ( JaqamanLinkingCostMatrixCreator< V, V > ) Functions.nullary( ops(), JaqamanLinkingCostMatrixCreator.class, SparseCostMatrix.class,
+							sources, targets, costFunction, costThreshold, alternativeCostFactor, 1d,
+							graph.vertices(), graph.vertices(),
+							spotComparator, spotComparator );
+					final JaqamanLinker< V, V > linker = new JaqamanLinker< V, V >( creator, graph.vertices(), graph.vertices() );
+					if ( !linker.checkInput() || !linker.process() )
 					{
-						if ( !ok.get() )
-						{
-							break;
-						}
-
-						// Get frame pairs
-						final int frame0 = framePairs.get( i )[ 0 ];
-						final int frame1 = framePairs.get( i )[ 1 ];
-
-						final SpatialIndex< V > sources = spots.getSpatialIndex( frame0 );
-						final SpatialIndex< V > targets = spots.getSpatialIndex( frame1 );
-
-						if ( sources.isEmpty() || targets.isEmpty() )
-							continue;
-
-						/*
-						 * Run the linker.
-						 */
-
-						final JaqamanLinkingCostMatrixCreator< V, V > creator = new JaqamanLinkingCostMatrixCreator<>(
-								sources, targets, costFunction, costThreshold, alternativeCostFactor, 1d,
-								graph.vertices(), graph.vertices(),
-								spotComparator, spotComparator );
-						final JaqamanLinker< V, V > linker = new JaqamanLinker< V, V >( creator, graph.vertices(), graph.vertices() );
-						if ( !linker.checkInput() || !linker.process() )
-						{
-							errorMessage = "Linking frame " + frame0 + " to " + frame1 + ": " + linker.getErrorMessage();
-							ok.set( false );
-							return;
-						}
-
-						/*
-						 * Update graph.
-						 */
-
-						synchronized ( graph )
-						{
-							final RefRefMap< V, V > assignment = linker.getResult();
-							final V vref = graph.vertexRef();
-							for ( final V source : assignment.keySet() )
-							{
-								final V target = assignment.get( source, vref );
-								edgeCreator.createEdge( source, target );
-							}
-							graph.releaseRef( vref );
-						}
-
-						logger.showProgress( progress.incrementAndGet(), framePairs.size() );
-
+						errorMessage = "Linking frame " + frame0 + " to " + frame1 + ": " + linker.getErrorMessage();
+						aok.set( false );
+						return null;
 					}
+
+					/*
+					 * Update graph. We have to do it in a single thread at a
+					 * time.
+					 */
+
+					synchronized ( graph )
+					{
+						final RefRefMap< V, V > assignment = linker.getResult();
+						final V vref = graph.vertexRef();
+						for ( final V source : assignment.keySet() )
+						{
+							final V target = assignment.get( source, vref );
+							edgeCreator.createEdge( source, target );
+						}
+						graph.releaseRef( vref );
+					}
+
+					statusService.showProgress( progress.incrementAndGet(), framePairs.size() );
+					return null;
 				}
-			};
+			} ) );
+
 		}
 
-		logger.showStatus( "Frame to frame linking..." );
-		SimpleMultiThreading.startAndJoin( threads );
-		logger.showProgress( 1, 1 );
-		logger.showStatus( "" );
+		for ( final Future< Void > f : futures )
+		{
+			try
+			{
+				f.get();
+			}
+			catch ( final InterruptedException e )
+			{
+				e.printStackTrace();
+			}
+			catch ( final ExecutionException e )
+			{
+				e.printStackTrace();
+			}
+		}
+		statusService.clearStatus();
 
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
 
-		return ok.get();
+		this.ok = aok.get();
 	}
 
 	private static final boolean checkSettingsValidity( final Map< String, Object > settings, final StringBuilder str )
@@ -273,8 +243,21 @@ public class SparseLAPFrameToFrameTracker< V extends Vertex< E > & HasTimepoint 
 		return ok;
 	}
 
-	public void setProgressListener( final ProgressListener logger )
+	@Override
+	public boolean wasSuccessful()
 	{
-		this.logger = logger;
+		return ok;
+	}
+
+	@Override
+	public String getErrorMessage()
+	{
+		return errorMessage;
+	}
+
+	@Override
+	public long getProcessingTime()
+	{
+		return processingTime;
 	}
 }

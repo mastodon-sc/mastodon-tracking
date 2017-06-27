@@ -1,8 +1,20 @@
 package org.mastodon.tracking.kalman;
 
+import static org.mastodon.tracking.TrackerKeys.DEFAULT_GAP_CLOSING_MAX_FRAME_GAP;
+import static org.mastodon.tracking.TrackerKeys.DEFAULT_LINKING_MAX_DISTANCE;
+import static org.mastodon.tracking.TrackerKeys.DEFAULT_MAX_SEARCH_RADIUS;
+import static org.mastodon.tracking.TrackerKeys.DEFAULT_POSITION_SIGMA;
+import static org.mastodon.tracking.TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
+import static org.mastodon.tracking.TrackerKeys.KEY_KALMAN_SEARCH_RADIUS;
+import static org.mastodon.tracking.TrackerKeys.KEY_LINKING_MAX_DISTANCE;
+import static org.mastodon.tracking.TrackerKeys.KEY_POSITION_SIGMA;
+import static org.mastodon.tracking.lap.LAPUtils.checkParameter;
+
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import org.mastodon.collection.ObjectRefMap;
 import org.mastodon.collection.RefCollections;
@@ -14,28 +26,33 @@ import org.mastodon.collection.ref.RefObjectHashMap;
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
-import org.mastodon.revised.mamut.ProgressListener;
-import org.mastodon.revised.model.feature.FeatureProjection;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.spatial.SpatioTemporalIndex;
-import org.mastodon.tracking.EdgeCreator;
-import org.mastodon.tracking.ProgressListeners;
+import org.mastodon.tracking.AbstractParticleLinkerOp;
+import org.mastodon.tracking.ParticleLinkerOp;
 import org.mastodon.tracking.lap.costfunction.CostFunction;
 import org.mastodon.tracking.lap.costfunction.SquareDistCostFunction;
 import org.mastodon.tracking.lap.costmatrix.JaqamanLinkingCostMatrixCreator;
 import org.mastodon.tracking.lap.linker.JaqamanLinker;
+import org.mastodon.tracking.lap.linker.SparseCostMatrix;
+import org.scijava.plugin.Plugin;
 
+import net.imagej.ops.special.function.Functions;
 import net.imglib2.RealLocalizable;
-import net.imglib2.algorithm.Algorithm;
 import net.imglib2.algorithm.Benchmark;
 
 /**
  * @author Jean-Yves Tinevez
  *
- * @param <V> the type of vertices in the graph.
- * @param <E> the type of edges in the graph.
+ * @param <V>
+ *            the type of vertices in the graph.
+ * @param <E>
+ *            the type of edges in the graph.
  */
-public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends Edge< V > > implements Algorithm, Benchmark
+@Plugin( type = ParticleLinkerOp.class )
+public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends Edge< V > >
+		extends AbstractParticleLinkerOp< V, E >
+		implements Benchmark
 {
 
 	private static final double ALTERNATIVE_COST_FACTOR = 1.05d;
@@ -44,86 +61,32 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 
 	private static final String BASE_ERROR_MSG = "[KalmanTracker] ";
 
-	private String errorMessage;
-
-	private final double maxSearchRadius;
-
-	private final int maxFrameGap;
-
-	private final double initialSearchRadius;
-
 	private long processingTime;
 
-	private final SpatioTemporalIndex< V > spots;
-
-	private final int minTimepoint;
-
-	private final int maxTimepoint;
-
-	private final Graph< V, E > graph;
-
-	private final FeatureProjection< V > radiuses;
-
-	private final EdgeCreator< V, E > edgeCreator;
-
-	private final Comparator< V > spotComparator;
-
-	private ProgressListener logger = ProgressListeners.voidLogger();
-
-
-	/*
-	 * CONSTRUCTOR
-	 */
-
-	public KalmanTracker(
-			final SpatioTemporalIndex< V > spots,
-			final Graph< V, E > graph,
-			final EdgeCreator< V, E > edgeCreator,
-			final FeatureProjection< V > radiuses,
-			final int minTimepoint,
-			final int maxTimepoint,
-			final double maxSearchRadius,
-			final int maxFrameGap,
-			final double initialSearchRadius,
-			final Comparator<V> spotComparator )
-	{
-		this.spots = spots;
-		this.graph = graph;
-		this.edgeCreator = edgeCreator;
-		this.radiuses = radiuses;
-		this.minTimepoint = minTimepoint;
-		this.maxTimepoint = maxTimepoint;
-		this.maxSearchRadius = maxSearchRadius;
-		this.maxFrameGap = maxFrameGap;
-		this.initialSearchRadius = initialSearchRadius;
-		this.spotComparator = spotComparator;
-	}
-
-	/*
-	 * PUBLIC METHODS
-	 */
-
 	@Override
-	public boolean checkInput()
+	public void mutate1( final Graph< V, E > graph, final SpatioTemporalIndex< V > spots )
 	{
+		ok = false;
+		final long start = System.currentTimeMillis();
+
 		// Check that the objects list itself isn't null
 		if ( null == graph )
 		{
 			errorMessage = BASE_ERROR_MSG + "The input graph is null.";
-			return false;
+			return;
 		}
 
 		if ( maxTimepoint <= minTimepoint )
 		{
 			errorMessage = BASE_ERROR_MSG + "Max timepoint <= min timepoint.";
-			return false;
+			return;
 		}
 
 		// Check that the objects list itself isn't null
 		if ( null == spots )
 		{
 			errorMessage = BASE_ERROR_MSG + "The spot collection is null.";
-			return false;
+			return;
 		}
 
 		// Check that at least one inner collection contains an object.
@@ -139,21 +102,25 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 		if ( empty )
 		{
 			errorMessage = BASE_ERROR_MSG + "The spot collection is empty.";
-			return false;
+			return;
 		}
-
-		return true;
-	}
-
-
-	@Override
-	public boolean process()
-	{
-		final long start = System.currentTimeMillis();
+		// Check parameters
+		final StringBuilder errorHolder = new StringBuilder();
+		if ( !checkSettingsValidity( settings, errorHolder ) )
+		{
+			errorMessage = BASE_ERROR_MSG + "Incorrect settings map:\n" + errorHolder.toString();
+			return;
+		}
 
 		/*
 		 * Constants.
 		 */
+
+		final double maxSearchRadius = ( Double ) settings.get( KEY_KALMAN_SEARCH_RADIUS );
+		final int maxFrameGap = ( Integer ) settings.get( KEY_GAP_CLOSING_MAX_FRAME_GAP );
+		final double initialSearchRadius = ( Double ) settings.get( KEY_LINKING_MAX_DISTANCE );
+		final double positionMeasurementStd = ( Double ) settings.get( KEY_POSITION_SIGMA );
+
 
 		// Max KF search cost.
 		final double maxCost = maxSearchRadius * maxSearchRadius;
@@ -174,13 +141,16 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 		{
 			if ( !spots.getSpatialIndex( tp ).isEmpty() )
 			{
-				previousOrphanSpots = generateSpotList( tp );
+				previousOrphanSpots = generateSpotList( tp, spots, graph );
 				firstFrame = tp;
 				break;
 			}
 		}
 		if ( null == previousOrphanSpots )
-			return true; // Nothing to do.
+		{
+			ok = true;
+			return; // Nothing to do.
+		}
 
 		/*
 		 * Spots in the current frame that are not part of a new link (no
@@ -192,13 +162,16 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 		{
 			if ( !spots.getSpatialIndex( tp ).isEmpty() )
 			{
-				orphanSpots = generateSpotList( secondFrame );
+				orphanSpots = generateSpotList( secondFrame, spots, graph );
 				secondFrame = tp;
 				break;
 			}
 		}
 		if ( null == orphanSpots )
-			return true; // Nothing to do.
+		{
+			ok = true;
+			return; // Nothing to do.
+		}
 
 		/*
 		 * Prediction pool.
@@ -225,26 +198,8 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 		 */
 		final double positionProcessStd = maxSearchRadius / 3d;
 		final double velocityProcessStd = maxSearchRadius / 3d;
-		/*
-		 * We assume the detector did a good job and that positions measured are
-		 * accurate up to a fraction of the spot radius
-		 */
-
-		double meanSpotRadius = 0d;
-		int count = 0;
-		for ( final V spot : orphanSpots )
-		{
-			if ( radiuses.isSet( spot ) )
-			{
-				count++;
-				meanSpotRadius += radiuses.value( spot );
-			}
-		}
-		meanSpotRadius /= count;
-		final double positionMeasurementStd = meanSpotRadius / 10d;
 
 		// The master map that contains the currently active KFs.
-
 		final ObjectRefMap< CVMKalmanFilter, V > kalmanFiltersMap =
 				RefMaps.createObjectRefMap( graph.vertices(), orphanSpots.size() );
 
@@ -290,17 +245,28 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 			 */
 
 			// Use the spot in the next frame has measurements.
-			final RefList< V > measurements = generateSpotList( tp );
+			final RefList< V > measurements = generateSpotList( tp, spots, graph );
 			if ( !predictions.isEmpty() && !measurements.isEmpty() )
 			{
 				// Only link measurements to predictions if we have predictions.
-				final JaqamanLinkingCostMatrixCreator< Prediction, V > crm = new JaqamanLinkingCostMatrixCreator<>(
-						predictions, measurements, CF, maxCost, ALTERNATIVE_COST_FACTOR, PERCENTILE, predictionComparator, spotComparator );
+				@SuppressWarnings( "unchecked" )
+				final JaqamanLinkingCostMatrixCreator< Prediction, V > crm =
+						( JaqamanLinkingCostMatrixCreator< Prediction, V > ) Functions.nullary( ops(), JaqamanLinkingCostMatrixCreator.class, SparseCostMatrix.class,
+								predictions,
+								measurements,
+								CF,
+								maxCost,
+								ALTERNATIVE_COST_FACTOR,
+								PERCENTILE,
+								predictionPool.asRefCollection(),
+								graph.vertices(),
+								predictionComparator,
+								spotComparator );
 				final JaqamanLinker< Prediction, V > linker = new JaqamanLinker<>( crm, predictions, measurements );
 				if ( !linker.checkInput() || !linker.process() )
 				{
 					errorMessage = BASE_ERROR_MSG + "Error linking candidates in frame " + tp + ": " + linker.getErrorMessage();
-					return false;
+					return;
 				}
 				final RefRefMap< Prediction, V > agnts = linker.getResult();
 
@@ -346,22 +312,24 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 				 * already part of a link created via KF. That is: the orphan
 				 * spots of this frame.
 				 */
-
+				@SuppressWarnings( "unchecked" )
 				final JaqamanLinkingCostMatrixCreator< V, V > ic =
-						new JaqamanLinkingCostMatrixCreator<>(
+						( JaqamanLinkingCostMatrixCreator< V, V > ) Functions.nullary( ops(), JaqamanLinkingCostMatrixCreator.class, SparseCostMatrix.class,
 								previousOrphanSpots,
 								orphanSpots,
 								nucleatingCostFunction,
 								maxInitialCost,
-								ALTERNATIVE_COST_FACTOR, PERCENTILE,
+								ALTERNATIVE_COST_FACTOR,
+								PERCENTILE,
+								graph.vertices(),
+								graph.vertices(),
 								spotComparator,
 								spotComparator );
-
 				final JaqamanLinker< V, V > newLinker = new JaqamanLinker<>( ic, previousOrphanSpots, orphanSpots );
 				if ( !newLinker.checkInput() || !newLinker.process() )
 				{
-					errorMessage = BASE_ERROR_MSG + "Error linking spots from frame " + ( tp - 1 ) + " to frame " + tp + ": " + newLinker.getErrorMessage();
-					return false;
+					errorMessage = BASE_ERROR_MSG + "Error linking vertices from frame " + ( tp - 1 ) + " to frame " + tp + ": " + newLinker.getErrorMessage();
+					return;
 				}
 				final RefRefMap< V, V > newAssignments = newLinker.getResult();
 
@@ -399,7 +367,7 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 					kalmanFiltersMap.remove( kf );
 			}
 
-			logger.showProgress( p, maxTimepoint - minTimepoint - 1 );
+			statusService.showProgress( p, maxTimepoint - minTimepoint - 1 );
 		}
 
 		final long end = System.currentTimeMillis();
@@ -408,7 +376,8 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 		graph.releaseRef( vref1 );
 		graph.releaseRef( vref2 );
 
-		return true;
+		statusService.clearStatus();
+		ok = true;
 	}
 
 	@Override
@@ -448,7 +417,7 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 	 *            the timepoint to grab.
 	 * @return a new list.
 	 */
-	private final RefList< V > generateSpotList( final int timepoint )
+	private static final < V extends Vertex< ? > > RefList< V > generateSpotList( final int timepoint, final SpatioTemporalIndex< V > spots, final Graph< V, ? > graph )
 	{
 		final SpatialIndex< V > si = spots.getSpatialIndex( timepoint );
 		final RefList< V > list = RefCollections.createRefList( graph.vertices(), si.size() );
@@ -475,8 +444,35 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 		}
 	};
 
-	public void setProgressListener( final ProgressListener logger )
+	@Override
+	public boolean wasSuccessful()
 	{
-		this.logger = logger;
+		return ok;
 	}
+
+	public static boolean checkSettingsValidity( final Map< String, Object > settings, final StringBuilder str )
+	{
+		if ( null == settings )
+		{
+			str.append( "Settings map is null.\n" );
+			return false;
+		}
+
+		boolean ok = true;
+		ok = ok & checkParameter( settings, KEY_LINKING_MAX_DISTANCE, Double.class, str );
+		ok = ok & checkParameter( settings, KEY_KALMAN_SEARCH_RADIUS, Double.class, str );
+		ok = ok & checkParameter( settings, KEY_GAP_CLOSING_MAX_FRAME_GAP, Integer.class, str );
+		return ok;
+	}
+
+	public static Map< String, Object > getDefaultSettingsMap()
+	{
+		final Map< String, Object > sm = new HashMap< String, Object >( 3 );
+		sm.put( KEY_KALMAN_SEARCH_RADIUS, DEFAULT_MAX_SEARCH_RADIUS );
+		sm.put( KEY_LINKING_MAX_DISTANCE, DEFAULT_LINKING_MAX_DISTANCE );
+		sm.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, DEFAULT_GAP_CLOSING_MAX_FRAME_GAP );
+		sm.put( KEY_POSITION_SIGMA, DEFAULT_POSITION_SIGMA );
+		return sm;
+	}
+
 }

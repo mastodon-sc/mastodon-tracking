@@ -3,8 +3,7 @@ package org.mastodon.tracking.lap.costmatrix;
 import org.mastodon.collection.RefList;
 import org.mastodon.tracking.lap.linker.SparseCostMatrix;
 
-import net.imglib2.algorithm.Benchmark;
-import net.imglib2.algorithm.OutputAlgorithm;
+import net.imagej.ops.special.function.NullaryFunctionOp;
 
 /**
  * Interface for function that can generate a {@link SparseCostMatrix} from
@@ -13,7 +12,7 @@ import net.imglib2.algorithm.OutputAlgorithm;
  * @author Jean-Yves Tinevez
  *
  */
-public interface CostMatrixCreator< K, J > extends Benchmark, OutputAlgorithm< SparseCostMatrix >
+public interface CostMatrixCreatorOp< K, J > extends NullaryFunctionOp< SparseCostMatrix >
 {
 
 	/**
@@ -59,5 +58,11 @@ public interface CostMatrixCreator< K, J > extends Benchmark, OutputAlgorithm< S
 	 * @return the alternative cost.
 	 */
 	public double getAlternativeCostForTarget( J target );
+
+	/**
+	 * Returns an error message in case the cost matrix calculation failed.
+	 * @return an error message.
+	 */
+	public String getErrorMessage();
 
 }

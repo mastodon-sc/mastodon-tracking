@@ -9,12 +9,17 @@ import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
 import org.mastodon.collection.RefSet;
 import org.mastodon.tracking.lap.linker.SparseCostMatrix;
+import org.scijava.ItemIO;
+import org.scijava.plugin.Parameter;
+import org.scijava.plugin.Plugin;
 
+import net.imagej.ops.special.function.AbstractNullaryFunctionOp;
+import net.imglib2.algorithm.Benchmark;
 import net.imglib2.util.Util;
 
 /**
- * A {@link CostMatrixCreator} that build a cost matrix from 3 lists containing
- * the sources, the targets and the associated costs.
+ * A {@link CostMatrixCreatorOp} that build a cost matrix from 3 lists
+ * containing the sources, the targets and the associated costs.
  *
  * @author Jean-Yves Tinevez - 2014
  *
@@ -23,101 +28,77 @@ import net.imglib2.util.Util;
  * @param <J>
  *            the type of column elements.
  */
-public class DefaultCostMatrixCreator< K, J > implements CostMatrixCreator< K, J >
+@Plugin( type = CostMatrixCreatorOp.class )
+public class DefaultCostMatrixCreatorOp< K, J >
+		extends AbstractNullaryFunctionOp< SparseCostMatrix >
+		implements CostMatrixCreatorOp< K, J >, Benchmark
 {
 
-	private static final String BASE_ERROR_MESSAGE = "[DefaultCostMatrixCreator] ";
+	private static final String BASE_ERROR_MESSAGE = "[DefaultCostMatrixCreatorOp] ";
 
-	private SparseCostMatrix scm;
+	@Parameter( type = ItemIO.INPUT )
+	private RefList< K > rows;
 
+	@Parameter( type = ItemIO.INPUT )
+	private RefList< J > cols;
+
+	@Parameter( type = ItemIO.INPUT )
+	private double[] costs;
+
+	@Parameter( type = ItemIO.INPUT )
+	private double alternativeCostFactor;
+
+	@Parameter( type = ItemIO.INPUT )
+	private double percentile;
+
+	@Parameter( type = ItemIO.INPUT )
+	private Comparator< K > rowComparator;
+
+	@Parameter( type = ItemIO.INPUT )
+	private Comparator< J > colComparator;
+
+	@Parameter( type = ItemIO.OUTPUT )
 	private RefList< K > uniqueRows;
 
+	@Parameter( type = ItemIO.OUTPUT )
 	private RefList< J > uniqueCols;
 
-	private long processingTime;
+	@Parameter( type = ItemIO.OUTPUT )
+	private double alternativeCost;
 
 	private String errorMessage;
 
-	private double alternativeCost;
-
-	private final RefList< K > rows;
-
-	private final RefList< J > cols;
-
-	private final double[] costs;
-
-	private final double alternativeCostFactor;
-
-	private final double percentile;
-
-	private final Comparator< K > rowComparator;
-
-	private final Comparator< J > colComparator;
-
-	public DefaultCostMatrixCreator(
-			final RefList< K > rows,
-			final RefList< J > cols,
-			final double[] costs,
-			final double alternativeCostFactor,
-			final double percentile,
-			final Comparator< K > rowComparator,
-			final Comparator< J > colComparator )
-	{
-		this.rows = rows;
-		this.cols = cols;
-		this.costs = costs;
-		this.alternativeCostFactor = alternativeCostFactor;
-		this.percentile = percentile;
-		this.rowComparator = rowComparator;
-		this.colComparator = colComparator;
-	}
-
+	private long processingTime;
 
 	@Override
-	public long getProcessingTime()
-	{
-		return processingTime;
-	}
-
-	@Override
-	public SparseCostMatrix getResult()
-	{
-		return scm;
-	}
-
-	@Override
-	public boolean checkInput()
+	public SparseCostMatrix calculate()
 	{
 		if ( rows == null || rows.isEmpty() )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + "The row list is null or empty.";
-			return false;
+			return null;
 		}
-		if ( rows.size() != cols.size() ) {
-			errorMessage = BASE_ERROR_MESSAGE +"Row and column lists do not have the same number of elements. Found " + rows.size() + " and " + cols.size() + "." ;
-			return false;
+		if ( rows.size() != cols.size() )
+		{
+			errorMessage = BASE_ERROR_MESSAGE + "Row and column lists do not have the same number of elements. Found " + rows.size() + " and " + cols.size() + ".";
+			return null;
 		}
 		if ( rows.size() != costs.length )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + "Row list and cost array do not have the same number of elements. Found " + rows.size() + " and " + costs.length + ".";
-			return false;
+			return null;
 		}
 		if ( alternativeCostFactor <= 0 )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + "The alternative cost factor must be greater than 0. Was: " + alternativeCostFactor + ".";
-			return false;
+			return null;
 		}
 		if ( percentile < 0 || percentile > 1 )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + "The percentile must no be smaller than 0 or greater than 1. Was: " + percentile;
-			return false;
+			return null;
 		}
-		return true;
-	}
 
-	@Override
-	public boolean process()
-	{
 		final RefSet< K > tmpSet1 = RefCollections.createRefSet( rows, rows.size() );
 		tmpSet1.addAll( rows );
 		uniqueRows = RefCollections.createRefList( rows, tmpSet1.size() );
@@ -149,7 +130,7 @@ public class DefaultCostMatrixCreator< K, J > implements CostMatrixCreator< K, J
 			if ( assgn.equals( previousAssgn ) )
 			{
 				errorMessage = BASE_ERROR_MESSAGE + "Found duplicate assignment at index: " + assgn + ".";
-				return false;
+				return null;
 			}
 			previousAssgn = assgn;
 		}
@@ -182,11 +163,9 @@ public class DefaultCostMatrixCreator< K, J > implements CostMatrixCreator< K, J
 		}
 		number[ currentRow ] = nOfEl + 1;
 
-		scm = new SparseCostMatrix( cc, kk, number, nCols );
-
+		final SparseCostMatrix scm = new SparseCostMatrix( cc, kk, number, nCols );
 		alternativeCost = computeAlternativeCosts();
-
-		return true;
+		return scm;
 	}
 
 	protected double computeAlternativeCosts()
@@ -202,6 +181,12 @@ public class DefaultCostMatrixCreator< K, J > implements CostMatrixCreator< K, J
 	}
 
 	@Override
+	public long getProcessingTime()
+	{
+		return processingTime;
+	}
+
+	@Override
 	public RefList< K > getSourceList()
 	{
 		return uniqueRows;
@@ -212,7 +197,6 @@ public class DefaultCostMatrixCreator< K, J > implements CostMatrixCreator< K, J
 	{
 		return uniqueCols;
 	}
-
 
 	@Override
 	public double getAlternativeCostForSource( final K source )

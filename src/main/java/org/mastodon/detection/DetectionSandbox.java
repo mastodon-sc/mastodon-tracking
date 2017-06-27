@@ -15,9 +15,8 @@ import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.tracking.EdgeCreator;
-import org.mastodon.tracking.ProgressListeners;
-import org.mastodon.tracking.lap.LAPUtils;
-import org.mastodon.tracking.lap.SparseLAPTracker;
+import org.mastodon.tracking.ParticleLinkerOp;
+import org.mastodon.tracking.kalman.KalmanTracker;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
@@ -27,6 +26,7 @@ import mpicbg.spim.data.SpimDataException;
 import net.imagej.ImageJ;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.hybrid.Hybrids;
+import net.imagej.ops.special.inplace.Inplaces;
 import net.imglib2.algorithm.Benchmark;
 
 public class DetectionSandbox
@@ -66,7 +66,7 @@ public class DetectionSandbox
 		}
 		final SpimDataMinimal spimData = sd;
 
-		final int maxTimepoint = spimData.getSequenceDescription().getTimePoints().size() -1;
+		final int maxTimepoint = spimData.getSequenceDescription().getTimePoints().size() - 1;
 		final int minTimepoint = 0;
 
 		final Model model = new Model();
@@ -76,14 +76,14 @@ public class DetectionSandbox
 		final double threshold = 1000.;
 		final int setup = 0;
 
-//		final Class< DoGDetector > cl = DoGDetector.class;
-		final Class< LoGDetector > cl = LoGDetector.class;
-		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl , graph, spimData,
-				setup, radius, threshold, minTimepoint, maxTimepoint);
+		final Class< DoGDetector > cl = DoGDetector.class;
+//		final Class< LoGDetector > cl = LoGDetector.class;
+		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl, graph, spimData,
+				setup, radius, threshold, minTimepoint, maxTimepoint );
 		detector.compute( spimData, graph );
 
 		model.getGraphFeatureModel().declareFeature( detector.getQualityFeature() );
-		if (detector instanceof Benchmark)
+		if ( detector instanceof Benchmark )
 		{
 			final Benchmark bm = ( Benchmark ) detector;
 			System.out.println( "Detection completed in " + bm.getProcessingTime() + " ms." );
@@ -105,27 +105,33 @@ public class DetectionSandbox
 			}
 		};
 
-		final Map< String, Object > settings = LAPUtils.getDefaultLAPSettingsMap();
-		final SparseLAPTracker< Spot, Link > tracker = new SparseLAPTracker<>(
-				model.getSpatioTemporalIndex(),
-				model.getGraphFeatureModel(),
-				model.getGraph(),
-				edgeCreator,
-				minTimepoint, maxTimepoint, settings, spotComparator );
-		tracker.setProgressListener( ProgressListeners.defaultLogger() );
-		tracker.setNumThreads( 1 );
+//		final Map< String, Object > settings = LAPUtils.getDefaultLAPSettingsMap();
+//		@SuppressWarnings( "rawtypes" )
+//		final Class< SparseLAPLinker > plcl = SparseLAPLinker.class;
+
+		final Map< String, Object > settings = KalmanTracker.getDefaultSettingsMap();
+		@SuppressWarnings( "rawtypes" )
+		final Class< KalmanTracker > plcl = KalmanTracker.class;
+
+		@SuppressWarnings( { "unchecked", "rawtypes" } )
+		final ParticleLinkerOp< Spot, Link > tracker =
+				( ParticleLinkerOp ) Inplaces.binary1( ops, plcl, model.getGraph(), model.getSpatioTemporalIndex(),
+						settings, model.getGraphFeatureModel(), minTimepoint, maxTimepoint, spotComparator, edgeCreator );
 
 		System.out.println( "\n\nTracking with " + tracker );
-//		if ( !tracker.checkInput() || !tracker.process() )
-//		{
-//			System.out.println( "Tracking failed: " + tracker.getErrorMessage() );
-//			return;
-//		}
-		System.out.println( "Tracking completed in " + tracker.getProcessingTime() + " ms." );
+		tracker.mutate1( model.getGraph(), model.getSpatioTemporalIndex() );
+		if ( !tracker.wasSuccessful() )
+		{
+			System.out.println( "Tracking failed: " + tracker.getErrorMessage() );
+			return;
+		}
+		if ( tracker instanceof Benchmark )
+			System.out.println( "Tracking completed in " + ( ( Benchmark ) tracker ).getProcessingTime() + " ms." );
+		else
+			System.out.println( "Tracking completed." );
 
 		new MainWindow( model, spimData, bdvFile, getInputTriggerConfig() ).setVisible( true );
 	}
-
 
 	static final InputTriggerConfig getInputTriggerConfig()
 	{
