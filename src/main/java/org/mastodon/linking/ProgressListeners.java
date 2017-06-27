@@ -1,4 +1,4 @@
-package org.mastodon.tracking;
+package org.mastodon.linking;
 
 import org.mastodon.revised.mamut.ProgressListener;
 

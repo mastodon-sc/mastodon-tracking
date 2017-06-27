@@ -1,4 +1,4 @@
-package org.mastodon.tracking;
+package org.mastodon.linking;
 
 import java.util.HashMap;
 import java.util.Map;

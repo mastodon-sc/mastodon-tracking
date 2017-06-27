@@ -1,4 +1,4 @@
-package org.mastodon.tracking.lap.costmatrix;
+package org.mastodon.linking.lap.costmatrix;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,7 +8,7 @@ import java.util.List;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
 import org.mastodon.collection.RefSet;
-import org.mastodon.tracking.lap.linker.SparseCostMatrix;
+import org.mastodon.linking.lap.linker.SparseCostMatrix;
 import org.scijava.ItemIO;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;

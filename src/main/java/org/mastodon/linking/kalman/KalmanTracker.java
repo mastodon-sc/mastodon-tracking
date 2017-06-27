@@ -1,14 +1,14 @@
-package org.mastodon.tracking.kalman;
+package org.mastodon.linking.kalman;
 
-import static org.mastodon.tracking.TrackerKeys.DEFAULT_GAP_CLOSING_MAX_FRAME_GAP;
-import static org.mastodon.tracking.TrackerKeys.DEFAULT_LINKING_MAX_DISTANCE;
-import static org.mastodon.tracking.TrackerKeys.DEFAULT_MAX_SEARCH_RADIUS;
-import static org.mastodon.tracking.TrackerKeys.DEFAULT_POSITION_SIGMA;
-import static org.mastodon.tracking.TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
-import static org.mastodon.tracking.TrackerKeys.KEY_KALMAN_SEARCH_RADIUS;
-import static org.mastodon.tracking.TrackerKeys.KEY_LINKING_MAX_DISTANCE;
-import static org.mastodon.tracking.TrackerKeys.KEY_POSITION_SIGMA;
-import static org.mastodon.tracking.lap.LAPUtils.checkParameter;
+import static org.mastodon.linking.TrackerKeys.DEFAULT_GAP_CLOSING_MAX_FRAME_GAP;
+import static org.mastodon.linking.TrackerKeys.DEFAULT_LINKING_MAX_DISTANCE;
+import static org.mastodon.linking.TrackerKeys.DEFAULT_MAX_SEARCH_RADIUS;
+import static org.mastodon.linking.TrackerKeys.DEFAULT_POSITION_SIGMA;
+import static org.mastodon.linking.TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
+import static org.mastodon.linking.TrackerKeys.KEY_KALMAN_SEARCH_RADIUS;
+import static org.mastodon.linking.TrackerKeys.KEY_LINKING_MAX_DISTANCE;
+import static org.mastodon.linking.TrackerKeys.KEY_POSITION_SIGMA;
+import static org.mastodon.linking.lap.LAPUtils.checkParameter;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -26,15 +26,15 @@ import org.mastodon.collection.ref.RefObjectHashMap;
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
+import org.mastodon.linking.AbstractParticleLinkerOp;
+import org.mastodon.linking.ParticleLinkerOp;
+import org.mastodon.linking.lap.costfunction.CostFunction;
+import org.mastodon.linking.lap.costfunction.SquareDistCostFunction;
+import org.mastodon.linking.lap.costmatrix.JaqamanLinkingCostMatrixCreator;
+import org.mastodon.linking.lap.linker.JaqamanLinker;
+import org.mastodon.linking.lap.linker.SparseCostMatrix;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.spatial.SpatioTemporalIndex;
-import org.mastodon.tracking.AbstractParticleLinkerOp;
-import org.mastodon.tracking.ParticleLinkerOp;
-import org.mastodon.tracking.lap.costfunction.CostFunction;
-import org.mastodon.tracking.lap.costfunction.SquareDistCostFunction;
-import org.mastodon.tracking.lap.costmatrix.JaqamanLinkingCostMatrixCreator;
-import org.mastodon.tracking.lap.linker.JaqamanLinker;
-import org.mastodon.tracking.lap.linker.SparseCostMatrix;
 import org.scijava.plugin.Plugin;
 
 import net.imagej.ops.special.function.Functions;

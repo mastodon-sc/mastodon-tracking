@@ -1,4 +1,4 @@
-package org.mastodon.tracking.lap.costfunction;
+package org.mastodon.linking.lap.costfunction;
 
 /**
  * Interface representing a function that can calculate the cost to link a

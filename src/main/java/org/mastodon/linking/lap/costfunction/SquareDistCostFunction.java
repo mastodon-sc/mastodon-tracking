@@ -1,6 +1,6 @@
-package org.mastodon.tracking.lap.costfunction;
+package org.mastodon.linking.lap.costfunction;
 
-import org.mastodon.tracking.lap.LAPUtils;
+import org.mastodon.linking.lap.LAPUtils;
 
 import net.imglib2.RealLocalizable;
 

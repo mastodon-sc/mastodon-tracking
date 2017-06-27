@@ -1,10 +1,10 @@
-package org.mastodon.tracking.lap.costfunction;
+package org.mastodon.linking.lap.costfunction;
 
 import java.util.Map;
 
 import org.mastodon.graph.Vertex;
+import org.mastodon.linking.lap.LAPUtils;
 import org.mastodon.revised.model.feature.FeatureModel;
-import org.mastodon.tracking.lap.LAPUtils;
 
 import net.imglib2.RealLocalizable;
 

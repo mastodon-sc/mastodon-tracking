@@ -1,4 +1,4 @@
-package org.mastodon.tracking;
+package org.mastodon.linking;
 
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;

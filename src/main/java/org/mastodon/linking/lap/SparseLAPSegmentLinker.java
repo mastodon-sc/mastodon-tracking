@@ -1,13 +1,13 @@
-package org.mastodon.tracking.lap;
+package org.mastodon.linking.lap;
 
-import static org.mastodon.tracking.TrackerKeys.KEY_ALLOW_GAP_CLOSING;
-import static org.mastodon.tracking.TrackerKeys.KEY_ALLOW_TRACK_MERGING;
-import static org.mastodon.tracking.TrackerKeys.KEY_ALLOW_TRACK_SPLITTING;
-import static org.mastodon.tracking.TrackerKeys.KEY_GAP_CLOSING_FEATURE_PENALTIES;
-import static org.mastodon.tracking.TrackerKeys.KEY_GAP_CLOSING_MAX_DISTANCE;
-import static org.mastodon.tracking.TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
-import static org.mastodon.tracking.lap.LAPUtils.checkFeatureMap;
-import static org.mastodon.tracking.lap.LAPUtils.checkParameter;
+import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_GAP_CLOSING;
+import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_TRACK_MERGING;
+import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_TRACK_SPLITTING;
+import static org.mastodon.linking.TrackerKeys.KEY_GAP_CLOSING_FEATURE_PENALTIES;
+import static org.mastodon.linking.TrackerKeys.KEY_GAP_CLOSING_MAX_DISTANCE;
+import static org.mastodon.linking.TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
+import static org.mastodon.linking.lap.LAPUtils.checkFeatureMap;
+import static org.mastodon.linking.lap.LAPUtils.checkParameter;
 
 import java.util.Map;
 
@@ -15,12 +15,12 @@ import org.mastodon.collection.RefRefMap;
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
+import org.mastodon.linking.AbstractParticleLinkerOp;
+import org.mastodon.linking.lap.costmatrix.JaqamanSegmentCostMatrixCreator;
+import org.mastodon.linking.lap.linker.JaqamanLinker;
+import org.mastodon.linking.lap.linker.SparseCostMatrix;
 import org.mastodon.spatial.HasTimepoint;
 import org.mastodon.spatial.SpatioTemporalIndex;
-import org.mastodon.tracking.AbstractParticleLinkerOp;
-import org.mastodon.tracking.lap.costmatrix.JaqamanSegmentCostMatrixCreator;
-import org.mastodon.tracking.lap.linker.JaqamanLinker;
-import org.mastodon.tracking.lap.linker.SparseCostMatrix;
 import org.scijava.plugin.Plugin;
 
 import net.imagej.ops.special.function.Functions;

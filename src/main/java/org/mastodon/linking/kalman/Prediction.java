@@ -1,4 +1,4 @@
-package org.mastodon.tracking.kalman;
+package org.mastodon.linking.kalman;
 
 import org.mastodon.collection.util.DelegateRealLocalizable;
 import org.mastodon.collection.util.DelegateRealPositionable;

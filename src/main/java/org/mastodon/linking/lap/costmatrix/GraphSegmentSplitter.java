@@ -1,4 +1,4 @@
-package org.mastodon.tracking.lap.costmatrix;
+package org.mastodon.linking.lap.costmatrix;
 
 import java.util.ArrayList;
 import java.util.Collections;
