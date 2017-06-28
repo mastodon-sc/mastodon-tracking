@@ -6,6 +6,8 @@ import java.util.Map;
 import org.mastodon.graph.Graph;
 import org.mastodon.linking.EdgeCreator;
 import org.mastodon.linking.ParticleLinkerOp;
+import org.mastodon.properties.DoublePropertyMap;
+import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.ModelGraph;
@@ -52,7 +54,9 @@ public abstract class AbstractSpotLinkerOp
 				spotComparator(), edgeCreator() );
 		linker.mutate1( graph, spots );
 		final long end = System.currentTimeMillis();
-		this.processingTime = end - start;
+
+		processingTime = end - start;
+		linkCostFeature = linker.getLinkCostFeature();
 		ok = linker.wasSuccessful();
 	}
 
@@ -64,6 +68,18 @@ public abstract class AbstractSpotLinkerOp
 	protected Comparator< Spot > spotComparator()
 	{
 		return SPOT_COMPARATOR;
+	}
+
+	/**
+	 * The edge linking cost feature provided by this particle-linker.
+	 */
+	@Parameter( type = ItemIO.OUTPUT )
+	protected Feature< Link, Double, DoublePropertyMap< Link > > linkCostFeature;
+
+	@Override
+	public Feature< Link, Double, DoublePropertyMap< Link > > getLinkCostFeature()
+	{
+		return linkCostFeature;
 	}
 
 	@Override

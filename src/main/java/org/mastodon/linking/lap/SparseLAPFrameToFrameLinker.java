@@ -1,11 +1,11 @@
 package org.mastodon.linking.lap;
 
+import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
+import static org.mastodon.linking.LinkingUtils.checkMapKeys;
+import static org.mastodon.linking.LinkingUtils.checkParameter;
 import static org.mastodon.linking.TrackerKeys.KEY_ALTERNATIVE_LINKING_COST_FACTOR;
 import static org.mastodon.linking.TrackerKeys.KEY_LINKING_FEATURE_PENALTIES;
 import static org.mastodon.linking.TrackerKeys.KEY_LINKING_MAX_DISTANCE;
-import static org.mastodon.linking.lap.LAPUtils.checkFeatureMap;
-import static org.mastodon.linking.lap.LAPUtils.checkMapKeys;
-import static org.mastodon.linking.lap.LAPUtils.checkParameter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,12 +23,14 @@ import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
 import org.mastodon.linking.AbstractParticleLinkerOp;
+import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.lap.costfunction.CostFunction;
 import org.mastodon.linking.lap.costfunction.FeaturePenaltyCostFunction;
 import org.mastodon.linking.lap.costfunction.SquareDistCostFunction;
 import org.mastodon.linking.lap.costmatrix.JaqamanLinkingCostMatrixCreator;
 import org.mastodon.linking.lap.linker.JaqamanLinker;
 import org.mastodon.linking.lap.linker.SparseCostMatrix;
+import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.spatial.HasTimepoint;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.spatial.SpatioTemporalIndex;
@@ -60,6 +62,8 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 	public void mutate1( final Graph< V, E > graph, final SpatioTemporalIndex< V > spots )
 	{
 		ok = false;
+		final DoublePropertyMap< E > linkcost = new DoublePropertyMap<>( graph.edges(), Double.NaN );
+
 		/*
 		 * Check input now.
 		 */
@@ -186,7 +190,8 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 						{
 							final V target = assignment.get( source, vref );
 							final double cost = assignmentCosts.get( source );
-							edgeCreator.createEdge( graph, eref, source, target, cost );
+							final E edge = edgeCreator.createEdge( graph, eref, source, target, cost );
+							linkcost.set( edge, cost );
 						}
 						graph.releaseRef( vref );
 						graph.releaseRef( eref );
@@ -216,6 +221,7 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 		}
 		statusService.clearStatus();
 
+		this.linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost );
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
 

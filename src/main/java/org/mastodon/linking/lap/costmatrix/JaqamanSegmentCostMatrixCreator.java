@@ -1,5 +1,8 @@
 package org.mastodon.linking.lap.costmatrix;
 
+import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
+import static org.mastodon.linking.LinkingUtils.checkMapKeys;
+import static org.mastodon.linking.LinkingUtils.checkParameter;
 import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_GAP_CLOSING;
 import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_TRACK_MERGING;
 import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_TRACK_SPLITTING;
@@ -12,9 +15,6 @@ import static org.mastodon.linking.TrackerKeys.KEY_MERGING_FEATURE_PENALTIES;
 import static org.mastodon.linking.TrackerKeys.KEY_MERGING_MAX_DISTANCE;
 import static org.mastodon.linking.TrackerKeys.KEY_SPLITTING_FEATURE_PENALTIES;
 import static org.mastodon.linking.TrackerKeys.KEY_SPLITTING_MAX_DISTANCE;
-import static org.mastodon.linking.lap.LAPUtils.checkFeatureMap;
-import static org.mastodon.linking.lap.LAPUtils.checkMapKeys;
-import static org.mastodon.linking.lap.LAPUtils.checkParameter;
 
 import java.util.ArrayList;
 import java.util.Collections;

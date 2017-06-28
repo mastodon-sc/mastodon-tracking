@@ -3,7 +3,7 @@ package org.mastodon.linking.lap.costfunction;
 import java.util.Map;
 
 import org.mastodon.graph.Vertex;
-import org.mastodon.linking.lap.LAPUtils;
+import org.mastodon.linking.LinkingUtils;
 import org.mastodon.revised.model.feature.FeatureModel;
 
 import net.imglib2.RealLocalizable;
@@ -51,12 +51,12 @@ public class FeaturePenaltyCostFunction< V extends Vertex< ? > & RealLocalizable
 	@Override
 	public double linkingCost( final V source, final V target )
 	{
-		final double d2 = LAPUtils.squareDistance( source, target );
+		final double d2 = LinkingUtils.squareDistance( source, target );
 
 		double penalty = 1;
 		for ( final String feature : featurePenalties.keySet() )
 		{
-			final double ndiff = LAPUtils.normalizeDiffCost( source, target, feature, featureModel );
+			final double ndiff = LinkingUtils.normalizeDiffCost( source, target, feature, featureModel );
 			if ( Double.isNaN( ndiff ) )
 			{
 				continue;

@@ -1,5 +1,8 @@
 package org.mastodon.linking.lap;
 
+import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
+import static org.mastodon.linking.LinkingUtils.checkMapKeys;
+import static org.mastodon.linking.LinkingUtils.checkParameter;
 import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_GAP_CLOSING;
 import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_TRACK_MERGING;
 import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_TRACK_SPLITTING;
@@ -15,9 +18,6 @@ import static org.mastodon.linking.TrackerKeys.KEY_MERGING_FEATURE_PENALTIES;
 import static org.mastodon.linking.TrackerKeys.KEY_MERGING_MAX_DISTANCE;
 import static org.mastodon.linking.TrackerKeys.KEY_SPLITTING_FEATURE_PENALTIES;
 import static org.mastodon.linking.TrackerKeys.KEY_SPLITTING_MAX_DISTANCE;
-import static org.mastodon.linking.lap.LAPUtils.checkFeatureMap;
-import static org.mastodon.linking.lap.LAPUtils.checkMapKeys;
-import static org.mastodon.linking.lap.LAPUtils.checkParameter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,7 +28,9 @@ import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
 import org.mastodon.linking.AbstractParticleLinkerOp;
+import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.ParticleLinkerOp;
+import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.spatial.HasTimepoint;
 import org.mastodon.spatial.SpatioTemporalIndex;
 import org.scijava.ItemIO;
@@ -57,6 +59,7 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 	public void mutate1( final Graph< V, E > graph, final SpatioTemporalIndex< V > spots )
 	{
 		ok = false;
+		final DoublePropertyMap< E > linkcost = new DoublePropertyMap<>( graph.edges(), Double.NaN );
 
 		/*
 		 * Check input now.
@@ -124,6 +127,10 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 			errorMessage = frameToFrameLinker.getErrorMessage();
 			return;
 		}
+		// Copy link costs.
+		final DoublePropertyMap< E > ftfCosts = frameToFrameLinker.getLinkCostFeature().getPropertyMap();
+		for ( final E e : ftfCosts.getMap().keySet() )
+			linkcost.set( e, ftfCosts.get( e ) );
 
 		/*
 		 * 2. Gap-closing, merging and splitting.
@@ -159,9 +166,14 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 			errorMessage = segmentLinker.getErrorMessage();
 			return ;
 		}
+		// Copy link costs.
+		final DoublePropertyMap< E > slCosts = segmentLinker.getLinkCostFeature().getPropertyMap();
+		for ( final E e : slCosts.getMap().keySet() )
+			linkcost.set( e, slCosts.get( e ) );
 
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
+		this.linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost );
 		statusService.clearStatus();
 		ok = true;
 	}

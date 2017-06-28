@@ -1,13 +1,13 @@
 package org.mastodon.linking.lap;
 
+import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
+import static org.mastodon.linking.LinkingUtils.checkParameter;
 import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_GAP_CLOSING;
 import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_TRACK_MERGING;
 import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_TRACK_SPLITTING;
 import static org.mastodon.linking.TrackerKeys.KEY_GAP_CLOSING_FEATURE_PENALTIES;
 import static org.mastodon.linking.TrackerKeys.KEY_GAP_CLOSING_MAX_DISTANCE;
 import static org.mastodon.linking.TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
-import static org.mastodon.linking.lap.LAPUtils.checkFeatureMap;
-import static org.mastodon.linking.lap.LAPUtils.checkParameter;
 
 import java.util.Map;
 
@@ -17,9 +17,11 @@ import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
 import org.mastodon.linking.AbstractParticleLinkerOp;
+import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.lap.costmatrix.JaqamanSegmentCostMatrixCreator;
 import org.mastodon.linking.lap.linker.JaqamanLinker;
 import org.mastodon.linking.lap.linker.SparseCostMatrix;
+import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.spatial.HasTimepoint;
 import org.mastodon.spatial.SpatioTemporalIndex;
 import org.scijava.plugin.Plugin;
@@ -75,17 +77,11 @@ public class SparseLAPSegmentLinker< V extends Vertex< E > & HasTimepoint & Real
 	public void mutate1( final Graph< V, E > graph, final SpatioTemporalIndex< V > spots )
 	{
 		ok = false;
+		final DoublePropertyMap< E > linkcost = new DoublePropertyMap<>( graph.edges(), Double.NaN );
 
 		/*
 		 * Check input now.
 		 */
-
-		// Check that the objects list itself isn't null
-		if ( null == graph )
-		{
-			errorMessage = BASE_ERROR_MESSAGE + "The input graph is null.";
-			return;
-		}
 
 		// Check parameters
 		final StringBuilder errorHolder = new StringBuilder();
@@ -135,7 +131,8 @@ public class SparseLAPSegmentLinker< V extends Vertex< E > & HasTimepoint & Real
 			{
 				final V target = assignment.get( source, vref );
 				final double cost = assignmentCosts.get( source );
-				edgeCreator.createEdge( graph, eref, source, target, cost );
+				final E edge = edgeCreator.createEdge( graph, eref, source, target, cost );
+				linkcost.set( edge, cost );
 			}
 			graph.releaseRef( eref );
 			graph.releaseRef( vref );
@@ -144,6 +141,7 @@ public class SparseLAPSegmentLinker< V extends Vertex< E > & HasTimepoint & Real
 		statusService.clearStatus();
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
+		this.linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost );
 		ok = true;
 	}
 

@@ -1,5 +1,6 @@
 package org.mastodon.linking.mamut;
 
+import static org.mastodon.linking.LinkingUtils.checkParameter;
 import static org.mastodon.linking.TrackerKeys.DEFAULT_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.linking.TrackerKeys.DEFAULT_LINKING_MAX_DISTANCE;
 import static org.mastodon.linking.TrackerKeys.DEFAULT_MAX_SEARCH_RADIUS;
@@ -7,7 +8,6 @@ import static org.mastodon.linking.TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.linking.TrackerKeys.KEY_KALMAN_SEARCH_RADIUS;
 import static org.mastodon.linking.TrackerKeys.KEY_LINKING_MAX_DISTANCE;
 import static org.mastodon.linking.TrackerKeys.KEY_POSITION_SIGMA;
-import static org.mastodon.linking.lap.LAPUtils.checkParameter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,7 +56,9 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 				spotComparator(), edgeCreator() );
 		linker.mutate1( graph, spots );
 		final long end = System.currentTimeMillis();
-		this.processingTime = end - start;
+
+		processingTime = end - start;
+		linkCostFeature = linker.getLinkCostFeature();
 		ok = linker.wasSuccessful();
 	}
 

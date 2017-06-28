@@ -1,4 +1,4 @@
-package org.mastodon.linking.lap;
+package org.mastodon.linking;
 
 import static org.mastodon.linking.TrackerKeys.DEFAULT_ALLOW_GAP_CLOSING;
 import static org.mastodon.linking.TrackerKeys.DEFAULT_ALLOW_TRACK_MERGING;
@@ -36,6 +36,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,15 +55,25 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
 import org.mastodon.graph.Vertex;
+import org.mastodon.properties.DoublePropertyMap;
+import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.revised.model.feature.FeatureProjection;
+import org.mastodon.revised.model.feature.FeatureProjectors;
+import org.mastodon.revised.model.feature.FeatureTarget;
 
 import net.imglib2.RealLocalizable;
 
-public class LAPUtils
+public class LinkingUtils
 {
 
 	private static final Border RED_BORDER = new LineBorder( Color.RED );
+
+	/**
+	 * The key of the edge linking cost feature and projection returned by
+	 * {@link ParticleLinkerOp#getLinCostFeature(DoublePropertyMap)}.
+	 */
+	public static final String LINK_COST_FEATURE_NAME = "Link cost";
 
 	/*
 	 * STATIC KEYS Mainly used for marshalling.
@@ -81,6 +92,23 @@ public class LAPUtils
 	/*
 	 * STATIC METHODS - UTILS
 	 */
+
+	/**
+	 * Returns a new feature wrapping the specified property map, that serves as
+	 * an Edge linking cost feature for the linkers of Mastodon. This feature is
+	 * expected to be common to all particle linkers.
+	 *
+	 * @param linkCosts
+	 *            the property map containing the link cost values of all edges
+	 *            in the model.
+	 * @return the link cost feature.
+	 */
+	public static final < E > Feature< E, Double, DoublePropertyMap< E > > getLinkCostFeature( final DoublePropertyMap< E > linkCosts )
+	{
+		return new Feature< E, Double, DoublePropertyMap< E > >(
+				LINK_COST_FEATURE_NAME, FeatureTarget.EDGE, linkCosts,
+				Collections.singletonMap( LINK_COST_FEATURE_NAME, FeatureProjectors.project( linkCosts ) ) );
+	}
 
 	/**
 	 * Utility method to put a value in a map, contained in a mother map. Here
@@ -217,7 +245,6 @@ public class LAPUtils
 		// Set score
 		return d2 * penalty * penalty;
 	}
-
 
 	/**
 	 * @return true if the settings map can be used with the LAP trackers. We do
@@ -681,7 +708,7 @@ public class LAPUtils
 	public static < V extends Vertex< ? > > double normalizeDiffCost( final V source, final V target, final String feature, final FeatureModel< V, ? > featureModel )
 	{
 		final FeatureProjection< V > vertexProjection = featureModel.getVertexProjection( feature );
-		if (!vertexProjection.isSet( source ) || !vertexProjection.isSet( target ))
+		if ( !vertexProjection.isSet( source ) || !vertexProjection.isSet( target ) )
 			return Double.NaN;
 		final double a = vertexProjection.value( source );
 		final double b = vertexProjection.value( target );
@@ -691,4 +718,6 @@ public class LAPUtils
 			return Math.abs( a - b ) / ( ( a + b ) / 2 );
 	}
 
+	private LinkingUtils()
+	{}
 }

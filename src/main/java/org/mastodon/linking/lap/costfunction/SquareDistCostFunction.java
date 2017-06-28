@@ -1,6 +1,6 @@
 package org.mastodon.linking.lap.costfunction;
 
-import org.mastodon.linking.lap.LAPUtils;
+import org.mastodon.linking.LinkingUtils;
 
 import net.imglib2.RealLocalizable;
 
@@ -17,7 +17,7 @@ public class SquareDistCostFunction< K extends RealLocalizable > implements Cost
 	@Override
 	public double linkingCost( final K source, final K target )
 	{
-		return LAPUtils.squareDistance( source, target );
+		return LinkingUtils.squareDistance( source, target );
 	}
 
 }

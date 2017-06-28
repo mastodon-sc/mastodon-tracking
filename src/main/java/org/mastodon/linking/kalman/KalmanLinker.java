@@ -1,5 +1,6 @@
 package org.mastodon.linking.kalman;
 
+import static org.mastodon.linking.LinkingUtils.checkParameter;
 import static org.mastodon.linking.TrackerKeys.DEFAULT_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.linking.TrackerKeys.DEFAULT_LINKING_MAX_DISTANCE;
 import static org.mastodon.linking.TrackerKeys.DEFAULT_MAX_SEARCH_RADIUS;
@@ -8,7 +9,6 @@ import static org.mastodon.linking.TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.linking.TrackerKeys.KEY_KALMAN_SEARCH_RADIUS;
 import static org.mastodon.linking.TrackerKeys.KEY_LINKING_MAX_DISTANCE;
 import static org.mastodon.linking.TrackerKeys.KEY_POSITION_SIGMA;
-import static org.mastodon.linking.lap.LAPUtils.checkParameter;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -28,12 +28,14 @@ import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
 import org.mastodon.linking.AbstractParticleLinkerOp;
+import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.ParticleLinkerOp;
 import org.mastodon.linking.lap.costfunction.CostFunction;
 import org.mastodon.linking.lap.costfunction.SquareDistCostFunction;
 import org.mastodon.linking.lap.costmatrix.JaqamanLinkingCostMatrixCreator;
 import org.mastodon.linking.lap.linker.JaqamanLinker;
 import org.mastodon.linking.lap.linker.SparseCostMatrix;
+import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.spatial.SpatioTemporalIndex;
 import org.scijava.plugin.Plugin;
@@ -69,13 +71,7 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
-
-		// Check that the objects list itself isn't null
-		if ( null == graph )
-		{
-			errorMessage = BASE_ERROR_MSG + "The input graph is null.";
-			return;
-		}
+		final DoublePropertyMap< E > linkcost = new DoublePropertyMap<>( graph.edges(), Double.NaN );
 
 		if ( maxTimepoint <= minTimepoint )
 		{
@@ -213,9 +209,6 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 		int p = 0;
 		for ( int tp = secondFrame; tp <= maxTimepoint; tp++ )
 		{
-
-			System.out.println( "Linking t = " + (tp-1) + " with " + tp ); // DEBUG
-
 			p++;
 
 			/*
@@ -287,7 +280,8 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 					final V source = kalmanFiltersMap.get( kf, vref1 );
 					final V target = agnts.get( cm, vref2 );
 					final double cost = assignmentCosts.get( cm );
-					edgeCreator.createEdge( graph, ref, source, target, cost );
+					final E edge = edgeCreator.createEdge( graph, ref, source, target, cost );
+					linkcost.set( edge, cost );
 
 					// Update Kalman filter
 					kf.update( toMeasurement( target ) );
@@ -360,7 +354,8 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 
 					// Add edge to the graph.
 					final double cost = assignmentCosts.get( source );
-					edgeCreator.createEdge( graph, ref, source, target, cost );
+					final E edge = edgeCreator.createEdge( graph, ref, source, target, cost );
+					linkcost.set( edge, cost );
 				}
 				graph.releaseRef( ref );
 			}
@@ -386,7 +381,7 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 
 		graph.releaseRef( vref1 );
 		graph.releaseRef( vref2 );
-
+		linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost );
 		statusService.clearStatus();
 		ok = true;
 	}

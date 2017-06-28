@@ -6,6 +6,8 @@ import java.util.Map;
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
+import org.mastodon.properties.DoublePropertyMap;
+import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.spatial.SpatioTemporalIndex;
 import org.scijava.ItemIO;
@@ -47,4 +49,15 @@ public abstract class AbstractParticleLinkerOp< V extends Vertex< E > & RealLoca
 	@Parameter( type = ItemIO.OUTPUT )
 	protected boolean ok;
 
+	/**
+	 * The edge linking cost feature provided by this particle-linker.
+	 */
+	@Parameter( type = ItemIO.OUTPUT )
+	protected Feature< E, Double, DoublePropertyMap< E > > linkCostFeature;
+
+	@Override
+	public Feature< E, Double, DoublePropertyMap< E > > getLinkCostFeature()
+	{
+		return linkCostFeature;
+	}
 }

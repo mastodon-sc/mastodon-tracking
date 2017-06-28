@@ -8,7 +8,8 @@ import java.util.Map;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import org.mastodon.linking.mamut.KalmanLinkerMamut;
+import org.mastodon.linking.LinkingUtils;
+import org.mastodon.linking.mamut.SparseLAPLinkerMamut;
 import org.mastodon.linking.mamut.SpotLinkerOp;
 import org.mastodon.revised.mamut.MainWindow;
 import org.mastodon.revised.model.mamut.Model;
@@ -92,11 +93,11 @@ public class DetectionSandbox
 		 * Let's track them.
 		 */
 
-//		final Map< String, Object > settings = LAPUtils.getDefaultLAPSettingsMap();
-//		final Class< SparseLAPLinkerMamut > plcl = SparseLAPLinkerMamut.class;
+		final Map< String, Object > settings = LinkingUtils.getDefaultLAPSettingsMap();
+		final Class< SparseLAPLinkerMamut > plcl = SparseLAPLinkerMamut.class;
 
-		final Map< String, Object > settings = KalmanLinkerMamut.getDefaultSettingsMap();
-		final Class< KalmanLinkerMamut > plcl = KalmanLinkerMamut.class;
+//		final Map< String, Object > settings = KalmanLinkerMamut.getDefaultSettingsMap();
+//		final Class< KalmanLinkerMamut > plcl = KalmanLinkerMamut.class;
 
 		final SpotLinkerOp linker =
 				( SpotLinkerOp ) Inplaces.binary1( ops, plcl, model.getGraph(), model.getSpatioTemporalIndex(),
@@ -109,6 +110,7 @@ public class DetectionSandbox
 			System.out.println( "Tracking failed: " + linker.getErrorMessage() );
 			return;
 		}
+		model.getGraphFeatureModel().declareFeature( linker.getLinkCostFeature() );
 		if ( linker instanceof Benchmark )
 			System.out.println( "Tracking completed in " + ( ( Benchmark ) linker ).getProcessingTime() + " ms." );
 		else
