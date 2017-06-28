@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -71,23 +70,9 @@ public class LinkingUtils
 
 	/**
 	 * The key of the edge linking cost feature and projection returned by
-	 * {@link ParticleLinkerOp#getLinCostFeature(DoublePropertyMap)}.
+	 * {@link ParticleLinkerOp#getLinkCostFeature()}.
 	 */
 	public static final String LINK_COST_FEATURE_NAME = "Link cost";
-
-	/*
-	 * STATIC KEYS Mainly used for marshalling.
-	 */
-
-	public static final String XML_ELEMENT_NAME_LINKING = "Linking";
-
-	public static final String XML_ELEMENT_NAME_GAP_CLOSING = "GapClosing";
-
-	public static final String XML_ELEMENT_NAME_MERGING = "TrackMerging";
-
-	public static final String XML_ELEMENT_NAME_SPLITTING = "TrackSplitting";
-
-	public static final String XML_ELEMENT_NAME_FEATURE_PENALTIES = "FeaturePenalties";
 
 	/*
 	 * STATIC METHODS - UTILS
@@ -108,42 +93,6 @@ public class LinkingUtils
 		return new Feature< E, Double, DoublePropertyMap< E > >(
 				LINK_COST_FEATURE_NAME, FeatureTarget.EDGE, linkCosts,
 				Collections.singletonMap( LINK_COST_FEATURE_NAME, FeatureProjectors.project( linkCosts ) ) );
-	}
-
-	/**
-	 * Utility method to put a value in a map, contained in a mother map. Here
-	 * it is mainly use to feed feature penalties to LAP tracker settings map.
-	 *
-	 * @param motherMap
-	 *            the mother map
-	 * @param motherKey
-	 *            the key in the mother map that points to the child map
-	 * @param childKey
-	 *            the key in the child map to put
-	 * @param childValue
-	 *            the value in the child map to put
-	 * @param errorHolder
-	 *            an error holder that will be appended with an error message if
-	 *            modifying the child map is unsuccessful.
-	 * @return true if the child map could be modified correctly.
-	 */
-	public static final boolean addFeaturePenaltyToSettings( final Map< ?, ? > motherMap, final Object motherKey, final Object childKey, final Object childValue, final StringBuilder errorHolder )
-	{
-		final Object childObj = motherMap.get( motherKey );
-		if ( null == childObj )
-		{
-			errorHolder.append( "Mother map has no value for key " + motherKey + ".\n" );
-			return false;
-		}
-		if ( !( childObj instanceof Map< ?, ? > ) )
-		{
-			errorHolder.append( "Value for key " + motherKey + " is not a map.\n" );
-			return false;
-		}
-		@SuppressWarnings( "unchecked" )
-		final Map< Object, Object > childMap = ( Map< Object, Object > ) childObj;
-		childMap.put( childKey, childValue );
-		return true;
 	}
 
 	/**
@@ -179,6 +128,13 @@ public class LinkingUtils
 		return settings;
 	}
 
+	/**
+	 * Prints a feature penalty map.
+	 *
+	 * @param featurePenalties
+	 *            the feature penalty map.
+	 * @return a string representation of the map.
+	 */
 	public static String echoFeaturePenalties( final Map< String, Double > featurePenalties )
 	{
 		String str = "";
@@ -194,121 +150,6 @@ public class LinkingUtils
 		}
 		return str;
 
-	}
-
-	/**
-	 * Compute the cost to link two spots, in the default way for the TrackMate
-	 * trackmate.
-	 * <p>
-	 * This cost is calculated as follow:
-	 * <ul>
-	 * <li>The distance between the two spots <code>D</code> is calculated
-	 * <li>If the spots are separated by more than the distance cutoff, the cost
-	 * is set to be the blocking value. If not,
-	 * <li>For each feature in the map, a penalty <code>p</code> is calculated
-	 * as <code>p = 3 × α × |f1-f2| / (f1+f2)</code>, where <code>α</code> is
-	 * the factor associated to the feature in the map. This expression is such
-	 * that:
-	 * <ul>
-	 * <li>there is no penalty if the 2 feature values <code>f1</code> and
-	 * <code>f2</code> are the same;
-	 * <li>that, with a factor of 1, the penalty if 1 is one value is the double
-	 * of the other;
-	 * <li>the penalty is 2 if one is 5 times the other one.
-	 * </ul>
-	 * <li>All penalties are summed, to form <code>P = (1 + ∑ p )</code>
-	 * <li>The cost is set to the square of the product:
-	 * <code>C = ( D × P )²</code>
-	 * </ul>
-	 * For instance: if 2 spots differ by twice the value in a feature which is
-	 * in the penalty map with a factor of 1, they will <i>look</i> as if they
-	 * were twice as far.
-	 */
-	public static final < V extends Vertex< ? > & RealLocalizable > double computeLinkingCostFor( final V s0, final V s1,
-			final double distanceCutOff, final double blockingValue, final Map< String, Double > featurePenalties, final FeatureModel< V, ? > featureModel )
-	{
-		final double d2 = squareDistance( s0, s1 );
-
-		// Distance threshold
-		if ( d2 > distanceCutOff * distanceCutOff ) { return blockingValue; }
-
-		double penalty = 1;
-		for ( final String feature : featurePenalties.keySet() )
-		{
-			final double ndiff = normalizeDiffCost( s0, s1, feature, featureModel );
-			if ( Double.isNaN( ndiff ) )
-				continue;
-			final double factor = featurePenalties.get( feature );
-			penalty += factor * 1.5 * ndiff;
-		}
-
-		// Set score
-		return d2 * penalty * penalty;
-	}
-
-	/**
-	 * @return true if the settings map can be used with the LAP trackers. We do
-	 *         not check that all the spot features used in penalties are indeed
-	 *         found in all spots, because if such a feature is absent from one
-	 *         spot, the LAP trackers simply ignores the penalty and does not
-	 *         generate an error.
-	 * @param settings
-	 *            the map to test.
-	 * @param errorHolder
-	 *            a {@link StringBuilder} that will contain an error message if
-	 *            the check is not successful.
-	 */
-	public static final boolean checkSettingsValidity( final Map< String, Object > settings, final StringBuilder errorHolder )
-	{
-		if ( null == settings )
-		{
-			errorHolder.append( "Settings map is null.\n" );
-			return false;
-		}
-
-		boolean ok = true;
-		// Linking
-		ok = ok & checkParameter( settings, KEY_LINKING_MAX_DISTANCE, Double.class, errorHolder );
-		ok = ok & checkFeatureMap( settings, KEY_LINKING_FEATURE_PENALTIES, errorHolder );
-		// Gap-closing
-		ok = ok & checkParameter( settings, KEY_ALLOW_GAP_CLOSING, Boolean.class, errorHolder );
-		ok = ok & checkParameter( settings, KEY_GAP_CLOSING_MAX_DISTANCE, Double.class, errorHolder );
-		ok = ok & checkParameter( settings, KEY_GAP_CLOSING_MAX_FRAME_GAP, Integer.class, errorHolder );
-		ok = ok & checkFeatureMap( settings, KEY_GAP_CLOSING_FEATURE_PENALTIES, errorHolder );
-		// Splitting
-		ok = ok & checkParameter( settings, KEY_ALLOW_TRACK_SPLITTING, Boolean.class, errorHolder );
-		ok = ok & checkParameter( settings, KEY_SPLITTING_MAX_DISTANCE, Double.class, errorHolder );
-		ok = ok & checkFeatureMap( settings, KEY_SPLITTING_FEATURE_PENALTIES, errorHolder );
-		// Merging
-		ok = ok & checkParameter( settings, KEY_ALLOW_TRACK_MERGING, Boolean.class, errorHolder );
-		ok = ok & checkParameter( settings, KEY_MERGING_MAX_DISTANCE, Double.class, errorHolder );
-		ok = ok & checkFeatureMap( settings, KEY_MERGING_FEATURE_PENALTIES, errorHolder );
-		// Others
-		ok = ok & checkParameter( settings, KEY_CUTOFF_PERCENTILE, Double.class, errorHolder );
-		ok = ok & checkParameter( settings, KEY_ALTERNATIVE_LINKING_COST_FACTOR, Double.class, errorHolder );
-		ok = ok & checkParameter( settings, KEY_BLOCKING_VALUE, Double.class, errorHolder );
-
-		// Check keys
-		final List< String > mandatoryKeys = new ArrayList< String >();
-		mandatoryKeys.add( KEY_LINKING_MAX_DISTANCE );
-		mandatoryKeys.add( KEY_ALLOW_GAP_CLOSING );
-		mandatoryKeys.add( KEY_GAP_CLOSING_MAX_DISTANCE );
-		mandatoryKeys.add( KEY_GAP_CLOSING_MAX_FRAME_GAP );
-		mandatoryKeys.add( KEY_ALLOW_TRACK_SPLITTING );
-		mandatoryKeys.add( KEY_SPLITTING_MAX_DISTANCE );
-		mandatoryKeys.add( KEY_ALLOW_TRACK_MERGING );
-		mandatoryKeys.add( KEY_MERGING_MAX_DISTANCE );
-		mandatoryKeys.add( KEY_ALTERNATIVE_LINKING_COST_FACTOR );
-		mandatoryKeys.add( KEY_CUTOFF_PERCENTILE );
-		mandatoryKeys.add( KEY_BLOCKING_VALUE );
-		final List< String > optionalKeys = new ArrayList< String >();
-		optionalKeys.add( KEY_LINKING_FEATURE_PENALTIES );
-		optionalKeys.add( KEY_GAP_CLOSING_FEATURE_PENALTIES );
-		optionalKeys.add( KEY_SPLITTING_FEATURE_PENALTIES );
-		optionalKeys.add( KEY_MERGING_FEATURE_PENALTIES );
-		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, errorHolder );
-
-		return ok;
 	}
 
 	/**
@@ -439,6 +280,12 @@ public class LinkingUtils
 		return ok;
 	}
 
+	/**
+	 * Prints a string representation of a double matrix/
+	 *
+	 * @param m
+	 *            the double matrix to print.
+	 */
 	public static final void echoMatrix( final double[][] m )
 	{
 		final int nlines = m.length;
@@ -667,6 +514,15 @@ public class LinkingUtils
 		frame.setVisible( true );
 	}
 
+	/**
+	 * Returns the square distance between two {@link RealLocalizable}s.
+	 *
+	 * @param source
+	 *            the source position.
+	 * @param target
+	 *            the target position.
+	 * @return the square distance.
+	 */
 	public static final < K extends RealLocalizable > double squareDistance( final K source, final K target )
 	{
 
@@ -680,30 +536,28 @@ public class LinkingUtils
 	}
 
 	/**
-	 * A cost function that tempers a square distance cost by difference in
-	 * feature values.
-	 * <p>
-	 * This cost is calculated as follow:
-	 * <ul>
-	 * <li>The distance between the two spots <code>D</code> is calculated
-	 * <li>For each feature in the map, a penalty <code>p</code> is calculated
-	 * as <code>p = 3 × α × |f1-f2| / (f1+f2)</code>, where <code>α</code> is
-	 * the factor associated to the feature in the map. This expression is such
-	 * that:
-	 * <ul>
-	 * <li>there is no penalty if the 2 feature values <code>f1</code> and
-	 * <code>f2</code> are the same;
-	 * <li>that, with a factor of 1, the penalty if 1 is one value is the double
-	 * of the other;
-	 * <li>the penalty is 2 if one is 5 times the other one.
-	 * </ul>
-	 * <li>All penalties are summed, to form <code>P = (1 + ∑ p )</code>
-	 * <li>The cost is set to the square of the product:
-	 * <code>C = ( D × P )²</code>
-	 * </ul>
-	 * For instance: if 2 spots differ by twice the value in a feature which is
-	 * in the penalty map with a factor of 1, they will <i>look</i> as if they
-	 * were twice as far.
+	 * Returns the normalized difference of the feature value between two
+	 * vertices. This value is equal to
+	 *
+	 * <pre>
+	 * | a - b | / ( ( a + b )/2 )
+	 * </pre>
+	 *
+	 * where <code>a</code> and <code>b</code> are the feature value for the
+	 * source and target vertex.
+	 *
+	 * If one of the feature value cannot be found, this method returns
+	 * {@link Double#NaN}.
+	 *
+	 * @param source
+	 *            the source vertex.
+	 * @param target
+	 *            the target vertex.
+	 * @param feature
+	 *            the feature key.
+	 * @param featureModel
+	 *            the feature model to read feature values from.
+	 * @return the normalized difference.
 	 */
 	public static < V extends Vertex< ? > > double normalizeDiffCost( final V source, final V target, final String feature, final FeatureModel< V, ? > featureModel )
 	{
