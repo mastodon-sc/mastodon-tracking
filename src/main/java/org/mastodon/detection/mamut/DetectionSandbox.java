@@ -1,5 +1,11 @@
 package org.mastodon.detection.mamut;
 
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
+import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
+import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
@@ -8,6 +14,7 @@ import java.util.Map;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import org.mastodon.detection.DetectionUtil;
 import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.mamut.SparseLAPLinkerMamut;
 import org.mastodon.linking.mamut.SpotLinkerOp;
@@ -65,21 +72,32 @@ public class DetectionSandbox
 
 		final int maxTimepoint = spimData.getSequenceDescription().getTimePoints().size() - 1;
 		final int minTimepoint = 0;
-
-		final Model model = new Model();
-		final ModelGraph graph = model.getGraph();
-
 		final double radius = 6.;
 		final double threshold = 1000.;
 		final int setup = 0;
 
+		final Model model = new Model();
+		final ModelGraph graph = model.getGraph();
+
 		final Class< DoGDetectorMamut > cl = DoGDetectorMamut.class;
 //		final Class< LoGDetectorMamut > cl = LoGDetectorMamut.class;
-		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl, graph, spimData,
-				setup, radius, threshold, minTimepoint, maxTimepoint );
+		final Map< String, Object > detectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
+		detectorSettings.put( KEY_SETUP_ID, setup );
+		detectorSettings.put( KEY_MIN_TIMEPOINT, minTimepoint );
+		detectorSettings.put( KEY_MAX_TIMEPOINT, maxTimepoint );
+		detectorSettings.put( KEY_RADIUS, radius );
+		detectorSettings.put( KEY_THRESHOLD, threshold );
+
+		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl,
+				graph, spimData, detectorSettings );
 
 		System.out.println( "\n\nSpot detection with " + detector );
 		detector.compute( spimData, graph );
+		if (!detector.wasSuccessful())
+		{
+			System.out.println( "Detection failed: " + detector.getErrorMessage() );
+			return;
+		}
 
 		model.getGraphFeatureModel().declareFeature( detector.getQualityFeature() );
 		if ( detector instanceof Benchmark )
@@ -93,28 +111,28 @@ public class DetectionSandbox
 		 * Let's track them.
 		 */
 
-		final Map< String, Object > settings = LinkingUtils.getDefaultLAPSettingsMap();
+		final Map< String, Object > linkerSettings = LinkingUtils.getDefaultLAPSettingsMap();
 		final Class< SparseLAPLinkerMamut > plcl = SparseLAPLinkerMamut.class;
 
-//		final Map< String, Object > settings = KalmanLinkerMamut.getDefaultSettingsMap();
+//		final Map< String, Object > linkerSettings = KalmanLinkerMamut.getDefaultSettingsMap();
 //		final Class< KalmanLinkerMamut > plcl = KalmanLinkerMamut.class;
 
 		final SpotLinkerOp linker =
 				( SpotLinkerOp ) Inplaces.binary1( ops, plcl, model.getGraph(), model.getSpatioTemporalIndex(),
-						settings, model.getGraphFeatureModel(), minTimepoint, maxTimepoint );
+						linkerSettings, model.getGraphFeatureModel(), minTimepoint, maxTimepoint );
 
 		System.out.println( "\n\nParticle-linking with " + linker );
 		linker.mutate1( model.getGraph(), model.getSpatioTemporalIndex() );
 		if ( !linker.wasSuccessful() )
 		{
-			System.out.println( "Tracking failed: " + linker.getErrorMessage() );
+			System.out.println( "Particle-linking failed: " + linker.getErrorMessage() );
 			return;
 		}
 		model.getGraphFeatureModel().declareFeature( linker.getLinkCostFeature() );
 		if ( linker instanceof Benchmark )
-			System.out.println( "Tracking completed in " + ( ( Benchmark ) linker ).getProcessingTime() + " ms." );
+			System.out.println( "Particle-linking  completed in " + ( ( Benchmark ) linker ).getProcessingTime() + " ms." );
 		else
-			System.out.println( "Tracking completed." );
+			System.out.println( "Particle-linking  completed." );
 
 		new MainWindow( model, spimData, bdvFile, getInputTriggerConfig() ).setVisible( true );
 	}

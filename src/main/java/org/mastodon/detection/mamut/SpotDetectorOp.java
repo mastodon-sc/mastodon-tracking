@@ -17,4 +17,23 @@ public interface SpotDetectorOp extends UnaryHybridCF< SpimDataMinimal, ModelGra
 	 * @return the quality feature.
 	 */
 	public Feature< Spot, Double, DoublePropertyMap< Spot > > getQualityFeature();
+
+	/**
+	 * Returns <code>true</code> if the particle-linking process completed
+	 * successfully. If not, a meaningful error message can be obtained with
+	 * {@link #getErrorMessage()}.
+	 *
+	 * @return <code>true</code> if the particle-linking process completed
+	 *         successfully.
+	 * @see #getErrorMessage()
+	 */
+	public boolean wasSuccessful();
+
+	/**
+	 * Returns a meaningful error message after the particle-linking process
+	 * failed to complete.
+	 *
+	 * @return an error message.
+	 */
+	public String getErrorMessage();
 }

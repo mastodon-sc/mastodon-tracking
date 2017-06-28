@@ -1,7 +1,21 @@
 package org.mastodon.detection;
 
+import static org.mastodon.detection.DetectorKeys.DEFAULT_RADIUS;
+import static org.mastodon.detection.DetectorKeys.DEFAULT_SETUP_ID;
+import static org.mastodon.detection.DetectorKeys.DEFAULT_THRESHOLD;
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
+import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
+import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
+import static org.mastodon.linking.LinkingUtils.checkMapKeys;
+import static org.mastodon.linking.LinkingUtils.checkParameter;
+
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import org.mastodon.properties.DoublePropertyMap;
@@ -59,7 +73,7 @@ public class DetectionUtil
 	 *            the model.
 	 * @return the quality feature.
 	 */
-	public static final <V> Feature< V, Double, DoublePropertyMap< V > > getQualityFeature( final DoublePropertyMap< V > quality )
+	public static final < V > Feature< V, Double, DoublePropertyMap< V > > getQualityFeature( final DoublePropertyMap< V > quality )
 	{
 		return new Feature< V, Double, DoublePropertyMap< V > >(
 				QUALITY_FEATURE_NAME, FeatureTarget.VERTEX, quality,
@@ -174,7 +188,7 @@ public class DetectionUtil
 	{
 		final ViewId viewId = new ViewId( timepoint, setup );
 		final AffineTransform3D transform = new AffineTransform3D();
-		transform.set(spimData.getViewRegistrations().getViewRegistration( viewId ).getModel() );
+		transform.set( spimData.getViewRegistrations().getViewRegistration( viewId ).getModel() );
 
 		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
 		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
@@ -277,6 +291,71 @@ public class DetectionUtil
 		final IntervalView< FloatType > extended = Views.interval( Views.extendMirrorSingle( source ), Intervals.expand( source, 1 ) );
 		final List< Point > peaks = LocalExtrema.findLocalExtrema( extended, localNeighborhoodCheck, service );
 		return peaks;
+	}
+
+	/**
+	 * Returns a new settings map filled with default values suitable for the
+	 * default detectors.
+	 *
+	 * @return a new map.
+	 */
+	public static final Map< String, Object > getDefaultDetectorSettingsMap()
+	{
+		final Map< String, Object > settings = new HashMap< String, Object >();
+		settings.put( KEY_SETUP_ID, DEFAULT_SETUP_ID );
+		settings.put( KEY_RADIUS, DEFAULT_RADIUS );
+		settings.put( KEY_THRESHOLD, DEFAULT_THRESHOLD );
+		return settings;
+	}
+
+	/**
+	 * Checks whether the provided settings map is suitable for use with the
+	 * default detectors.
+	 *
+	 * @param settings
+	 *            the map to test.
+	 * @param errorHolder
+	 *            a {@link StringBuilder} that will contain an error message if
+	 *            the check is not successful.
+	 * @return true if the settings map can be used with the default detectors.
+	 */
+	public static final boolean checkSettingsValidity( final Map< String, Object > settings, final StringBuilder errorHolder )
+	{
+		if ( null == settings )
+		{
+			errorHolder.append( "Settings map is null.\n" );
+			return false;
+		}
+
+		boolean ok = true;
+		// Linking
+		ok = ok & checkParameter( settings, KEY_SETUP_ID, Integer.class, errorHolder );
+		ok = ok & checkParameter( settings, KEY_MIN_TIMEPOINT, Integer.class, errorHolder );
+		ok = ok & checkParameter( settings, KEY_MAX_TIMEPOINT, Integer.class, errorHolder );
+		ok = ok & checkParameter( settings, KEY_RADIUS, Double.class, errorHolder );
+		ok = ok & checkParameter( settings, KEY_THRESHOLD, Double.class, errorHolder );
+
+		// Check keys
+		final List< String > mandatoryKeys = new ArrayList< String >();
+		mandatoryKeys.add( KEY_SETUP_ID );
+		mandatoryKeys.add( KEY_MIN_TIMEPOINT );
+		mandatoryKeys.add( KEY_MAX_TIMEPOINT );
+		mandatoryKeys.add( KEY_RADIUS );
+		mandatoryKeys.add( KEY_THRESHOLD );
+		final List< String > optionalKeys = new ArrayList< String >();
+		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, errorHolder );
+
+		// Check min & max time-point
+		final int minTimepoint = ( int ) settings.get( KEY_MIN_TIMEPOINT );
+		final int maxTimepoint = ( int ) settings.get( KEY_MAX_TIMEPOINT );
+		if ( maxTimepoint < minTimepoint )
+		{
+			ok = false;
+			errorHolder.append( "Min time-point should smaller than max time-point, be was min = "
+					+ minTimepoint + " and max = " + maxTimepoint + "\n" );
+		}
+
+		return ok;
 	}
 
 	private DetectionUtil()

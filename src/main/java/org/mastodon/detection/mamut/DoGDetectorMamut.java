@@ -18,7 +18,6 @@ import net.imglib2.algorithm.Benchmark;
 public class DoGDetectorMamut extends AbstractSpotDetectorOp implements SpotDetectorOp, Benchmark
 {
 
-
 	@Override
 	public void compute( final SpimDataMinimal spimData, final ModelGraph graph )
 	{

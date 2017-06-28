@@ -1,5 +1,7 @@
 package org.mastodon.detection;
 
+import java.util.Map;
+
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
 import org.mastodon.properties.DoublePropertyMap;
@@ -15,43 +17,21 @@ public abstract class AbstractDetectorOp< V extends Vertex< ? > >
 		implements DetectorOp< V >
 {
 
-	/**
-	 * The id of the setup in the provided SpimData object to process.
-	 */
-	@Parameter( required = true )
-	protected int setup = 0;
-
-	/**
-	 * the expected radius (in units of the global coordinate system) of blobs
-	 * to detect.
-	 */
-	@Parameter( required = true )
-	protected double radius = 5.;
-
-	/**
-	 * The quality threshold below which spots will be rejected.
-	 */
-	@Parameter
-	protected double threshold = 0.;
-
-	/**
-	 * The min time-point to process, inclusive.
-	 */
-	@Parameter
-	protected int minTimepoint = 0;
-
-	/**
-	 * The max time-point to process, inclusive.
-	 */
-	@Parameter
-	protected int maxTimepoint = 0;
+	@Parameter( type = ItemIO.INPUT )
+	protected Map< String, Object > settings;
 
 	/**
 	 * The {@link VertexCreator} that will be used to create and add vertices to
 	 * the graph.
 	 */
-	@Parameter
+	@Parameter( type = ItemIO.INPUT )
 	protected VertexCreator< V > vertexCreator;
+
+	@Parameter( type = ItemIO.OUTPUT )
+	protected String errorMessage;
+
+	@Parameter( type = ItemIO.OUTPUT )
+	protected boolean ok;
 
 	/**
 	 * The quality feature provided by this detector.
@@ -63,5 +43,17 @@ public abstract class AbstractDetectorOp< V extends Vertex< ? > >
 	public Feature< V, Double, DoublePropertyMap< V > > getQualityFeature()
 	{
 		return qualityFeature;
+	}
+
+	@Override
+	public String getErrorMessage()
+	{
+		return errorMessage;
+	}
+
+	@Override
+	public boolean wasSuccessful()
+	{
+		return ok;
 	}
 }

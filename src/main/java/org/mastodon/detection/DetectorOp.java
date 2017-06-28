@@ -21,6 +21,24 @@ public interface DetectorOp< V extends Vertex< ? > > extends BinaryInplace1OnlyO
 	 *
 	 * @return the spot quality feature.
 	 */
-	Feature< V, Double, DoublePropertyMap< V > > getQualityFeature();
+	public Feature< V, Double, DoublePropertyMap< V > > getQualityFeature();
 
+	/**
+	 * Returns <code>true</code> if the particle-linking process completed
+	 * successfully. If not, a meaningful error message can be obtained with
+	 * {@link #getErrorMessage()}.
+	 *
+	 * @return <code>true</code> if the particle-linking process completed
+	 *         successfully.
+	 * @see #getErrorMessage()
+	 */
+	public boolean wasSuccessful();
+
+	/**
+	 * Returns a meaningful error message after the particle-linking process
+	 * failed to complete.
+	 *
+	 * @return an error message.
+	 */
+	public String getErrorMessage();
 }

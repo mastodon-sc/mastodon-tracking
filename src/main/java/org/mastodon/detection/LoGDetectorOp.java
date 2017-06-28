@@ -1,5 +1,11 @@
 package org.mastodon.detection;
 
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
+import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
+import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
+
 import java.util.List;
 
 import org.mastodon.graph.Graph;
@@ -55,7 +61,24 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 	@Override
 	public void mutate1( final Graph< V, ? > graph, final SpimDataMinimal spimData )
 	{
+		ok = false;
 		final long start = System.currentTimeMillis();
+
+		final StringBuilder str = new StringBuilder();
+		if ( DetectionUtil.checkSettingsValidity( settings, str ) )
+		{
+			processingTime = System.currentTimeMillis() - start;
+			statusService.clearStatus();
+			errorMessage = str.toString();
+			return;
+		}
+
+		final int minTimepoint = ( int ) settings.get( KEY_MIN_TIMEPOINT );
+		final int maxTimepoint = ( int ) settings.get( KEY_MAX_TIMEPOINT );
+		final int setup = ( int ) settings.get( KEY_SETUP_ID );
+		final double radius = ( double ) settings.get( KEY_RADIUS );
+		final double threshold = ( double ) settings.get( KEY_THRESHOLD );
+
 
 		final DoublePropertyMap< V > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
 		statusService.showStatus( "LoG detection" );
@@ -161,11 +184,11 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 			statusService.showProgress( tp, maxTimepoint - minTimepoint + 1 );
 		}
 
-		this.qualityFeature = DetectionUtil.getQualityFeature( quality );
-
 		final long end = System.currentTimeMillis();
-		this.processingTime = end - start;
+		processingTime = end - start;
+		qualityFeature = DetectionUtil.getQualityFeature( quality );
 		statusService.clearStatus();
+		ok = true;
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package org.mastodon.detection.mamut;
 
+import java.util.Map;
+
 import org.mastodon.detection.DetectorOp;
 import org.mastodon.detection.VertexCreator;
 import org.mastodon.graph.Graph;
@@ -20,81 +22,47 @@ import net.imglib2.algorithm.Benchmark;
 public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGraph > implements SpotDetectorOp, Benchmark
 {
 
-	private static final VertexCreator< Spot > VERTEX_CREATOR_INSTANCE = new VertexCreator< Spot >()
-	{
-
-		@Override
-		public Spot createVertex( final Graph< Spot, ? > graph, final Spot ref, final double[] pos, final double radius, final int timepoint, final double quality )
-		{
-			return graph.addVertex( ref ).init( timepoint, pos, radius );
-		}
-
-	};
-
 	@Parameter
 	private ThreadService threadService;
 
 	@Parameter
 	private StatusService statusService;
 
-	/**
-	 * The id of the setup in the provided SpimData object to process.
-	 */
-	@Parameter( required = true )
-	private int setup = 0;
+	@Parameter( type = ItemIO.INPUT )
+	private Map< String, Object > settings;
 
-	/**
-	 * the expected radius (in units of the global coordinate system) of blobs
-	 * to detect.
-	 */
-	@Parameter( required = true )
-	private double radius = 5.;
+	@Parameter( type = ItemIO.OUTPUT )
+	protected String errorMessage;
 
-	/**
-	 * The quality threshold below which spots will be rejected.
-	 */
-	@Parameter
-	private double threshold = 0.;
+	@Parameter( type = ItemIO.OUTPUT )
+	protected boolean ok;
 
-	/**
-	 * The min time-point to process, inclusive.
-	 */
-	@Parameter
-	private int minTimepoint = 0;
-
-	/**
-	 * The max time-point to process, inclusive.
-	 */
-	@Parameter
-	private int maxTimepoint = 0;
+	@Parameter( type = ItemIO.OUTPUT )
+	protected Feature< Spot, Double, DoublePropertyMap< Spot > > qualityFeature;
 
 	private long processingTime;
 
 	protected void exec( final SpimDataMinimal spimData, final ModelGraph graph, @SuppressWarnings( "rawtypes" ) final Class< ? extends DetectorOp > cl )
 	{
+		ok = false;
 		final long start = System.currentTimeMillis();
 		@SuppressWarnings( { "rawtypes", "unchecked" } )
 		final DetectorOp< Spot > detector = ( DetectorOp ) Inplaces.binary1( ops(), cl,
 				graph, spimData,
-				setup, radius, threshold, minTimepoint, maxTimepoint, vertexCreator() );
+				settings, vertexCreator() );
 		detector.mutate1( graph, spimData );
-		qualityFeature = detector.getQualityFeature();
 		final long end = System.currentTimeMillis();
-		this.processingTime = end - start;
+		processingTime = end - start;
+		qualityFeature = detector.getQualityFeature();
+		ok = detector.wasSuccessful();
+		if ( !ok )
+			errorMessage = detector.getErrorMessage();
 	}
 
 	@Override
 	public long getProcessingTime()
 	{
 		return processingTime;
-	}
-
-	@Parameter( type = ItemIO.OUTPUT )
-	protected Feature< Spot, Double, DoublePropertyMap< Spot > > qualityFeature;
-
-	protected VertexCreator< Spot > vertexCreator()
-	{
-		return VERTEX_CREATOR_INSTANCE;
 	}
 
 	@Override
@@ -109,4 +77,31 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 		return qualityFeature;
 	}
 
+	@Override
+	public String getErrorMessage()
+	{
+		return errorMessage;
+	}
+
+	@Override
+	public boolean wasSuccessful()
+	{
+		return ok;
+	}
+
+	private static final VertexCreator< Spot > VERTEX_CREATOR_INSTANCE = new VertexCreator< Spot >()
+	{
+
+		@Override
+		public Spot createVertex( final Graph< Spot, ? > graph, final Spot ref, final double[] pos, final double radius, final int timepoint, final double quality )
+		{
+			return graph.addVertex( ref ).init( timepoint, pos, radius );
+		}
+
+	};
+
+	protected VertexCreator< Spot > vertexCreator()
+	{
+		return VERTEX_CREATOR_INSTANCE;
+	}
 }
