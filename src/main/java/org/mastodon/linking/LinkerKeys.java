@@ -5,49 +5,6 @@ import java.util.Map;
 
 public class LinkerKeys
 {
-
-	/*
-	 * MARSHALLING CONSTANTS
-	 */
-
-	public static final String TRACKER_SETTINGS_ALLOW_EVENT_ATTNAME = "allowed";
-
-	// Alternative costs & blocking
-	public static final String TRACKER_SETTINGS_ALTERNATE_COST_FACTOR_ATTNAME = "alternatecostfactor";
-
-	public static final String TRACKER_SETTINGS_CUTOFF_PERCENTILE_ATTNAME = "cutoffpercentile";
-
-	public static final String TRACKER_SETTINGS_BLOCKING_VALUE_ATTNAME = "blockingvalue";
-
-	// Cutoff elements
-	public static final String TRACKER_SETTINGS_TIME_CUTOFF_ELEMENT = "TimeCutoff";
-
-	public static final String TRACKER_SETTINGS_TIME_CUTOFF_ATTNAME = "value";
-
-	public static final String TRACKER_SETTINGS_DISTANCE_CUTOFF_ELEMENT = "DistanceCutoff";
-
-	public static final String TRACKER_SETTINGS_DISTANCE_CUTOFF_ATTNAME = "value";
-
-	public static final String TRACKER_SETTINGS_FEATURE_ELEMENT = "FeatureCondition";
-
-	public static final String TRACKER_SETTINGS_LINKING_ELEMENT = "LinkingCondition";
-
-	public static final String TRACKER_SETTINGS_GAP_CLOSING_ELEMENT = "GapClosingCondition";
-
-	public static final String TRACKER_SETTINGS_MERGING_ELEMENT = "MergingCondition";
-
-	public static final String TRACKER_SETTINGS_SPLITTING_ELEMENT = "SplittingCondition";
-
-	/*
-	 *
-	 */
-
-	/**
-	 * The attribute name for the {@link SpotTracker} key when marshalling to or
-	 * unmarhsalling from XML.
-	 */
-	public static final String XML_ATTRIBUTE_TRACKER_NAME = "TRACKER_NAME";
-
 	/**
 	 * Key for the parameter specifying the maximal linking distance. The
 	 * expected value must be a Double and should be expressed in physical
@@ -63,8 +20,6 @@ public class LinkerKeys
 	 * particles. Expected values should be a
 	 * <code>Map&lt;String, Double&gt;</code> where the map keys are spot
 	 * feature names.
-	 *
-	 * @see fiji.plugin.trackmate.Spot#getFeature(String)
 	 */
 	public static final String KEY_LINKING_FEATURE_PENALTIES = "LINKING_FEATURE_PENALTIES";
 
@@ -115,8 +70,6 @@ public class LinkerKeys
 	 * gap-closing events. Expected values should be a
 	 * <code>Map&lt;String, Double&gt;</code> where the map keys are spot
 	 * feature names.
-	 *
-	 * @see fiji.plugin.trackmate.Spot#getFeature(String)
 	 */
 	public static final String KEY_GAP_CLOSING_FEATURE_PENALTIES = "GAP_CLOSING_FEATURE_PENALTIES";
 
@@ -151,8 +104,6 @@ public class LinkerKeys
 	 * merging events. Expected values should be a
 	 * <code>Map&lt;String, Double&gt;</code> where the map keys are spot
 	 * feature names.
-	 *
-	 * @see fiji.plugin.trackmate.Spot#getFeature(String)
 	 */
 	public static final String KEY_MERGING_FEATURE_PENALTIES = "MERGING_FEATURE_PENALTIES";
 
@@ -192,8 +143,6 @@ public class LinkerKeys
 	 * splitting events. Expected values should be a
 	 * <code>Map&lt;String, Double&gt;</code> where the map keys are spot
 	 * feature names.
-	 *
-	 * @see fiji.plugin.trackmate.Spot#getFeature(String)
 	 */
 	public static final String KEY_SPLITTING_FEATURE_PENALTIES = "SPLITTING_FEATURE_PENALTIES";
 
@@ -236,7 +185,7 @@ public class LinkerKeys
 
 	public static final String KEY_KALMAN_SEARCH_RADIUS = "KALMAN_SEARCH_RADIUS";
 
-	public static final double DEFAULT_MAX_SEARCH_RADIUS = 10d;
+	public static final double DEFAULT_MAX_SEARCH_RADIUS = 10.;
 
 	/**
 	 * The position accuracy or standard deviation on positions, used to
