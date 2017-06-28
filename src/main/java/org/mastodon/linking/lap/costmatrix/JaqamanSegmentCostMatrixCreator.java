@@ -21,10 +21,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
@@ -40,7 +36,6 @@ import org.mastodon.spatial.HasTimepoint;
 import org.scijava.ItemIO;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.thread.ThreadService;
 
 import gnu.trove.list.array.TDoubleArrayList;
 import net.imagej.ops.special.function.AbstractNullaryFunctionOp;
@@ -73,9 +68,6 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 {
 
 	private static String BASE_ERROR_MESSAGE = "[JaqamanSegmentCostMatrixCreator] ";
-
-	@Parameter
-	private ThreadService threadService;
 
 	@Parameter( type = ItemIO.INPUT )
 	private ReadOnlyGraph< V, E > graph;
@@ -182,8 +174,6 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 			allMiddles = Collections.emptyList();
 		}
 
-		final Object lock = new Object();
-
 		/*
 		 * Sources and targets.
 		 */
@@ -197,105 +187,59 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 		 * (gap-closing) then the segment middles (merging).
 		 */
 
-		final ExecutorService service = threadService.getExecutorService();
-		final ArrayList< Future< Void > > futures1 = new ArrayList<>();
-
-		final int numSources = segmentEnds.size();
-		if ( numSources > 0 )
+		for ( final V source : segmentEnds )
 		{
-			final int numThreads = Runtime.getRuntime().availableProcessors();
-			final int numTasks = numThreads <= 1 ? 1 : ( int ) Math.min( numSources, numThreads * 20 );
-			final int taskSize = numSources / numTasks;
+			final int sourceFrame = source.getTimepoint();
 
-			for ( int taskNum = 0; taskNum < numTasks; ++taskNum )
+			/*
+			 * Iterate over segment starts - GAP-CLOSING.
+			 */
+
+			if ( allowGapClosing )
 			{
-				final int fromIndex = taskNum * taskSize;
-				final int toIndex = ( taskNum == numTasks - 1 ) ? numSources : fromIndex + taskSize;
-				final List< V > subList = segmentEnds.subList( fromIndex, toIndex );
-				futures1.add( service.submit( new Callable< Void >()
+				for ( final V target : segmentStarts )
 				{
-					@Override
-					public Void call()
-					{
-						for ( final V source : subList )
-						{
-							final int sourceFrame = source.getTimepoint();
+					// Check frame interval, must be within user
+					// specification.
+					final int targetFrame = target.getTimepoint();
+					final int tdiff = targetFrame - sourceFrame;
+					if ( tdiff < 1 || tdiff > maxFrameInterval )
+						continue;
 
-							/*
-							 * Iterate over segment starts - GAP-CLOSING.
-							 */
+					// Check max distance
+					final double cost = gcCostFunction.linkingCost( source, target );
+					if ( cost > gcCostThreshold )
+						continue;
 
-							if ( allowGapClosing )
-							{
-								for ( final V target : segmentStarts )
-								{
-									// Check frame interval, must be within user
-									// specification.
-									final int targetFrame = target.getTimepoint();
-									final int tdiff = targetFrame - sourceFrame;
-									if ( tdiff < 1 || tdiff > maxFrameInterval )
-										continue;
+					sources.add( source );
+					targets.add( target );
+					linkCosts.add( cost );
+				}
 
-									// Check max distance
-									final double cost = gcCostFunction.linkingCost( source, target );
-									if ( cost > gcCostThreshold )
-										continue;
-
-									synchronized ( lock )
-									{
-										sources.add( source );
-										targets.add( target );
-										linkCosts.add( cost );
-									}
-								}
-
-							}
-
-							/*
-							 * Iterate over middle points - MERGING.
-							 */
-
-							if ( allowMerging )
-							{
-								for ( final V target : allMiddles )
-								{
-									// Check frame interval, must be 1.
-									final int targetFrame = target.getTimepoint();
-									final int tdiff = targetFrame - sourceFrame;
-									if ( tdiff != 1 )
-										continue;
-
-									// Check max distance
-									final double cost = mCostFunction.linkingCost( source, target );
-									if ( cost > mCostThreshold )
-										continue;
-
-									synchronized ( lock )
-									{
-										sources.add( source );
-										targets.add( target );
-										linkCosts.add( cost );
-									}
-								}
-							}
-						}
-						return null;
-					}
-				} ) );
 			}
-			for ( final Future< Void > f : futures1 )
+
+			/*
+			 * Iterate over middle points - MERGING.
+			 */
+
+			if ( allowMerging )
 			{
-				try
+				for ( final V target : allMiddles )
 				{
-					f.get();
-				}
-				catch ( final InterruptedException e )
-				{
-					e.printStackTrace();
-				}
-				catch ( final ExecutionException e )
-				{
-					e.printStackTrace();
+					// Check frame interval, must be 1.
+					final int targetFrame = target.getTimepoint();
+					final int tdiff = targetFrame - sourceFrame;
+					if ( tdiff != 1 )
+						continue;
+
+					// Check max distance
+					final double cost = mCostFunction.linkingCost( source, target );
+					if ( cost > mCostThreshold )
+						continue;
+
+					sources.add( source );
+					targets.add( target );
+					linkCosts.add( cost );
 				}
 			}
 		}
@@ -303,63 +247,34 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 		/*
 		 * Iterate over middle points targeting segment starts - SPLITTING
 		 */
-		final ArrayList< Future< Void > > futures2 = new ArrayList<>( allMiddles.size() );
 		if ( allowSplitting )
 		{
 			for ( final V source : allMiddles )
 			{
-				futures2.add( service.submit( new Callable< Void >()
-				{
 
-					@Override
-					public Void call()
+				final int sourceFrame = source.getTimepoint();
+				for ( final V target : segmentStarts )
+				{
+					// Check frame interval, must be 1.
+					final int targetFrame = target.getTimepoint();
+					final int tdiff = targetFrame - sourceFrame;
+
+					if ( tdiff != 1 )
 					{
-						final int sourceFrame = source.getTimepoint();
-						for ( final V target : segmentStarts )
-						{
-							// Check frame interval, must be 1.
-							final int targetFrame = target.getTimepoint();
-							final int tdiff = targetFrame - sourceFrame;
-
-							if ( tdiff != 1 )
-							{
-								continue;
-							}
-
-							// Check max distance
-							final double cost = sCostFunction.linkingCost( source, target );
-							if ( cost > sCostThreshold )
-							{
-								continue;
-							}
-							synchronized ( lock )
-							{
-								sources.add( source );
-								targets.add( target );
-								linkCosts.add( cost );
-							}
-						}
-						return null;
+						continue;
 					}
-				} ) );
-			}
-			for ( final Future< Void > f : futures2 )
-			{
-				try
-				{
-					f.get();
-				}
-				catch ( final InterruptedException e )
-				{
-					e.printStackTrace();
-				}
-				catch ( final ExecutionException e )
-				{
-					e.printStackTrace();
+
+					// Check max distance
+					final double cost = sCostFunction.linkingCost( source, target );
+					if ( cost > sCostThreshold )
+						continue;
+
+					sources.add( source );
+					targets.add( target );
+					linkCosts.add( cost );
 				}
 			}
 		}
-		linkCosts.trimToSize();
 
 		/*
 		 * Build a sparse cost matrix from this. If the accepted costs are not
@@ -375,7 +290,8 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 			alternativeCost = Double.NaN;
 			scm = new SparseCostMatrix();
 			/*
-			 * CAREFUL! We return an empty matrix if no acceptable links are found.
+			 * CAREFUL! We return an empty matrix if no acceptable links are
+			 * found.
 			 */
 		}
 		else
