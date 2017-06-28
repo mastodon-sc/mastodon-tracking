@@ -72,9 +72,9 @@ public class SparseCostMatrix
 	/**
 	 * Instantiate a new sparse cost matrix. The caller must provide 3 arrays:
 	 * <ol>
-	 * <li> <code>cc</code>, the <code>double[]</code> array containing all the
+	 * <li><code>cc</code>, the <code>double[]</code> array containing all the
 	 * non-infinite costs.
-	 * <li> <code>kk</code>, an <code>int[]</code> array of the same length that
+	 * <li><code>kk</code>, an <code>int[]</code> array of the same length that
 	 * <code>cc</code>, and that contains the columns of the cost.
 	 * </ol>
 	 * These two arrays must be arranged row by row, starting with the first
@@ -82,7 +82,7 @@ public class SparseCostMatrix
 	 * facilitate index search). Also, each row must have at least one
 	 * non-infinte cost. If not, an {@link IllegalArgumentException} is thrown.
 	 * <ol start="3">
-	 * <li> <code>number</code> an <code>int[]</code> array, with one element per
+	 * <li><code>number</code> an <code>int[]</code> array, with one element per
 	 * row, that contains the number of non infinite cost for a row.
 	 * </ol>
 	 *
@@ -92,6 +92,8 @@ public class SparseCostMatrix
 	 *            the column index of each cost.
 	 * @param number
 	 *            the number of element for each row.
+	 * @param nCols
+	 *            the number of columns in the matrix.
 	 * @throws IllegalArgumentException
 	 *             if the cost and column arrays are not of the same size, if
 	 *             the column array is not sorted row by row, of if one row has
@@ -105,9 +107,7 @@ public class SparseCostMatrix
 		this.nCols = nCols;
 
 		// Check sizes
-		if (cc.length != kk.length) {
-			throw new IllegalArgumentException( "Cost and column indices arrays must have the same length. Found " + cc.length + " and " + kk.length + "." );
-		}
+		if ( cc.length != kk.length ) { throw new IllegalArgumentException( "Cost and column indices arrays must have the same length. Found " + cc.length + " and " + kk.length + "." ); }
 
 		this.cardinality = cc.length;
 		this.nRows = number.length;

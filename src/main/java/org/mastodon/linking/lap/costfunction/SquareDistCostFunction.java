@@ -9,6 +9,7 @@ import net.imglib2.RealLocalizable;
  * Brownian motion.
  *
  * @author Jean-Yves Tinevez - 2014
+ * @param <K> the type of objects to compute cost for.
  *
  */
 public class SquareDistCostFunction< K extends RealLocalizable > implements CostFunction< K, K >

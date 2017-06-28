@@ -10,6 +10,10 @@ import net.imagej.ops.special.function.NullaryFunctionOp;
  * assignment candidates.
  *
  * @author Jean-Yves Tinevez
+ * @param <K>
+ *            the type of source objects.
+ * @param <J>
+ *            the type of target objects.
  *
  */
 public interface CostMatrixCreatorOp< K, J > extends NullaryFunctionOp< SparseCostMatrix >
@@ -22,7 +26,6 @@ public interface CostMatrixCreatorOp< K, J > extends NullaryFunctionOp< SparseCo
 	 *         the source corresponding to the row <code>i</code> in the
 	 *         generated cost matrix.
 	 * @see #getTargetList()
-	 * @see #getResult()
 	 */
 	public RefList< K > getSourceList();
 
@@ -33,7 +36,6 @@ public interface CostMatrixCreatorOp< K, J > extends NullaryFunctionOp< SparseCo
 	 *         is the target corresponding to the column <code>j</code> in the
 	 *         generated cost matrix.
 	 * @see #getSourceList()
-	 * @see #getResult()
 	 */
 	public RefList< J > getTargetList();
 
@@ -61,6 +63,7 @@ public interface CostMatrixCreatorOp< K, J > extends NullaryFunctionOp< SparseCo
 
 	/**
 	 * Returns an error message in case the cost matrix calculation failed.
+	 *
 	 * @return an error message.
 	 */
 	public String getErrorMessage();

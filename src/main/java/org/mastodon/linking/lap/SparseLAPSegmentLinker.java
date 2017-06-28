@@ -1,13 +1,13 @@
 package org.mastodon.linking.lap;
 
-import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
-import static org.mastodon.linking.LinkingUtils.checkParameter;
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_GAP_CLOSING;
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_MERGING;
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_SPLITTING;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_FEATURE_PENALTIES;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
+import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
+import static org.mastodon.linking.LinkingUtils.checkParameter;
 
 import java.util.Map;
 
@@ -34,10 +34,8 @@ import net.imglib2.algorithm.Benchmark;
  * This class tracks deals with the second step of tracking according to the LAP
  * tracking framework formulated by Jaqaman, K. et al. "Robust single-particle
  * tracking in live-cell time-lapse sequences." Nature Methods, 2008.
- *
  * <p>
  * In this tracking framework, tracking is divided into two steps:
- *
  * <ol>
  * <li>Identify individual track segments</li>
  * <li>Gap closing, merging and splitting</li>
@@ -62,6 +60,11 @@ import net.imglib2.algorithm.Benchmark;
  * <p>
  * The class itself uses a sparse version of the cost matrix and a solver that
  * can exploit it. Therefore it is optimized for memory usage rather than speed.
+ *
+ * @param <V>
+ *            the type of vertices in the graph.
+ * @param <E>
+ *            the type of edges in the graph.
  */
 @Plugin( type = SparseLAPSegmentLinker.class )
 public class SparseLAPSegmentLinker< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > >
@@ -106,7 +109,7 @@ public class SparseLAPSegmentLinker< V extends Vertex< E > & HasTimepoint & Real
 		@SuppressWarnings( "unchecked" )
 		final JaqamanSegmentCostMatrixCreator< V, E > costMatrixCreator =
 				( JaqamanSegmentCostMatrixCreator< V, E > ) Functions.nullary( ops(), JaqamanSegmentCostMatrixCreator.class, SparseCostMatrix.class,
-				graph, featureModel, settings, spotComparator );
+						graph, featureModel, settings, spotComparator );
 		final JaqamanLinker< V, V > linker = new JaqamanLinker<>( costMatrixCreator, graph.vertices(), graph.vertices() );
 		if ( !linker.checkInput() || !linker.process() )
 		{

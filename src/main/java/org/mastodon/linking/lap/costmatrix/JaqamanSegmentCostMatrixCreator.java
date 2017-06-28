@@ -1,8 +1,5 @@
 package org.mastodon.linking.lap.costmatrix;
 
-import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
-import static org.mastodon.linking.LinkingUtils.checkMapKeys;
-import static org.mastodon.linking.LinkingUtils.checkParameter;
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_GAP_CLOSING;
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_MERGING;
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_SPLITTING;
@@ -15,6 +12,9 @@ import static org.mastodon.linking.LinkerKeys.KEY_MERGING_FEATURE_PENALTIES;
 import static org.mastodon.linking.LinkerKeys.KEY_MERGING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkerKeys.KEY_SPLITTING_FEATURE_PENALTIES;
 import static org.mastodon.linking.LinkerKeys.KEY_SPLITTING_MAX_DISTANCE;
+import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
+import static org.mastodon.linking.LinkingUtils.checkMapKeys;
+import static org.mastodon.linking.LinkingUtils.checkParameter;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,6 +59,10 @@ import net.imglib2.algorithm.Benchmark;
  * </ul>
  *
  * @author Jean-Yves Tinevez - 2014 - 2017
+ * @param <V>
+ *            the type of vertices in the graph.
+ * @param <E>
+ *            the type of edges in the graph.
  *
  */
 @Plugin( type = JaqamanSegmentCostMatrixCreator.class )

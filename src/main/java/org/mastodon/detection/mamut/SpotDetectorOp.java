@@ -12,7 +12,9 @@ public interface SpotDetectorOp extends UnaryHybridCF< SpimDataMinimal, ModelGra
 {
 
 	/**
-	 * The quality feature provided by this detector.
+	 * Returns the quality feature provided by this detector.
+	 *
+	 * @return the quality feature.
 	 */
 	public Feature< Spot, Double, DoublePropertyMap< Spot > > getQualityFeature();
 }

@@ -14,7 +14,7 @@ import net.imglib2.RealLocalizable;
  * <p>
  * This cost is calculated as follow:
  * <ul>
- * <li>The distance between the two spots <code>D</code> is calculated
+ * <li>The distance between the two vertices <code>D</code> is calculated
  * <li>For each feature in the map, a penalty <code>p</code> is calculated as
  * <code>p = 3 × α × |f1-f2| / (f1+f2)</code>, where <code>α</code> is the
  * factor associated to the feature in the map. This expression is such that:
@@ -28,11 +28,13 @@ import net.imglib2.RealLocalizable;
  * <li>All penalties are summed, to form <code>P = (1 + ∑ p )</code>
  * <li>The cost is set to the square of the product: <code>C = ( D × P )²</code>
  * </ul>
- * For instance: if 2 spots differ by twice the value in a feature which is in
- * the penalty map with a factor of 1, they will <i>look</i> as if they were
+ * For instance: if 2 vertices differ by twice the value in a feature which is
+ * in the penalty map with a factor of 1, they will <i>look</i> as if they were
  * twice as far.
  *
  * @author Jean-Yves Tinevez - 2014
+ * @param <V>
+ *            the type of the vertices to compute cost for.
  *
  */
 public class FeaturePenaltyCostFunction< V extends Vertex< ? > & RealLocalizable > implements CostFunction< V, V >

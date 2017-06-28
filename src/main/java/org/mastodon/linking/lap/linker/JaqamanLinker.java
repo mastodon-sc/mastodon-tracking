@@ -2,6 +2,7 @@ package org.mastodon.linking.lap.linker;
 
 import java.util.Arrays;
 
+import org.mastodon.Ref;
 import org.mastodon.collection.RefCollection;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefDoubleMap;
@@ -26,7 +27,7 @@ import net.imglib2.util.Util;
  * @param <J>
  *            the type of the target objects to link.
  */
-public class JaqamanLinker< K , J > extends BenchmarkAlgorithm implements OutputAlgorithm< RefRefMap< K, J > >
+public class JaqamanLinker< K, J > extends BenchmarkAlgorithm implements OutputAlgorithm< RefRefMap< K, J > >
 {
 	private RefRefMap< K, J > assignments;
 
@@ -44,6 +45,14 @@ public class JaqamanLinker< K , J > extends BenchmarkAlgorithm implements Output
 	 *
 	 * @param costMatrixCreator
 	 *            the class in charge of creating linking costs.
+	 * @param keyPool
+	 *            a {@link RefCollection} of keys in the linker. This instance
+	 *            might be used to return optimized collections in the case
+	 *            where keys are {@link Ref} objects.
+	 * @param valuePool
+	 *            a {@link RefCollection} of values in the linker. This instance
+	 *            might be used to return optimized collections in the case
+	 *            where values are {@link Ref} objects.
 	 */
 	public JaqamanLinker( final CostMatrixCreatorOp< K, J > costMatrixCreator, final RefCollection< K > keyPool, final RefCollection< J > valuePool )
 	{

@@ -29,11 +29,7 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Intervals;
 
 /**
- * Refine a set of peaks to subpixel coordinates. This class provides the static
- * {@link #refinePeaks(List, RandomAccessible, Interval, boolean, int, boolean, float, boolean[], int)}
- * method to do this, but this has a lot of parameters. Therefore, this class
- * can also be instantiated to encapsulate the parameter settings.
- *
+ * Refine a set of peaks to subpixel coordinates.
  * <p>
  * A List {@link RefinedPeak} for the given list of {@link Localizable} is
  * computed by, for each peak, fitting a quadratic function to the image and
@@ -46,6 +42,11 @@ import net.imglib2.util.Intervals;
  * @author Stephan Preibisch
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
+ * @param <P>
+ *            the type of the {@link Localizable} instance used to specify where
+ *            are the peaks.
+ * @param <T>
+ *            the pixel value type.
  */
 @Plugin( type = SubpixelLocalization.class )
 public class SubpixelLocalization< P extends Localizable, T extends RealType< T > >
@@ -61,16 +62,16 @@ public class SubpixelLocalization< P extends Localizable, T extends RealType< T 
 	 * infinite {@code img} is assumed. Integer peaks must lie within a 1-pixel
 	 * border of this interval.
 	 */
-	@Parameter(required = false,
+	@Parameter( required = false,
 			description = "In which interval the {@code img} contains valid pixels. If null, an "
-			+ "infinite {@code img} is assumed. Integer peaks must lie within a 1-pixel "
-			+ "border of this interval.")
+					+ "infinite {@code img} is assumed. Integer peaks must lie within a 1-pixel "
+					+ "border of this interval." )
 	private Interval validInterval;
 
 	/**
 	 * Maximum number of iterations for each peak.
 	 */
-	@Parameter(required = false)
+	@Parameter( required = false )
 	private int maxNumMoves = 4;
 
 	/**
@@ -80,31 +81,31 @@ public class SubpixelLocalization< P extends Localizable, T extends RealType< T 
 	 * say, ok, lets keep the base position even if the subpixel location is
 	 * 0.6...
 	 */
-	@Parameter(required = false)
+	@Parameter( required = false )
 	private boolean allowMaximaTolerance = false;
 
 	/**
 	 * Whether (invalid) {@link RefinedPeak} should be created for peaks where
 	 * the fitting procedure did not converge.
 	 */
-	@Parameter(required = false)
+	@Parameter( required = false )
 	private boolean returnInvalidPeaks = false;
 
 	/**
 	 * By how much to increase the tolerance per iteration.
 	 */
-	@Parameter(required = false)
+	@Parameter( required = false )
 	private float maximaTolerance = 0.01f;
 
-	@Parameter(required = false)
+	@Parameter( required = false )
 	private boolean[] allowedToMoveInDim;
 
 	@Override
 	public List< RefinedPeak< P > > calculate( final RandomAccessible< T > img, final List< P > peaks )
 	{
-		if (null == allowedToMoveInDim)
+		if ( null == allowedToMoveInDim )
 		{
-			allowedToMoveInDim = new boolean[img.numDimensions()];
+			allowedToMoveInDim = new boolean[ img.numDimensions() ];
 			Arrays.fill( allowedToMoveInDim, true );
 		}
 

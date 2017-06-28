@@ -28,6 +28,8 @@ import net.imglib2.view.Views;
  * Laplacian of Gaussian detector.
  *
  * @author Jean-Yves Tinevez
+ * @param <V>
+ *            the type of the vertices in the graph.
  */
 @Plugin( type = DetectorOp.class )
 public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >

@@ -31,6 +31,8 @@ import net.imglib2.type.numeric.real.FloatType;
  *
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
+ * @param <V>
+ *            the type of the vertices in the graph.
  */
 @Plugin( type = DetectorOp.class )
 public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
