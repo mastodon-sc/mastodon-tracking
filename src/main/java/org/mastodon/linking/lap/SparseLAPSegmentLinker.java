@@ -2,12 +2,12 @@ package org.mastodon.linking.lap;
 
 import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
 import static org.mastodon.linking.LinkingUtils.checkParameter;
-import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_GAP_CLOSING;
-import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_TRACK_MERGING;
-import static org.mastodon.linking.TrackerKeys.KEY_ALLOW_TRACK_SPLITTING;
-import static org.mastodon.linking.TrackerKeys.KEY_GAP_CLOSING_FEATURE_PENALTIES;
-import static org.mastodon.linking.TrackerKeys.KEY_GAP_CLOSING_MAX_DISTANCE;
-import static org.mastodon.linking.TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
+import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_GAP_CLOSING;
+import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_MERGING;
+import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_SPLITTING;
+import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_FEATURE_PENALTIES;
+import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_DISTANCE;
+import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
 
 import java.util.Map;
 

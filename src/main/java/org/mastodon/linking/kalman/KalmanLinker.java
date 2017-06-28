@@ -1,14 +1,14 @@
 package org.mastodon.linking.kalman;
 
 import static org.mastodon.linking.LinkingUtils.checkParameter;
-import static org.mastodon.linking.TrackerKeys.DEFAULT_GAP_CLOSING_MAX_FRAME_GAP;
-import static org.mastodon.linking.TrackerKeys.DEFAULT_LINKING_MAX_DISTANCE;
-import static org.mastodon.linking.TrackerKeys.DEFAULT_MAX_SEARCH_RADIUS;
-import static org.mastodon.linking.TrackerKeys.DEFAULT_POSITION_SIGMA;
-import static org.mastodon.linking.TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
-import static org.mastodon.linking.TrackerKeys.KEY_KALMAN_SEARCH_RADIUS;
-import static org.mastodon.linking.TrackerKeys.KEY_LINKING_MAX_DISTANCE;
-import static org.mastodon.linking.TrackerKeys.KEY_POSITION_SIGMA;
+import static org.mastodon.linking.LinkerKeys.DEFAULT_GAP_CLOSING_MAX_FRAME_GAP;
+import static org.mastodon.linking.LinkerKeys.DEFAULT_LINKING_MAX_DISTANCE;
+import static org.mastodon.linking.LinkerKeys.DEFAULT_MAX_SEARCH_RADIUS;
+import static org.mastodon.linking.LinkerKeys.DEFAULT_POSITION_SIGMA;
+import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
+import static org.mastodon.linking.LinkerKeys.KEY_KALMAN_SEARCH_RADIUS;
+import static org.mastodon.linking.LinkerKeys.KEY_LINKING_MAX_DISTANCE;
+import static org.mastodon.linking.LinkerKeys.KEY_POSITION_SIGMA;
 
 import java.util.Collection;
 import java.util.Comparator;

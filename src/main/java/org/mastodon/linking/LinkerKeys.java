@@ -3,7 +3,7 @@ package org.mastodon.linking;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TrackerKeys
+public class LinkerKeys
 {
 
 	/*
@@ -245,4 +245,7 @@ public class TrackerKeys
 	public static final String KEY_POSITION_SIGMA = "POSITION_SIGMA";
 
 	public static final double DEFAULT_POSITION_SIGMA = DEFAULT_MAX_SEARCH_RADIUS / 10.;
+
+	private LinkerKeys()
+	{}
 }

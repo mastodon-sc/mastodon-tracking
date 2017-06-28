@@ -3,9 +3,9 @@ package org.mastodon.linking.lap;
 import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
 import static org.mastodon.linking.LinkingUtils.checkMapKeys;
 import static org.mastodon.linking.LinkingUtils.checkParameter;
-import static org.mastodon.linking.TrackerKeys.KEY_ALTERNATIVE_LINKING_COST_FACTOR;
-import static org.mastodon.linking.TrackerKeys.KEY_LINKING_FEATURE_PENALTIES;
-import static org.mastodon.linking.TrackerKeys.KEY_LINKING_MAX_DISTANCE;
+import static org.mastodon.linking.LinkerKeys.KEY_ALTERNATIVE_LINKING_COST_FACTOR;
+import static org.mastodon.linking.LinkerKeys.KEY_LINKING_FEATURE_PENALTIES;
+import static org.mastodon.linking.LinkerKeys.KEY_LINKING_MAX_DISTANCE;
 
 import java.util.ArrayList;
 import java.util.List;
