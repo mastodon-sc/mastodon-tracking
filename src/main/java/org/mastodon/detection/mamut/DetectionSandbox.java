@@ -2,21 +2,17 @@ package org.mastodon.detection.mamut;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Comparator;
 import java.util.Locale;
 import java.util.Map;
 
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import org.mastodon.linking.EdgeCreator;
-import org.mastodon.linking.ParticleLinkerOp;
-import org.mastodon.linking.kalman.KalmanTracker;
+import org.mastodon.linking.mamut.KalmanLinkerMamut;
+import org.mastodon.linking.mamut.SpotLinkerOp;
 import org.mastodon.revised.mamut.MainWindow;
-import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
-import org.mastodon.revised.model.mamut.Spot;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
@@ -76,10 +72,12 @@ public class DetectionSandbox
 		final double threshold = 1000.;
 		final int setup = 0;
 
-//		final Class< DoGDetectorMamut > cl = DoGDetectorMamut.class;
-		final Class< LoGDetectorMamut > cl = LoGDetectorMamut.class;
+		final Class< DoGDetectorMamut > cl = DoGDetectorMamut.class;
+//		final Class< LoGDetectorMamut > cl = LoGDetectorMamut.class;
 		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl, graph, spimData,
 				setup, radius, threshold, minTimepoint, maxTimepoint );
+
+		System.out.println( "\n\nSpot detection with " + detector );
 		detector.compute( spimData, graph );
 
 		model.getGraphFeatureModel().declareFeature( detector.getQualityFeature() );
@@ -94,39 +92,25 @@ public class DetectionSandbox
 		 * Let's track them.
 		 */
 
-		final EdgeCreator< Spot, Link > edgeCreator = edgeCreator( model.getGraph() );
-		final Comparator< Spot > spotComparator = new Comparator< Spot >()
-		{
-
-			@Override
-			public int compare( final Spot o1, final Spot o2 )
-			{
-				return o1.getInternalPoolIndex() - o2.getInternalPoolIndex();
-			}
-		};
-
 //		final Map< String, Object > settings = LAPUtils.getDefaultLAPSettingsMap();
-//		@SuppressWarnings( "rawtypes" )
-//		final Class< SparseLAPLinker > plcl = SparseLAPLinker.class;
+//		final Class< SparseLAPLinkerMamut > plcl = SparseLAPLinkerMamut.class;
 
-		final Map< String, Object > settings = KalmanTracker.getDefaultSettingsMap();
-		@SuppressWarnings( "rawtypes" )
-		final Class< KalmanTracker > plcl = KalmanTracker.class;
+		final Map< String, Object > settings = KalmanLinkerMamut.getDefaultSettingsMap();
+		final Class< KalmanLinkerMamut > plcl = KalmanLinkerMamut.class;
 
-		@SuppressWarnings( { "unchecked", "rawtypes" } )
-		final ParticleLinkerOp< Spot, Link > tracker =
-				( ParticleLinkerOp ) Inplaces.binary1( ops, plcl, model.getGraph(), model.getSpatioTemporalIndex(),
-						settings, model.getGraphFeatureModel(), minTimepoint, maxTimepoint, spotComparator, edgeCreator );
+		final SpotLinkerOp linker =
+				( SpotLinkerOp ) Inplaces.binary1( ops, plcl, model.getGraph(), model.getSpatioTemporalIndex(),
+						settings, model.getGraphFeatureModel(), minTimepoint, maxTimepoint );
 
-		System.out.println( "\n\nTracking with " + tracker );
-		tracker.mutate1( model.getGraph(), model.getSpatioTemporalIndex() );
-		if ( !tracker.wasSuccessful() )
+		System.out.println( "\n\nParticle-linking with " + linker );
+		linker.mutate1( model.getGraph(), model.getSpatioTemporalIndex() );
+		if ( !linker.wasSuccessful() )
 		{
-			System.out.println( "Tracking failed: " + tracker.getErrorMessage() );
+			System.out.println( "Tracking failed: " + linker.getErrorMessage() );
 			return;
 		}
-		if ( tracker instanceof Benchmark )
-			System.out.println( "Tracking completed in " + ( ( Benchmark ) tracker ).getProcessingTime() + " ms." );
+		if ( linker instanceof Benchmark )
+			System.out.println( "Tracking completed in " + ( ( Benchmark ) linker ).getProcessingTime() + " ms." );
 		else
 			System.out.println( "Tracking completed." );
 
@@ -170,19 +154,4 @@ public class DetectionSandbox
 
 		return conf;
 	}
-
-	private static EdgeCreator< Spot, Link > edgeCreator( final ModelGraph graph )
-	{
-		final Link ref = graph.edgeRef();
-		return new EdgeCreator< Spot, Link >()
-		{
-
-			@Override
-			public Link createEdge( final Spot source, final Spot target )
-			{
-				return graph.addEdge( source, target, ref ).init();
-			}
-		};
-	};
-
 }

@@ -18,6 +18,7 @@ import java.util.Map;
 
 import org.mastodon.collection.ObjectRefMap;
 import org.mastodon.collection.RefCollections;
+import org.mastodon.collection.RefDoubleMap;
 import org.mastodon.collection.RefList;
 import org.mastodon.collection.RefMaps;
 import org.mastodon.collection.RefRefMap;
@@ -50,7 +51,7 @@ import net.imglib2.algorithm.Benchmark;
  *            the type of edges in the graph.
  */
 @Plugin( type = ParticleLinkerOp.class )
-public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends Edge< V > >
+public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Edge< V > >
 		extends AbstractParticleLinkerOp< V, E >
 		implements Benchmark
 {
@@ -120,7 +121,6 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 		final int maxFrameGap = ( Integer ) settings.get( KEY_GAP_CLOSING_MAX_FRAME_GAP );
 		final double initialSearchRadius = ( Double ) settings.get( KEY_LINKING_MAX_DISTANCE );
 		final double positionMeasurementStd = ( Double ) settings.get( KEY_POSITION_SIGMA );
-
 
 		// Max KF search cost.
 		final double maxCost = maxSearchRadius * maxSearchRadius;
@@ -211,8 +211,11 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 		final V vref2 = graph.vertexRef();
 
 		int p = 0;
-		for ( int tp = secondFrame; tp <= maxTimepoint - 1; tp++ )
+		for ( int tp = secondFrame; tp <= maxTimepoint; tp++ )
 		{
+
+			System.out.println( "Linking t = " + (tp-1) + " with " + tp ); // DEBUG
+
 			p++;
 
 			/*
@@ -269,11 +272,13 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 					return;
 				}
 				final RefRefMap< Prediction, V > agnts = linker.getResult();
+				final RefDoubleMap< Prediction > assignmentCosts = linker.getAssignmentCosts();
 
 				// Deal with found links.
 				orphanSpots = RefCollections.createRefList( orphanSpots, measurements.size() );
 				orphanSpots.addAll( measurements );
 
+				final E ref = graph.edgeRef();
 				for ( final Prediction cm : agnts.keySet() )
 				{
 					final CVMKalmanFilter kf = predictionMap.get( cm );
@@ -281,7 +286,8 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 					// Create links for found match.
 					final V source = kalmanFiltersMap.get( kf, vref1 );
 					final V target = agnts.get( cm, vref2 );
-					edgeCreator.createEdge( source, target );
+					final double cost = assignmentCosts.get( cm );
+					edgeCreator.createEdge( graph, ref, source, target, cost );
 
 					// Update Kalman filter
 					kf.update( toMeasurement( target ) );
@@ -295,6 +301,7 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 					// Remove from childless KF set
 					childlessKFs.remove( kf );
 				}
+				graph.releaseRef( ref );
 			}
 
 			/*
@@ -332,8 +339,10 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 					return;
 				}
 				final RefRefMap< V, V > newAssignments = newLinker.getResult();
+				final RefDoubleMap< V > assignmentCosts = newLinker.getAssignmentCosts();
 
 				// Build links and new KFs from these links.
+				final E ref = graph.edgeRef();
 				for ( final V source : newAssignments.keySet() )
 				{
 					final V target = newAssignments.get( source, vref1 );
@@ -350,8 +359,10 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 					kalmanFiltersMap.put( kt, target, vref2 );
 
 					// Add edge to the graph.
-					edgeCreator.createEdge( source, target );
+					final double cost = assignmentCosts.get( source );
+					edgeCreator.createEdge( graph, ref, source, target, cost );
 				}
+				graph.releaseRef( ref );
 			}
 			previousOrphanSpots = orphanSpots;
 
@@ -462,6 +473,7 @@ public class KalmanTracker< V extends Vertex< E > & RealLocalizable, E extends E
 		ok = ok & checkParameter( settings, KEY_LINKING_MAX_DISTANCE, Double.class, str );
 		ok = ok & checkParameter( settings, KEY_KALMAN_SEARCH_RADIUS, Double.class, str );
 		ok = ok & checkParameter( settings, KEY_GAP_CLOSING_MAX_FRAME_GAP, Integer.class, str );
+		ok = ok & checkParameter( settings, KEY_POSITION_SIGMA, Double.class, str );
 		return ok;
 	}
 

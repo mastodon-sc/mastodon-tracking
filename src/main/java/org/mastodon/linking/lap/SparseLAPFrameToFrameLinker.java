@@ -17,6 +17,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.mastodon.collection.RefDoubleMap;
 import org.mastodon.collection.RefRefMap;
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
@@ -178,13 +179,17 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 					synchronized ( graph )
 					{
 						final RefRefMap< V, V > assignment = linker.getResult();
+						final RefDoubleMap< V > assignmentCosts = linker.getAssignmentCosts();
 						final V vref = graph.vertexRef();
+						final E eref = graph.edgeRef();
 						for ( final V source : assignment.keySet() )
 						{
 							final V target = assignment.get( source, vref );
-							edgeCreator.createEdge( source, target );
+							final double cost = assignmentCosts.get( source );
+							edgeCreator.createEdge( graph, eref, source, target, cost );
 						}
 						graph.releaseRef( vref );
+						graph.releaseRef( eref );
 					}
 
 					statusService.showProgress( progress.incrementAndGet(), framePairs.size() );

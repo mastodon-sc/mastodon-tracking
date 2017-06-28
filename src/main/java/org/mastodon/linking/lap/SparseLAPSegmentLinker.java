@@ -11,6 +11,7 @@ import static org.mastodon.linking.lap.LAPUtils.checkParameter;
 
 import java.util.Map;
 
+import org.mastodon.collection.RefDoubleMap;
 import org.mastodon.collection.RefRefMap;
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
@@ -124,6 +125,7 @@ public class SparseLAPSegmentLinker< V extends Vertex< E > & HasTimepoint & Real
 		statusService.showProgress( 9, 10 );
 		statusService.showStatus( "Creating links..." );
 		final RefRefMap< V, V > assignment = linker.getResult();
+		final RefDoubleMap< V > assignmentCosts = linker.getAssignmentCosts();
 		synchronized ( graph )
 		{
 
@@ -132,7 +134,8 @@ public class SparseLAPSegmentLinker< V extends Vertex< E > & HasTimepoint & Real
 			for ( final V source : assignment.keySet() )
 			{
 				final V target = assignment.get( source, vref );
-				edgeCreator.createEdge( source, target );
+				final double cost = assignmentCosts.get( source );
+				edgeCreator.createEdge( graph, eref, source, target, cost );
 			}
 			graph.releaseRef( eref );
 			graph.releaseRef( vref );
