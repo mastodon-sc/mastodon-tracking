@@ -95,7 +95,7 @@ public class Sandbox
 		new MainWindow( model, spimData, bdvFile, getInputTriggerConfig() ).setVisible( true );
 	}
 
-	static final InputTriggerConfig getInputTriggerConfig()
+	public static final InputTriggerConfig getInputTriggerConfig()
 	{
 		InputTriggerConfig conf = null;
 
