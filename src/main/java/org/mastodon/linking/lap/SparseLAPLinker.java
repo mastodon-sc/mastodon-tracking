@@ -1,8 +1,7 @@
 package org.mastodon.linking.lap;
 
-import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
-import static org.mastodon.linking.LinkingUtils.checkMapKeys;
-import static org.mastodon.linking.LinkingUtils.checkParameter;
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_GAP_CLOSING;
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_MERGING;
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_SPLITTING;
@@ -18,6 +17,9 @@ import static org.mastodon.linking.LinkerKeys.KEY_MERGING_FEATURE_PENALTIES;
 import static org.mastodon.linking.LinkerKeys.KEY_MERGING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkerKeys.KEY_SPLITTING_FEATURE_PENALTIES;
 import static org.mastodon.linking.LinkerKeys.KEY_SPLITTING_MAX_DISTANCE;
+import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
+import static org.mastodon.linking.LinkingUtils.checkMapKeys;
+import static org.mastodon.linking.LinkingUtils.checkParameter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,8 +45,8 @@ import net.imglib2.algorithm.Benchmark;
 
 @Plugin( type = ParticleLinkerOp.class )
 public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > >
-	extends AbstractParticleLinkerOp< V, E >
-	implements Benchmark
+		extends AbstractParticleLinkerOp< V, E >
+		implements Benchmark
 {
 	private final static String BASE_ERROR_MESSAGE = "[SparseLAPTracker] ";
 
@@ -61,15 +63,16 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 		ok = false;
 		final DoublePropertyMap< E > linkcost = new DoublePropertyMap<>( graph.edges(), Double.NaN );
 
-		/*
-		 * Check input now.
-		 */
-
-		if ( maxTimepoint <= minTimepoint )
+		// Check parameters
+		final StringBuilder errorHolder = new StringBuilder();
+		if ( !checkSettingsValidity( settings, errorHolder ) )
 		{
-			errorMessage = BASE_ERROR_MESSAGE + "Max timepoint <= min timepoint.";
+			errorMessage = BASE_ERROR_MESSAGE + "Incorrect settings map:\n" + errorHolder.toString();
 			return;
 		}
+
+		final int minTimepoint = ( int ) settings.get( KEY_MIN_TIMEPOINT );
+		final int maxTimepoint = ( int ) settings.get( KEY_MAX_TIMEPOINT );
 
 		// Check that the objects list itself isn't null
 		if ( null == spots )
@@ -93,13 +96,6 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 			errorMessage = BASE_ERROR_MESSAGE + "The spot collection is empty.";
 			return;
 		}
-		// Check parameters
-		final StringBuilder errorHolder = new StringBuilder();
-		if ( !checkSettingsValidity( settings, errorHolder ) )
-		{
-			errorMessage = BASE_ERROR_MESSAGE + "Incorrect settings map:\n" + errorHolder.toString();
-			return;
-		}
 
 		/*
 		 * Process.
@@ -113,14 +109,17 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 
 		// Prepare settings object
 		final Map< String, Object > ftfSettings = new HashMap< String, Object >();
+		ftfSettings.put( KEY_MIN_TIMEPOINT, settings.get( KEY_MIN_TIMEPOINT ) );
+		ftfSettings.put( KEY_MAX_TIMEPOINT, settings.get( KEY_MAX_TIMEPOINT ) );
 		ftfSettings.put( KEY_LINKING_MAX_DISTANCE, settings.get( KEY_LINKING_MAX_DISTANCE ) );
 		ftfSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, settings.get( KEY_ALTERNATIVE_LINKING_COST_FACTOR ) );
 		ftfSettings.put( KEY_LINKING_FEATURE_PENALTIES, settings.get( KEY_LINKING_FEATURE_PENALTIES ) );
 
 		@SuppressWarnings( "unchecked" )
-		final SparseLAPFrameToFrameLinker<V,E> frameToFrameLinker = ( SparseLAPFrameToFrameLinker< V, E > ) Inplaces.binary1( ops(), SparseLAPFrameToFrameLinker.class,
+		final SparseLAPFrameToFrameLinker< V, E > frameToFrameLinker = ( SparseLAPFrameToFrameLinker< V, E > ) Inplaces.binary1( ops(),
+				SparseLAPFrameToFrameLinker.class,
 				graph, spots,
-				ftfSettings, featureModel, minTimepoint, maxTimepoint, spotComparator, edgeCreator );
+				ftfSettings, featureModel, spotComparator, edgeCreator );
 		frameToFrameLinker.mutate1( graph, spots );
 		if ( !frameToFrameLinker.wasSuccessful() )
 		{
@@ -159,12 +158,12 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 		@SuppressWarnings( { "unchecked", "rawtypes" } )
 		final SparseLAPSegmentLinker< V, E > segmentLinker = ( SparseLAPSegmentLinker ) Inplaces.binary1( ops(), SparseLAPSegmentLinker.class,
 				graph, spots,
-				slSettings, featureModel, minTimepoint, maxTimepoint, spotComparator, edgeCreator );
+				slSettings, featureModel, spotComparator, edgeCreator );
 		segmentLinker.mutate1( graph, spots );
 		if ( !segmentLinker.wasSuccessful() )
 		{
 			errorMessage = segmentLinker.getErrorMessage();
-			return ;
+			return;
 		}
 		// Copy link costs.
 		final DoublePropertyMap< E > slCosts = segmentLinker.getLinkCostFeature().getPropertyMap();
@@ -187,6 +186,8 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 		}
 
 		boolean ok = true;
+		ok = ok & checkParameter( settings, KEY_MIN_TIMEPOINT, Integer.class, str );
+		ok = ok & checkParameter( settings, KEY_MAX_TIMEPOINT, Integer.class, str );
 		// Linking
 		ok = ok & checkParameter( settings, KEY_LINKING_MAX_DISTANCE, Double.class, str );
 		ok = ok & checkFeatureMap( settings, KEY_LINKING_FEATURE_PENALTIES, str );
@@ -209,6 +210,8 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 
 		// Check keys
 		final List< String > mandatoryKeys = new ArrayList< String >();
+		mandatoryKeys.add( KEY_MIN_TIMEPOINT );
+		mandatoryKeys.add( KEY_MAX_TIMEPOINT );
 		mandatoryKeys.add( KEY_LINKING_MAX_DISTANCE );
 		mandatoryKeys.add( KEY_ALLOW_GAP_CLOSING );
 		mandatoryKeys.add( KEY_GAP_CLOSING_MAX_DISTANCE );
@@ -226,6 +229,19 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 		optionalKeys.add( KEY_MERGING_FEATURE_PENALTIES );
 		optionalKeys.add( KEY_BLOCKING_VALUE );
 		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, str );
+
+		// Check min & max time-point
+		if ( ok )
+		{
+			final int minTimepoint = ( int ) settings.get( KEY_MIN_TIMEPOINT );
+			final int maxTimepoint = ( int ) settings.get( KEY_MAX_TIMEPOINT );
+			if ( maxTimepoint < minTimepoint )
+			{
+				ok = false;
+				str.append( "Min time-point should smaller than or equal to max time-point, be was min = "
+						+ minTimepoint + " and max = " + maxTimepoint + "\n" );
+			}
+		}
 
 		return ok;
 	}

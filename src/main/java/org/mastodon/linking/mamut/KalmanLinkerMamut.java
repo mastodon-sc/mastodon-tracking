@@ -1,6 +1,9 @@
 package org.mastodon.linking.mamut;
 
-import static org.mastodon.linking.LinkingUtils.checkParameter;
+import static org.mastodon.detection.DetectorKeys.DEFAULT_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.DEFAULT_MIN_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_LINKING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_MAX_SEARCH_RADIUS;
@@ -8,6 +11,7 @@ import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.linking.LinkerKeys.KEY_KALMAN_SEARCH_RADIUS;
 import static org.mastodon.linking.LinkerKeys.KEY_LINKING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkerKeys.KEY_POSITION_SIGMA;
+import static org.mastodon.linking.LinkingUtils.checkParameter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +37,15 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 	{
 		final long start = System.currentTimeMillis();
 		ok = false;
+		final StringBuilder str = new StringBuilder();
+		if (!checkSettingsValidity( settings, str ))
+		{
+			errorMessage = str.toString();
+			return;
+		}
+
+		final int minTimepoint = ( int ) settings.get( KEY_MIN_TIMEPOINT );
+		final int maxTimepoint = ( int ) settings.get( KEY_MAX_TIMEPOINT );
 
 		/*
 		 * Before we run the generic linker, we need to provide it with a
@@ -52,7 +65,7 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 		@SuppressWarnings( { "rawtypes", "unchecked" } )
 		final ParticleLinkerOp< Spot, Link > linker = ( ParticleLinkerOp ) Inplaces.binary1( ops(), KalmanLinker.class,
 				graph, spots,
-				kalmanSettings, featureModel, minTimepoint, maxTimepoint,
+				kalmanSettings, featureModel,
 				spotComparator(), edgeCreator() );
 		linker.mutate1( graph, spots );
 		final long end = System.currentTimeMillis();
@@ -74,6 +87,8 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 		ok = ok & checkParameter( settings, KEY_LINKING_MAX_DISTANCE, Double.class, str );
 		ok = ok & checkParameter( settings, KEY_KALMAN_SEARCH_RADIUS, Double.class, str );
 		ok = ok & checkParameter( settings, KEY_GAP_CLOSING_MAX_FRAME_GAP, Integer.class, str );
+		ok = ok & checkParameter( settings, KEY_MIN_TIMEPOINT, Integer.class, str );
+		ok = ok & checkParameter( settings, KEY_MAX_TIMEPOINT, Integer.class, str );
 		return ok;
 	}
 
@@ -83,6 +98,8 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 		sm.put( KEY_KALMAN_SEARCH_RADIUS, DEFAULT_MAX_SEARCH_RADIUS );
 		sm.put( KEY_LINKING_MAX_DISTANCE, DEFAULT_LINKING_MAX_DISTANCE );
 		sm.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, DEFAULT_GAP_CLOSING_MAX_FRAME_GAP );
+		sm.put( KEY_MIN_TIMEPOINT, DEFAULT_MIN_TIMEPOINT );
+		sm.put( KEY_MAX_TIMEPOINT, DEFAULT_MAX_TIMEPOINT );
 		return sm;
 	}
 

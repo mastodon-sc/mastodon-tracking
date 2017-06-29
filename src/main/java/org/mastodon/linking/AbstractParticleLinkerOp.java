@@ -32,12 +32,6 @@ public abstract class AbstractParticleLinkerOp< V extends Vertex< E > & RealLoca
 	protected FeatureModel< V, E > featureModel;
 
 	@Parameter(type = ItemIO.INPUT )
-	protected int minTimepoint;
-
-	@Parameter(type = ItemIO.INPUT )
-	protected int maxTimepoint;
-
-	@Parameter(type = ItemIO.INPUT )
 	protected Comparator< V > spotComparator;
 
 	@Parameter(type = ItemIO.INPUT )

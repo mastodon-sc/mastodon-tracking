@@ -31,12 +31,6 @@ public abstract class AbstractSpotLinkerOp
 	@Parameter( type = ItemIO.INPUT )
 	protected FeatureModel< Spot, Link > featureModel;
 
-	@Parameter( type = ItemIO.INPUT )
-	protected int minTimepoint;
-
-	@Parameter( type = ItemIO.INPUT )
-	protected int maxTimepoint;
-
 	protected long processingTime;
 
 	protected boolean ok;
@@ -50,7 +44,7 @@ public abstract class AbstractSpotLinkerOp
 		@SuppressWarnings( { "rawtypes", "unchecked" } )
 		final ParticleLinkerOp< Spot, Link > linker = ( ParticleLinkerOp ) Inplaces.binary1( ops(), cl,
 				graph, spots,
-				settings, featureModel, minTimepoint, maxTimepoint,
+				settings, featureModel,
 				spotComparator(), edgeCreator() );
 		linker.mutate1( graph, spots );
 		final long end = System.currentTimeMillis();
@@ -58,6 +52,7 @@ public abstract class AbstractSpotLinkerOp
 		processingTime = end - start;
 		linkCostFeature = linker.getLinkCostFeature();
 		ok = linker.wasSuccessful();
+		errorMessage = linker.getErrorMessage();
 	}
 
 	protected EdgeCreator< Spot, Link > edgeCreator()

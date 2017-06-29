@@ -19,7 +19,7 @@ public class DetectorKeys
 
 	/**
 	 * Key for the parameter specifying from what time-point on to perform
-	 * detection, inclusive. Expected values must be {@link Integer}s.
+	 * tracking, inclusive. Expected values must be {@link Integer}s.
 	 */
 	public static final String KEY_MIN_TIMEPOINT = "MIN_TIMEPOINT";
 
@@ -30,7 +30,7 @@ public class DetectorKeys
 
 	/**
 	 * Key for the parameter specifying up to what time-point on to perform
-	 * detection, inclusive. Expected values must be {@link Integer}s, larger
+	 * tracking, inclusive. Expected values must be {@link Integer}s, larger
 	 * than {@link #KEY_MIN_TIMEPOINT}.
 	 */
 	public static final String KEY_MAX_TIMEPOINT = "MAX_TIMEPOINT";

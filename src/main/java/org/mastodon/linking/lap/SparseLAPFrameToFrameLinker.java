@@ -1,11 +1,13 @@
 package org.mastodon.linking.lap;
 
-import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
-import static org.mastodon.linking.LinkingUtils.checkMapKeys;
-import static org.mastodon.linking.LinkingUtils.checkParameter;
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.linking.LinkerKeys.KEY_ALTERNATIVE_LINKING_COST_FACTOR;
 import static org.mastodon.linking.LinkerKeys.KEY_LINKING_FEATURE_PENALTIES;
 import static org.mastodon.linking.LinkerKeys.KEY_LINKING_MAX_DISTANCE;
+import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
+import static org.mastodon.linking.LinkingUtils.checkMapKeys;
+import static org.mastodon.linking.LinkingUtils.checkParameter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +69,16 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 		/*
 		 * Check input now.
 		 */
+		// Check parameters
+		final StringBuilder errorHolder = new StringBuilder();
+		if ( !checkSettingsValidity( settings, errorHolder ) )
+		{
+			errorMessage = BASE_ERROR_MESSAGE + errorHolder.toString();
+			return;
+		}
+
+		final int minTimepoint = ( int ) settings.get( KEY_MIN_TIMEPOINT );
+		final int maxTimepoint = ( int ) settings.get( KEY_MAX_TIMEPOINT );
 
 		if ( maxTimepoint <= minTimepoint )
 		{
@@ -94,14 +106,6 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 		if ( empty )
 		{
 			errorMessage = BASE_ERROR_MESSAGE + "The spot collection is empty.";
-			return;
-		}
-
-		// Check parameters
-		final StringBuilder errorHolder = new StringBuilder();
-		if ( !checkSettingsValidity( settings, errorHolder ) )
-		{
-			errorMessage = BASE_ERROR_MESSAGE + errorHolder.toString();
 			return;
 		}
 
@@ -237,6 +241,8 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 		}
 
 		boolean ok = true;
+		ok = ok & checkParameter( settings, KEY_MIN_TIMEPOINT, Integer.class, str );
+		ok = ok & checkParameter( settings, KEY_MAX_TIMEPOINT, Integer.class, str );
 		// Linking
 		ok = ok & checkParameter( settings, KEY_LINKING_MAX_DISTANCE, Double.class, str );
 		ok = ok & checkFeatureMap( settings, KEY_LINKING_FEATURE_PENALTIES, str );
@@ -245,6 +251,8 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 
 		// Check keys
 		final List< String > mandatoryKeys = new ArrayList< String >();
+		mandatoryKeys.add( KEY_MIN_TIMEPOINT );
+		mandatoryKeys.add( KEY_MAX_TIMEPOINT );
 		mandatoryKeys.add( KEY_LINKING_MAX_DISTANCE );
 		mandatoryKeys.add( KEY_ALTERNATIVE_LINKING_COST_FACTOR );
 		final List< String > optionalKeys = new ArrayList< String >();

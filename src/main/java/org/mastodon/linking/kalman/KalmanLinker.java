@@ -1,6 +1,7 @@
 package org.mastodon.linking.kalman;
 
-import static org.mastodon.linking.LinkingUtils.checkParameter;
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_LINKING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_MAX_SEARCH_RADIUS;
@@ -9,6 +10,7 @@ import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.linking.LinkerKeys.KEY_KALMAN_SEARCH_RADIUS;
 import static org.mastodon.linking.LinkerKeys.KEY_LINKING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkerKeys.KEY_POSITION_SIGMA;
+import static org.mastodon.linking.LinkingUtils.checkParameter;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -73,6 +75,17 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 		final long start = System.currentTimeMillis();
 		final DoublePropertyMap< E > linkcost = new DoublePropertyMap<>( graph.edges(), Double.NaN );
 
+		// Check parameters
+		final StringBuilder errorHolder = new StringBuilder();
+		if ( !checkSettingsValidity( settings, errorHolder ) )
+		{
+			errorMessage = BASE_ERROR_MSG + "Incorrect settings map:\n" + errorHolder.toString();
+			return;
+		}
+
+		final int minTimepoint = ( int ) settings.get( KEY_MIN_TIMEPOINT );
+		final int maxTimepoint = ( int ) settings.get( KEY_MAX_TIMEPOINT );
+
 		if ( maxTimepoint <= minTimepoint )
 		{
 			errorMessage = BASE_ERROR_MSG + "Max timepoint <= min timepoint.";
@@ -99,13 +112,6 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 		if ( empty )
 		{
 			errorMessage = BASE_ERROR_MSG + "The spot collection is empty.";
-			return;
-		}
-		// Check parameters
-		final StringBuilder errorHolder = new StringBuilder();
-		if ( !checkSettingsValidity( settings, errorHolder ) )
-		{
-			errorMessage = BASE_ERROR_MSG + "Incorrect settings map:\n" + errorHolder.toString();
 			return;
 		}
 
@@ -469,6 +475,17 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 		ok = ok & checkParameter( settings, KEY_KALMAN_SEARCH_RADIUS, Double.class, str );
 		ok = ok & checkParameter( settings, KEY_GAP_CLOSING_MAX_FRAME_GAP, Integer.class, str );
 		ok = ok & checkParameter( settings, KEY_POSITION_SIGMA, Double.class, str );
+
+		// Check min & max time-point
+		final int minTimepoint = ( int ) settings.get( KEY_MIN_TIMEPOINT );
+		final int maxTimepoint = ( int ) settings.get( KEY_MAX_TIMEPOINT );
+		if ( maxTimepoint < minTimepoint )
+		{
+			ok = false;
+			str.append( "Min time-point should smaller than or equal to max time-point, be was min = "
+					+ minTimepoint + " and max = " + maxTimepoint + "\n" );
+		}
+
 		return ok;
 	}
 

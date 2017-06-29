@@ -1,5 +1,9 @@
 package org.mastodon.linking;
 
+import static org.mastodon.detection.DetectorKeys.DEFAULT_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.DEFAULT_MIN_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_ALLOW_GAP_CLOSING;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_ALLOW_TRACK_MERGING;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_ALLOW_TRACK_SPLITTING;
@@ -104,6 +108,8 @@ public class LinkingUtils
 	public static final Map< String, Object > getDefaultLAPSettingsMap()
 	{
 		final Map< String, Object > settings = new HashMap< String, Object >();
+		settings.put( KEY_MIN_TIMEPOINT, DEFAULT_MIN_TIMEPOINT);
+		settings.put( KEY_MAX_TIMEPOINT, DEFAULT_MAX_TIMEPOINT);
 		// Linking
 		settings.put( KEY_LINKING_MAX_DISTANCE, DEFAULT_LINKING_MAX_DISTANCE );
 		settings.put( KEY_LINKING_FEATURE_PENALTIES, new HashMap< String, Double >( DEFAULT_LINKING_FEATURE_PENALTIES ) );

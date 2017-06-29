@@ -1,5 +1,7 @@
 package org.mastodon.detection;
 
+import static org.mastodon.detection.DetectorKeys.DEFAULT_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.DEFAULT_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_RADIUS;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_SETUP_ID;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_THRESHOLD;
@@ -302,6 +304,8 @@ public class DetectionUtil
 	public static final Map< String, Object > getDefaultDetectorSettingsMap()
 	{
 		final Map< String, Object > settings = new HashMap< String, Object >();
+		settings.put( KEY_MIN_TIMEPOINT, DEFAULT_MIN_TIMEPOINT );
+		settings.put( KEY_MAX_TIMEPOINT, DEFAULT_MAX_TIMEPOINT );
 		settings.put( KEY_SETUP_ID, DEFAULT_SETUP_ID );
 		settings.put( KEY_RADIUS, DEFAULT_RADIUS );
 		settings.put( KEY_THRESHOLD, DEFAULT_THRESHOLD );
@@ -351,7 +355,7 @@ public class DetectionUtil
 		if ( maxTimepoint < minTimepoint )
 		{
 			ok = false;
-			errorHolder.append( "Min time-point should smaller than max time-point, be was min = "
+			errorHolder.append( "Min time-point should smaller than or equal to max time-point, be was min = "
 					+ minTimepoint + " and max = " + maxTimepoint + "\n" );
 		}
 
