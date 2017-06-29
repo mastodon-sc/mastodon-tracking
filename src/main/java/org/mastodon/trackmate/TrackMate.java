@@ -6,7 +6,9 @@ import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.linking.mamut.SpotLinkerOp;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
+import org.scijava.app.StatusService;
 import org.scijava.command.ContextCommand;
+import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 
 import bdv.spimdata.SpimDataMinimal;
@@ -20,6 +22,12 @@ public class TrackMate extends ContextCommand
 
 	@Parameter
 	private OpService ops;
+
+	@Parameter
+	private StatusService statusService;
+
+	@Parameter
+	LogService log;
 
 	private final Settings settings;
 
@@ -42,65 +50,73 @@ public class TrackMate extends ContextCommand
 		return new Model();
 	}
 
-	public void execDetection()
+	public boolean execDetection()
 	{
-		final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
 		final ModelGraph graph = model.getGraph();
 		final SpimDataMinimal spimData = settings.values.getSpimData();
+		if ( null == spimData )
+		{
+			log.error( "Cannot start detection: SpimData obect is null." );
+			return false;
+		}
 
-		/*
-		 * TODO: Make a general settings map for detectors.
-		 */
-		final int setup= 0;
-		final double radius = 6.;
-		final double threshold = 1000.;
-		final int maxTimepoint = spimData.getSequenceDescription().getTimePoints().size() - 1;
-		final int minTimepoint = 0;
+		final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
+		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 
-		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl, graph, spimData,
-				setup, radius, threshold, minTimepoint, maxTimepoint );
+		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl,
+				graph, spimData,
+				detectorSettings );
+		log.info( "Detection with " + detector );
 		detector.compute( spimData, graph );
+
+		if ( !detector.wasSuccessful() )
+		{
+			log.error( "Detection failed:\n" + detector.getErrorMessage() );
+			return false;
+		}
+
 		model.getGraphFeatureModel().declareFeature( detector.getQualityFeature() );
 		if ( detector instanceof Benchmark )
 		{
 			final Benchmark bm = ( Benchmark ) detector;
-			System.out.println( "Detection completed in " + bm.getProcessingTime() + " ms." );
+			log.info( "Detection completed in " + bm.getProcessingTime() + " ms." );
 		}
-		System.out.println( "Found " + graph.vertices().size() + " spots." );
+		else
+		{
+			log.info( "Detection completed." );
+		}
+		log.info( "Found " + graph.vertices().size() + " spots." );
+		return true;
 	}
 
-	public void execParticleLinking()
+	public boolean execParticleLinking()
 	{
-		final SpimDataMinimal spimData = settings.values.getSpimData();
-		final int maxTimepoint = spimData.getSequenceDescription().getTimePoints().size() - 1;
-		final int minTimepoint = 0;
-
 		final Class< ? extends SpotLinkerOp > linkerCl = settings.values.getLinker();
 		final Map< String, Object > linkerSettings = settings.values.getLinkerSettings();
 
 		final SpotLinkerOp linker =
 				( SpotLinkerOp ) Inplaces.binary1( ops, linkerCl, model.getGraph(), model.getSpatioTemporalIndex(),
-						linkerSettings, model.getGraphFeatureModel(), minTimepoint, maxTimepoint );
+						linkerSettings, model.getGraphFeatureModel() );
 
-		System.out.println( "\n\nParticle-linking with " + linker );
+		log.info( "Particle-linking with " + linker );
 		linker.mutate1( model.getGraph(), model.getSpatioTemporalIndex() );
 		if ( !linker.wasSuccessful() )
 		{
-			System.out.println( "Tracking failed: " + linker.getErrorMessage() );
-			return;
+			log.error( "Particle-linking failed:\n" + linker.getErrorMessage() );
+			return false;
 		}
 		model.getGraphFeatureModel().declareFeature( linker.getLinkCostFeature() );
 		if ( linker instanceof Benchmark )
-			System.out.println( "Tracking completed in " + ( ( Benchmark ) linker ).getProcessingTime() + " ms." );
+			log.info( "Particle-linking completed in " + ( ( Benchmark ) linker ).getProcessingTime() + " ms." );
 		else
-			System.out.println( "Tracking completed." );
+			log.info( "Particle-linking completed." );
+		return true;
 	}
 
 	@Override
 	public void run()
 	{
-		execDetection();
-		execParticleLinking();
+		if ( execDetection() && execParticleLinking() );
 	}
 
 }

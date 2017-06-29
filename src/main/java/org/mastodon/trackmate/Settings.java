@@ -2,6 +2,7 @@ package org.mastodon.trackmate;
 
 import java.util.Map;
 
+import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.linking.LinkingUtils;
@@ -21,6 +22,12 @@ public class Settings
 		return this;
 	}
 
+	public Settings detectorSettings( final Map< String, Object > detectorSettings )
+	{
+		values.detectorSettings = detectorSettings;
+		return this;
+	}
+
 	public Settings linker( final Class< ? extends SpotLinkerOp > linker )
 	{
 		values.linker = linker;
@@ -33,7 +40,7 @@ public class Settings
 		return this;
 	}
 
-	public Settings spimData(final SpimDataMinimal spimData)
+	public Settings spimData( final SpimDataMinimal spimData )
 	{
 		values.spimData = spimData;
 		return this;
@@ -45,6 +52,8 @@ public class Settings
 
 		private Class< ? extends SpotDetectorOp > detector = DoGDetectorMamut.class;
 
+		private Map< String, Object > detectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
+
 		private Class< ? extends SpotLinkerOp > linker = SparseLAPLinkerMamut.class;
 
 		private Map< String, Object > linkerSettings = LinkingUtils.getDefaultLAPSettingsMap();
@@ -52,6 +61,11 @@ public class Settings
 		public Class< ? extends SpotDetectorOp > getDetector()
 		{
 			return detector;
+		}
+
+		public Map< String, Object > getDetectorSettings()
+		{
+			return detectorSettings;
 		}
 
 		public Class< ? extends SpotLinkerOp > getLinker()
