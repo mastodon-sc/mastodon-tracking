@@ -94,9 +94,9 @@ public class WizardController
 			return;
 	}
 
-	private void init()
+	public void init( final WizardPanelDescriptor descriptor )
 	{
-		final WizardPanelDescriptor descriptor = wizardModel.getCurrent();
+		wizardModel.setCurrent( descriptor );
 		wizardPanel.btnPrevious.setEnabled( null != descriptor.getBackPanelDescriptorIdentifier() );
 		wizardPanel.btnNext.setEnabled( null != descriptor.getNextPanelDescriptorIdentifier() );
 		wizardPanel.display( descriptor );
@@ -109,8 +109,6 @@ public class WizardController
 
 		wizardPanel.btnPrevious.setEnabled( null != to.getBackPanelDescriptorIdentifier() );
 		wizardPanel.btnNext.setEnabled( null != to.getNextPanelDescriptorIdentifier() );
-
-		from.aboutToHidePanel();
 		wizardPanel.transition( to, from, forward ? Direction.RIGHT : Direction.LEFT );
 	}
 
@@ -197,8 +195,7 @@ public class WizardController
 		controller.registerWizardPanel( d1 );
 		controller.registerWizardPanel( new Descriptor2() );
 		controller.registerWizardPanel( new Descriptor3() );
-		model.setCurrent( d1 );
-		controller.init();
+		controller.init( d1 );
 		frame.getContentPane().add( controller.getWizardPanel() );
 		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 		frame.setSize( 300, 500 );
