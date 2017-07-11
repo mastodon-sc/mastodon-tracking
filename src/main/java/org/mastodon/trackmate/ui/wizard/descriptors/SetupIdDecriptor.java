@@ -50,7 +50,7 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 	@Override
 	public String getNextPanelDescriptorIdentifier()
 	{
-		return Descriptor1.ID;
+		return BoundingBoxDescriptor.IDENTIFIER;
 	}
 
 	@Override
