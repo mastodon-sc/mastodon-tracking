@@ -8,6 +8,7 @@ import javax.swing.JFrame;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import org.mastodon.trackmate.ui.wizard.TransitionAnimator.Direction;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor1;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor2;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor3;
@@ -101,18 +102,16 @@ public class WizardController
 		wizardPanel.display( descriptor );
 	}
 
-	private void display( final WizardPanelDescriptor descriptor, final WizardPanelDescriptor current, final boolean forward )
+	private void display( final WizardPanelDescriptor to, final WizardPanelDescriptor from, final boolean forward )
 	{
-		if ( null == descriptor )
+		if ( null == to )
 			return;
 
-		wizardPanel.btnPrevious.setEnabled( null != descriptor.getBackPanelDescriptorIdentifier() );
-		wizardPanel.btnNext.setEnabled( null != descriptor.getNextPanelDescriptorIdentifier() );
+		wizardPanel.btnPrevious.setEnabled( null != to.getBackPanelDescriptorIdentifier() );
+		wizardPanel.btnNext.setEnabled( null != to.getNextPanelDescriptorIdentifier() );
 
-		current.aboutToHidePanel();
-		descriptor.aboutToDisplayPanel();
-		wizardPanel.display( descriptor );
-		descriptor.displayingPanel();
+		from.aboutToHidePanel();
+		wizardPanel.transition( to, from, forward ? Direction.RIGHT : Direction.LEFT );
 	}
 
 	private Action getNextAction()
