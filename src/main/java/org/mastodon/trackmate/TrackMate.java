@@ -50,6 +50,16 @@ public class TrackMate extends ContextCommand
 		return new Model();
 	}
 
+	public Model getModel()
+	{
+		return model;
+	}
+
+	public Settings getSettings()
+	{
+		return settings;
+	}
+
 	public boolean execDetection()
 	{
 		final ModelGraph graph = model.getGraph();
