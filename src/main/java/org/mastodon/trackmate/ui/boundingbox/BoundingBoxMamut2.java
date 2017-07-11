@@ -8,7 +8,6 @@ import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Behaviours;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
-import bdv.util.Affine3DHelpers;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerFrame;
 import net.imglib2.Interval;
@@ -77,21 +76,14 @@ public class BoundingBoxMamut2
 		final int numTimepoints = data.getNumTimepoints();
 		int tp = 0;
 		Interval interval = null;
+		final AffineTransform3D sourceTransform = new AffineTransform3D();
 		while ( tp++ < numTimepoints )
 		{
 			if ( source.isPresent( tp ) )
 			{
 				final RandomAccessibleInterval< ? > intervalPix = source.getSource( tp, 0 );
-				final AffineTransform3D t = new AffineTransform3D();
-				source.getSourceTransform( tp, 0, t );
-				final long[] minmax = new long[ 6 ];
-				for ( int d = 0; d < 3; d++ )
-				{
-					final double scale = Affine3DHelpers.extractScale( t, d );
-					minmax[ d ] = ( long ) Math.floor( intervalPix.min( d ) * scale );
-					minmax[ 3 + d ] = ( long ) Math.ceil( intervalPix.max( d ) * scale );
-				}
-				interval = intervalPix; // Intervals.createMinMax( minmax );
+				source.getSourceTransform( tp, 0, sourceTransform );
+				interval = intervalPix;
 				break;
 			}
 		}
@@ -102,8 +94,8 @@ public class BoundingBoxMamut2
 		 * Create bounding box dialog.
 		 */
 
-		this.model = new BoundingBoxModel( interval );
-		model.install( viewerFrame.getViewerPanel(), setupID );
+		this.model = new BoundingBoxModel( interval, sourceTransform  );
+		model.install( viewerFrame.getViewerPanel(), setupID);
 		this.controlPanel = new BoundingBoxControlPanel(
 				model,
 				viewerFrame.getViewerPanel(),

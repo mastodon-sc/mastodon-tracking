@@ -23,7 +23,7 @@ class BoundingBoxModel extends BoxRealRandomAccessible< UnsignedShortType >
 
 	private final TransformedSource< UnsignedShortType > ts;
 
-	public BoundingBoxModel( final Interval interval )
+	public BoundingBoxModel( final Interval interval, final AffineTransform3D transform )
 	{
 		super( interval, new UnsignedShortType( 1000 ), new UnsignedShortType( 0 ) );
 		this.boxSource =
@@ -39,6 +39,7 @@ class BoundingBoxModel extends BoxRealRandomAccessible< UnsignedShortType >
 					}
 				};
 		this.ts = new TransformedSource<>( boxSource );
+		ts.setFixedTransform( transform );
 	}
 
 	public void install(  final ViewerPanel viewer, final int boxSetupId )
@@ -54,7 +55,6 @@ class BoundingBoxModel extends BoxRealRandomAccessible< UnsignedShortType >
 		boxConverterSetup.setViewer( viewer );
 
 		// create a SourceAndConverter (can be added to the viewer for display)
-		final TransformedSource< UnsignedShortType > ts = new TransformedSource<>( boxSource );
 		boxSourceAndConverter = new SourceAndConverter<>( ts, converter );
 	}
 

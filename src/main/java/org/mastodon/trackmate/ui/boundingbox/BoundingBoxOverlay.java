@@ -181,19 +181,12 @@ class BoundingBoxOverlay implements OverlayRenderer, TransformListener< AffineTr
 		private final List< Point2D > intersectionPoints = new ArrayList<>();
 
 		private final double[] q000 = new double[ 3 ];
-
 		private final double[] q100 = new double[ 3 ];
-
 		private final double[] q010 = new double[ 3 ];
-
 		private final double[] q110 = new double[ 3 ];
-
 		private final double[] q001 = new double[ 3 ];
-
 		private final double[] q101 = new double[ 3 ];
-
 		private final double[] q011 = new double[ 3 ];
-
 		private final double[] q111 = new double[ 3 ];
 
 		// Order matters. We will use the order to know what we edit.
