@@ -81,8 +81,10 @@ public class WizardPanel extends JPanel
 
 	public void display( final WizardPanelDescriptor current )
 	{
+		current.aboutToDisplayPanel();
 		panelMain.add( current.getPanelComponent(), current.getPanelDescriptorIdentifier() );
 		cardLayout.show( panelMain, current.getPanelDescriptorIdentifier() );
+		current.displayingPanel();
 	}
 
 	public void transition( final WizardPanelDescriptor to, final WizardPanelDescriptor from, final Direction direction )
@@ -115,6 +117,9 @@ public class WizardPanel extends JPanel
 
 		public void start( final WizardPanelDescriptor from, final WizardPanelDescriptor to, final Direction direction )
 		{
+			from.aboutToHidePanel();
+			to.aboutToDisplayPanel();
+
 			this.to = to;
 			this.animator = new TransitionAnimator( from.getPanelComponent(), to.getPanelComponent(), direction, duration );
 			label.setIcon( new ImageIcon( animator.getCurrent( System.currentTimeMillis() ) ) );
