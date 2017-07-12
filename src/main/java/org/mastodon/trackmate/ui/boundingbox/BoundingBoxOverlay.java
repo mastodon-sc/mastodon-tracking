@@ -23,7 +23,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.TransformListener;
 
-class BoundingBoxOverlay implements OverlayRenderer, TransformListener< AffineTransform3D >
+public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< AffineTransform3D >
 {
 	public static enum DisplayMode
 	{
