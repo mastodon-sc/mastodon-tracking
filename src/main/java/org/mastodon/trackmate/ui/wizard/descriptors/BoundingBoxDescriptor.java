@@ -6,7 +6,6 @@ import java.awt.Component;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -31,6 +30,7 @@ import bdv.util.ModifiableInterval;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerFrame;
 import bdv.viewer.ViewerPanel;
+import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.util.Intervals;
 
@@ -47,34 +47,36 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 
 	private ViewerPanel viewer;
 
+	private int previousSetupID = -1;
+
+	final ModifiableInterval roi;
+
 	public BoundingBoxDescriptor( final Settings settings, final WindowManager wm )
 	{
 		this.settings = settings;
 		this.wm = wm;
 		this.panelIdentifier = IDENTIFIER;
+		this.roi = new ModifiableInterval( 3 );
+		final long[] a = new long[] { 1000l, 1000l, 1000l };
+		roi.set( new FinalInterval( a, a ) );
 		this.targetPanel = new BoundingBoxPanel();
-	}
-
-	@Override
-	public void displayingPanel()
-	{
-		final List< BdvWindow > bdvWindows = wm.getMamutWindowModel().getBdvWindows();
-		final ViewerFrame viewerFrame;
-		if ( bdvWindows == null || bdvWindows.isEmpty() )
-			viewerFrame = wm.createBigDataViewer();
-		else
-			viewerFrame = bdvWindows.get( 0 ).getViewerFrame();
-
-		viewer = viewerFrame.getViewerPanel();
-		viewerFrame.toFront();
 	}
 
 	@Override
 	public void aboutToDisplayPanel()
 	{
-		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
 		final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
-		panel.boxSelectionPanel.setBoundsInterval( getRangeInterval( setupID ) );
+		toggleBoundingBox( panel.useRoi.isSelected() );
+
+		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
+		if ( setupID != previousSetupID )
+		{
+			final Interval rangeInterval = getRangeInterval( setupID );
+			roi.set( rangeInterval );
+			panel.boxSelectionPanel.setBoundsInterval( rangeInterval );
+			panel.boxSelectionPanel.updateSliders( rangeInterval );
+			previousSetupID = setupID;
+		}
 	}
 
 	@Override
@@ -98,33 +100,40 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 
 		private final BoxModePanel boxModePanel;
 
+		private final JCheckBox useRoi;
+
 		private BoundingBoxPanel()
 		{
-			super();
-
-			final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
-
-			final GridLayout layout = new GridLayout( 0, 1 );
-			layout.setHgap( 5 );
-			layout.setVgap( 5 );
+			final GridBagLayout layout = new GridBagLayout();
+			layout.columnWidths = new int[] { 80 };
+			layout.columnWeights = new double[] { 1. };
 			setLayout( layout );
 
-			final JLabel lblTitle = new JLabel( "Region of interest" );
+			final GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridy = 0;
+			gbc.gridx = 0;
+			gbc.anchor = GridBagConstraints.NORTH;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			gbc.weighty = 1.;
+			gbc.insets = new Insets( 5, 5, 5, 5 );
+
+			final JLabel lblTitle = new JLabel( "Region of interest." );
 			lblTitle.setFont( getFont().deriveFont( Font.BOLD ) );
-			add( lblTitle );
+			add( lblTitle, gbc );
 
-			final JCheckBox useRoi = new JCheckBox( "Process only a ROI.", false );
-			add( useRoi );
+			gbc.gridy++;
+			gbc.anchor = GridBagConstraints.CENTER;
+			this.useRoi = new JCheckBox( "Process only a ROI.", false );
+			useRoi.addActionListener( ( e ) -> toggleBoundingBox( useRoi.isSelected() ) );
+			add( useRoi, gbc );
 
-			final ModifiableInterval roi = new ModifiableInterval( 3 );
-			final Interval rangeInterval = getRangeInterval( setupID );
-			boxSelectionPanel = new BoxSelectionPanel( roi, rangeInterval );
-			boxSelectionPanel.setEnabled( useRoi.isSelected() );
-			add( boxSelectionPanel );
+			gbc.gridy++;
+			this.boxSelectionPanel = new BoxSelectionPanel( roi, roi );
+			add( boxSelectionPanel, gbc );
 
+			gbc.gridy++;
 			this.boxModePanel = new BoxModePanel();
-			boxModePanel.setEnabled( useRoi.isSelected() );
-			add( boxModePanel );
+			add( boxModePanel, gbc );
 		}
 	}
 
@@ -185,13 +194,18 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 			this.modeLabel = new JLabel( "Navigation mode", JLabel.LEFT );
 			add( modeLabel, gbc );
 		}
+	}
 
-		@Override
-		public void setEnabled( final boolean b )
+	private void setPanelEnabled( final JPanel panel, final boolean isEnabled )
+	{
+		panel.setEnabled( isEnabled );
+		final Component[] components = panel.getComponents();
+		for ( int i = 0; i < components.length; i++ )
 		{
-			super.setEnabled( b );
-			for ( final Component c : getComponents() )
-				c.setEnabled( b );
+			if ( components[ i ] instanceof JPanel )
+				setPanelEnabled( ( JPanel ) components[ i ], isEnabled );
+
+			components[ i ].setEnabled( isEnabled );
 		}
 	}
 
@@ -214,5 +228,27 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 			interval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
 
 		return interval;
+	}
+
+	private void toggleBoundingBox( final boolean useRoi )
+	{
+		final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
+		setPanelEnabled( panel.boxSelectionPanel, useRoi );
+		setPanelEnabled( panel.boxModePanel, useRoi );
+		if ( useRoi )
+			showViewer();
+	}
+
+	private void showViewer()
+	{
+		final List< BdvWindow > bdvWindows = wm.getMamutWindowModel().getBdvWindows();
+		final ViewerFrame viewerFrame;
+		if ( bdvWindows == null || bdvWindows.isEmpty() )
+			viewerFrame = wm.createBigDataViewer();
+		else
+			viewerFrame = bdvWindows.get( 0 ).getViewerFrame();
+
+		viewer = viewerFrame.getViewerPanel();
+		viewerFrame.toFront();
 	}
 }
