@@ -62,7 +62,7 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 		final String dataName = spimData.getBasePath().getAbsolutePath();
 		panel.lblDataName.setText(
 				"<html>"
-						+ dataName.replaceAll( Pattern.quote( File.separator ), " " + File.separator + " " )
+						+ dataName.replaceAll( Pattern.quote( File.separator ), " / " )
 						+ "</html>" );
 
 		final List< BasicViewSetup > setups = spimData.getSequenceDescription().getViewSetupsOrdered();
