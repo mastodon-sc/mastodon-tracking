@@ -1,17 +1,10 @@
 package org.mastodon.trackmate.ui.wizard;
 
 import java.awt.event.ActionEvent;
-import java.util.Locale;
 
 import javax.swing.Action;
-import javax.swing.JFrame;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.trackmate.ui.wizard.TransitionAnimator.Direction;
-import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor1;
-import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor2;
-import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor3;
 import org.scijava.ui.behaviour.util.AbstractNamedAction;
 
 public class WizardController
@@ -67,17 +60,23 @@ public class WizardController
 
 	protected void next()
 	{
-		System.out.println( "next" ); // DEBUG
 		final WizardPanelDescriptor current = wizardModel.getCurrent();
-		if ( current == null || null == current.getNextPanelDescriptorIdentifier() )
+		if ( current == null )
+			return;
+
+		current.aboutToHidePanel();
+		if ( null == current.getNextPanelDescriptorIdentifier() )
 			return;
 
 		final String nextId = current.getNextPanelDescriptorIdentifier();
 		final WizardPanelDescriptor next = wizardModel.getDescriptor( nextId );
+		System.out.println( "next is " + next ); // DEBUG
 		if ( null == next )
 			return;
 
+		next.aboutToDisplayPanel();
 		display( next, current, true );
+		next.displayingPanel();
 		wizardModel.setCurrent( next );
 		exec( next.getForwardRunnable() );
 	}
@@ -99,7 +98,9 @@ public class WizardController
 		wizardModel.setCurrent( descriptor );
 		wizardPanel.btnPrevious.setEnabled( null != descriptor.getBackPanelDescriptorIdentifier() );
 		wizardPanel.btnNext.setEnabled( null != descriptor.getNextPanelDescriptorIdentifier() );
+		descriptor.aboutToDisplayPanel();
 		wizardPanel.display( descriptor );
+		descriptor.displayingPanel();
 	}
 
 	private void display( final WizardPanelDescriptor to, final WizardPanelDescriptor from, final boolean forward )
@@ -179,27 +180,4 @@ public class WizardController
 		cancelAction.putValue( Action.SMALL_ICON, WizardPanel.CANCEL_ICON );
 		return cancelAction;
 	}
-
-	/*
-	 * MAIN METHOD
-	 */
-
-	public static void main( final String[] args ) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException
-	{
-		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
-		Locale.setDefault( Locale.ROOT );
-		final JFrame frame = new JFrame( "Wrapper frame" );
-		final WizardModel model = new WizardModel();
-		final WizardController controller = new WizardController( model );
-		final Descriptor1 d1 = new Descriptor1();
-		controller.registerWizardPanel( d1 );
-		controller.registerWizardPanel( new Descriptor2() );
-		controller.registerWizardPanel( new Descriptor3() );
-		controller.init( d1 );
-		frame.getContentPane().add( controller.getWizardPanel() );
-		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-		frame.setSize( 300, 500 );
-		frame.setVisible( true );
-	}
-
 }
