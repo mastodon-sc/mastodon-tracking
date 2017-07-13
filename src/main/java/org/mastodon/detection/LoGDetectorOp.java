@@ -3,6 +3,7 @@ package org.mastodon.detection;
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
+import static org.mastodon.detection.DetectorKeys.KEY_ROI;
 import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
 import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 
@@ -19,6 +20,8 @@ import org.scijava.thread.ThreadService;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.util.Affine3DHelpers;
 import net.imagej.ops.special.function.Functions;
+import net.imglib2.FinalInterval;
+import net.imglib2.Interval;
 import net.imglib2.Point;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
@@ -28,6 +31,8 @@ import net.imglib2.algorithm.Benchmark;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
+import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 /**
@@ -63,9 +68,8 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
-
 		final StringBuilder str = new StringBuilder();
-		if ( DetectionUtil.checkSettingsValidity( settings, str ) )
+		if ( !DetectionUtil.checkSettingsValidity( settings, str ) )
 		{
 			processingTime = System.currentTimeMillis() - start;
 			statusService.clearStatus();
@@ -78,7 +82,7 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 		final int setup = ( int ) settings.get( KEY_SETUP_ID );
 		final double radius = ( double ) settings.get( KEY_RADIUS );
 		final double threshold = ( double ) settings.get( KEY_THRESHOLD );
-
+		final Interval roi = ( Interval ) settings.get( KEY_ROI );
 
 		final DoublePropertyMap< V > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
 		statusService.showStatus( "LoG detection" );
@@ -94,6 +98,7 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 
 			final int level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
 			final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );
+			final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( spimData, tp, setup, level );
 
 			/*
 			 * Load and extends image data.
@@ -101,6 +106,40 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 
 			@SuppressWarnings( "rawtypes" )
 			final RandomAccessibleInterval img = DetectionUtil.getImage( spimData, tp, setup, level );
+			@SuppressWarnings( "unchecked" )
+			final IntervalView< ? > zeroMin = Views.zeroMin( img );
+
+			/*
+			 * Transform ROI in higher level.
+			 */
+
+			final Interval interval;
+			if ( null == roi )
+			{
+				interval = zeroMin;
+			}
+			else
+			{
+				final double[] minSource = new double[ 3 ];
+				final double[] maxSource = new double[ 3 ];
+				roi.realMin( minSource );
+				roi.realMax( maxSource );
+				final double[] minTarget = new double[ 3 ];
+				final double[] maxTarget = new double[ 3 ];
+
+				mipmapTransform.applyInverse( minTarget, minSource );
+				mipmapTransform.applyInverse( maxTarget, maxSource );
+
+				final long[] tmin = new long[ 3 ];
+				final long[] tmax = new long[ 3 ];
+				for ( int d = 0; d < tmax.length; d++ )
+				{
+					tmin[ d ] = ( long ) Math.ceil( minTarget[ d ] );
+					tmax[ d ] = ( long ) Math.floor( maxTarget[ d ] );
+				}
+				final FinalInterval transformedRoi = new FinalInterval( tmin, tmax );
+				interval = Intervals.intersect( transformedRoi, zeroMin );
+			}
 
 			/*
 			 * Filter image.
@@ -112,8 +151,13 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 			final double[] calibration = new double[] { xs, ys, zs };
 
 			final RandomAccessibleInterval< FloatType > kernel = createLoGKernel( radius, img.numDimensions(), calibration );
+			@SuppressWarnings( "rawtypes" )
+			final IntervalView source = Views.interval( zeroMin, interval );
+
+			System.out.println( "Convolving" );
 			@SuppressWarnings( "unchecked" )
-			final RandomAccessibleInterval< FloatType > output = ops().filter().convolve( img, kernel );
+			final RandomAccessibleInterval< FloatType > output = ops().filter().convolve( source, kernel );
+			System.out.println( "Convolving done" );
 
 			/*
 			 * LoG normalization factor, so that the filtered peak have the

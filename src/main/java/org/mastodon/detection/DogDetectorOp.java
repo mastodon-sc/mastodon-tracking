@@ -3,6 +3,7 @@ package org.mastodon.detection;
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
+import static org.mastodon.detection.DetectorKeys.KEY_ROI;
 import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
 import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 
@@ -31,6 +32,9 @@ import net.imglib2.algorithm.dog.DogDetection.ExtremaType;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Intervals;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.Views;
 
 /**
  * Difference of Gaussian detector.
@@ -79,6 +83,7 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 		final int setup = ( int ) settings.get( KEY_SETUP_ID );
 		final double radius = ( double ) settings.get( KEY_RADIUS );
 		final double threshold = ( double ) settings.get( KEY_THRESHOLD );
+		final Interval roi = ( Interval ) settings.get( KEY_ROI );
 
 		final DoublePropertyMap< V > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
 
@@ -96,16 +101,49 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 
 			final int level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
 			final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );
+			final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( spimData, tp, setup, level );
 
 			/*
 			 * Load and extends image data.
 			 */
 
 			final RandomAccessibleInterval< ? > img = DetectionUtil.getImage( spimData, tp, setup, level );
+			final IntervalView< ? > zeroMin = Views.zeroMin( img );
 
 			@SuppressWarnings( { "unchecked", "rawtypes" } )
-			final RandomAccessible< FloatType > source = DetectionUtil.asExtendedFloat( ( RandomAccessibleInterval ) img );
-			final Interval interval = new FinalInterval( img );
+			final RandomAccessible< FloatType > source = DetectionUtil.asExtendedFloat( ( RandomAccessibleInterval ) zeroMin );
+
+			/*
+			 * Transform ROI in higher level.
+			 */
+
+			final Interval interval;
+			if ( null == roi )
+			{
+				interval = zeroMin;
+			}
+			else
+			{
+				final double[] minSource = new double[ 3 ];
+				final double[] maxSource = new double[ 3 ];
+				roi.realMin( minSource );
+				roi.realMax( maxSource );
+				final double[] minTarget = new double[ 3 ];
+				final double[] maxTarget = new double[ 3 ];
+
+				mipmapTransform.applyInverse( minTarget, minSource );
+				mipmapTransform.applyInverse( maxTarget, maxSource );
+
+				final long[] tmin = new long[ 3 ];
+				final long[] tmax = new long[ 3 ];
+				for ( int d = 0; d < tmax.length; d++ )
+				{
+					tmin[ d ] = ( long ) Math.ceil( minTarget[ d ] );
+					tmax[ d ] = ( long ) Math.floor( maxTarget[ d ] );
+				}
+				final FinalInterval transformedRoi = new FinalInterval( tmin, tmax );
+				interval = Intervals.intersect( transformedRoi, zeroMin );
+			}
 
 			/*
 			 * Process image.
