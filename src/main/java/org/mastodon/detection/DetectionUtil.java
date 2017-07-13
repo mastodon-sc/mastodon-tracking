@@ -195,13 +195,38 @@ public class DetectionUtil
 		final AffineTransform3D transform = new AffineTransform3D();
 		transform.set( spimData.getViewRegistrations().getViewRegistration( viewId ).getModel() );
 
+		transform.concatenate( getMipmapTransform( spimData, timepoint, setup, level ) );
+		return transform;
+	}
+
+	/**
+	 * Returns the transformation that maps the image coordinates at level 0 to
+	 * the image coordinates at the level specified, for the specified
+	 * time-point, setup id.
+	 * <p>
+	 * If the data does not ship multiple resolution levels, the identity
+	 * transform is returned.
+	 *
+	 * @param spimData
+	 *            the {@link SpimDataMinimal} linking to the image data.
+	 * @param timepoint
+	 *            the time-point to query.
+	 * @param setup
+	 *            the setup id to query.
+	 * @param level
+	 *            the resolution level.
+	 * @return a new transform.
+	 */
+	public static AffineTransform3D getMipmapTransform( final SpimDataMinimal spimData, final int timepoint, final int setup, final int level )
+	{
+		final AffineTransform3D transform = new AffineTransform3D();
 		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
 		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
 		{
 			final BasicMultiResolutionSetupImgLoader< ? > loader = ( ( BasicMultiResolutionImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
 			final AffineTransform3D[] mipmapTransforms = loader.getMipmapTransforms();
 			final AffineTransform3D mipmapTransform = mipmapTransforms[ level ];
-			transform.concatenate( mipmapTransform );
+			transform.set( mipmapTransform );
 		}
 		return transform;
 	}
