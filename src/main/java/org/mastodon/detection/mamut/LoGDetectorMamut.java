@@ -12,7 +12,16 @@ import net.imglib2.algorithm.Benchmark;
  *
  * @author Jean-Yves Tinevez
  */
-@Plugin( type = SpotDetectorOp.class )
+@Plugin( type = SpotDetectorOp.class, name = "LoG detector",
+		description = "<html>"
+				+ "This detector applies a LoG (Laplacian of Gaussian) filter "
+				+ "to the image, with a sigma suited to the blob estimated size. "
+				+ "<p>"
+				+ "This detector exploits multi-resolution images to speed-up detection. "
+				+ "Calculations are made in the Fourier space. The maxima in the "
+				+ "filtered image are searched for, and a quadratic fitting scheme allows to do "
+				+ "sub-pixel localization. "
+				+ "</html>" )
 public class LoGDetectorMamut extends AbstractSpotDetectorOp implements SpotDetectorOp, Benchmark
 {
 	@Override

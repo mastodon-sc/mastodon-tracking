@@ -14,7 +14,14 @@ import net.imglib2.algorithm.Benchmark;
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
  */
-@Plugin( type = SpotDetectorOp.class, priority = Priority.HIGH_PRIORITY )
+@Plugin( type = SpotDetectorOp.class, priority = Priority.HIGH_PRIORITY, name = "DoG detector",
+		description = "<html>"
+				+ "This detector relies on an approximation of the LoG operator  "
+				+ "by differences of gaussian (DoG). Computations are made in direct space."
+				+ "<p>"
+				+ "This detector exploits multi-resolution images to speed-up detection. "
+				+ "It can do sub-pixel localization of spots using a quadratic fitting scheme."
+				+ "</html>" )
 public class DoGDetectorMamut extends AbstractSpotDetectorOp implements SpotDetectorOp, Benchmark
 {
 
