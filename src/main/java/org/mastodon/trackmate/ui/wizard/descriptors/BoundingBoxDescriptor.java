@@ -174,7 +174,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 	@Override
 	public String getNextPanelDescriptorIdentifier()
 	{
-		return Descriptor1.ID;
+		return ChooseDetectorDescriptor.IDENTIFIER;
 	}
 
 	private void setPanelEnabled( final JPanel panel, final boolean isEnabled )

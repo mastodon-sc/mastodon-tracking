@@ -26,7 +26,7 @@ public class Descriptor1 extends WizardPanelDescriptor
 	@Override
 	public String getBackPanelDescriptorIdentifier()
 	{
-		return BoundingBoxDescriptor.IDENTIFIER;
+		return ChooseDetectorDescriptor.IDENTIFIER;
 	}
 
 	private class Descriptor1Panel extends JPanel
