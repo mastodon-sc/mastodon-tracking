@@ -51,7 +51,7 @@ public class Wizard extends AbstractContextual
 		final BoundingBoxDescriptor boundingBoxDescriptor = new BoundingBoxDescriptor( trackmate.getSettings(), windowManager );
 		controller.registerWizardPanel( boundingBoxDescriptor );
 
-		final ChooseDetectorDescriptor chooseDetectorDescriptor = new ChooseDetectorDescriptor( trackmate.getSettings() );
+		final ChooseDetectorDescriptor chooseDetectorDescriptor = new ChooseDetectorDescriptor( trackmate, controller, windowManager );
 		context().inject( chooseDetectorDescriptor );
 		controller.registerWizardPanel( chooseDetectorDescriptor );
 

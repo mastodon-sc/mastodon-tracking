@@ -4,8 +4,6 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.List;
 import java.util.Map;
 
@@ -15,8 +13,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.mastodon.detection.mamut.SpotDetectorOp;
+import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.trackmate.PluginProvider;
 import org.mastodon.trackmate.Settings;
+import org.mastodon.trackmate.TrackMate;
+import org.mastodon.trackmate.ui.wizard.WizardController;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 import org.scijava.Context;
 import org.scijava.Contextual;
@@ -35,8 +36,6 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 	@Parameter
 	private LogService log;
 
-	private final Settings settings;
-
 	private final DefaultComboBoxModel< String > model;
 
 	private List< String > names;
@@ -45,10 +44,20 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 
 	private List< Class< ? extends SpotDetectorOp > > classes;
 
-	public ChooseDetectorDescriptor( final Settings settings )
+	private final WizardController controller;
+
+	private String nextDescriptorIdentifier = "Not null"; // FIXME
+
+	private final TrackMate trackmate;
+
+	private final WindowManager windowManager;
+
+	public ChooseDetectorDescriptor( final TrackMate trackmate, final WizardController controller, final WindowManager windowManager )
 	{
+		this.trackmate = trackmate;
+		this.controller = controller;
+		this.windowManager = windowManager;
 		this.model = new DefaultComboBoxModel<>();
-		this.settings = settings;
 		this.targetPanel = new ChooseDetectorPanel();
 		this.panelIdentifier = IDENTIFIER;
 	}
@@ -64,6 +73,7 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 		this.classes = provider.getClasses();
 
 		int indexOf = 0;
+		final Settings settings = trackmate.getSettings();
 		final Class< ? extends SpotDetectorOp > detectorClass = settings.values.getDetector();
 		if ( null != detectorClass )
 		{
@@ -83,7 +93,30 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 	public void aboutToHidePanel()
 	{
 		final String name = ( String ) model.getSelectedItem();
-		settings.detector( classes.get( names.indexOf( name ) ) );
+		final Class< ? extends SpotDetectorOp > detectorClass = classes.get( names.indexOf( name ) );
+		final Settings settings = trackmate.getSettings();
+		settings.detector( detectorClass );
+
+		/*
+		 * Determine and register the next descriptor.
+		 */
+
+		final PluginProvider< SpotDetectorDescriptor > provider = new PluginProvider<>( SpotDetectorDescriptor.class );
+		provider.setContext( context() );
+		final List< String > detectorPanelNames = provider.getNames();
+		for ( final String key : detectorPanelNames )
+		{
+			final SpotDetectorDescriptor detectorPanel = provider.getInstance( key );
+			if ( detectorPanel.getTargetClasses().contains( detectorClass ) )
+			{
+				controller.registerWizardPanel( detectorPanel );
+				detectorPanel.getPanelComponent().setSize( targetPanel.getSize() );
+				detectorPanel.setTrackMate( trackmate );
+				detectorPanel.setWindowManager( windowManager );
+				context().inject( detectorPanel );
+				nextDescriptorIdentifier = detectorPanel.getPanelDescriptorIdentifier();
+			}
+		}
 	}
 
 	@Override
@@ -95,7 +128,7 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 	@Override
 	public String getNextPanelDescriptorIdentifier()
 	{
-		return Descriptor1.ID;
+		return nextDescriptorIdentifier;
 	}
 
 	private class ChooseDetectorPanel extends JPanel
@@ -146,14 +179,7 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 			gbc.anchor = GridBagConstraints.EAST;
 			add( lblInfo, gbc );
 
-			comboBox.addActionListener( new ActionListener()
-			{
-				@Override
-				public void actionPerformed( final ActionEvent e )
-				{
-					lblInfo.setText( descriptions.get( model.getSelectedItem() ) );
-				}
-			} );
+			comboBox.addActionListener( ( e ) -> lblInfo.setText( descriptions.get( model.getSelectedItem() ) ) );
 		}
 	}
 
