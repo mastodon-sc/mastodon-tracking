@@ -27,6 +27,8 @@ public class PluginProvider< K extends SciJavaPlugin > extends AbstractContextua
 
 	private List< Class< ? extends K > > classes;
 
+	private Map< String, K > instances;
+
 	public PluginProvider( final Class< K > cl )
 	{
 		this.cl = cl;
@@ -52,6 +54,7 @@ public class PluginProvider< K extends SciJavaPlugin > extends AbstractContextua
 		this.disabled = new ArrayList<>( infos.size() );
 		this.descriptions = new HashMap<>();
 		this.classes = new ArrayList<>( infos.size() );
+		this.instances = new HashMap<>( infos.size() );
 
 		for ( final PluginInfo< K > info : infos )
 		{
@@ -70,12 +73,20 @@ public class PluginProvider< K extends SciJavaPlugin > extends AbstractContextua
 				keys.add( key );
 				if ( info.isVisible() )
 					visibleKeys.add( key );
+				instances.put( key, info.createInstance() );
 			}
 			catch ( final InstantiableException e )
 			{
 				e.printStackTrace();
 			}
 		}
+	}
+
+	public K getInstance(final String name)
+	{
+		if (null == instances)
+			register();
+		return instances.get( name );
 	}
 
 	public List< Class< ? extends K > > getClasses()
