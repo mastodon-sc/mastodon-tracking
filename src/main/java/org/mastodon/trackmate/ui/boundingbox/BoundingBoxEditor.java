@@ -7,12 +7,10 @@ import bdv.util.ModifiableInterval;
 import bdv.viewer.ViewerPanel;
 import net.imglib2.FinalInterval;
 
-class BoundingBoxEditor implements DragBehaviour
+public class BoundingBoxEditor implements DragBehaviour
 {
 
 	private final BoundingBoxOverlay boxOverlay;
-
-	private final BoundingBoxModel model;
 
 	private boolean moving = false;
 
@@ -20,12 +18,14 @@ class BoundingBoxEditor implements DragBehaviour
 
 	private BoxSelectionPanel boxSelectionPanel;
 
-	BoundingBoxEditor( final BoundingBoxOverlay boxOverlay, final BoundingBoxModel model, final ViewerPanel viewerPanel, final BoxSelectionPanel boxSelectionPanel )
+	private ModifiableInterval interval;
+
+	public BoundingBoxEditor( final BoundingBoxOverlay boxOverlay, final ViewerPanel viewerPanel, final BoxSelectionPanel boxSelectionPanel, final ModifiableInterval interval )
 	{
 		this.boxOverlay = boxOverlay;
-		this.model = model;
 		this.viewerPanel = viewerPanel;
 		this.boxSelectionPanel = boxSelectionPanel;
+		this.interval = interval;
 	}
 
 	@Override
@@ -50,9 +50,8 @@ class BoundingBoxEditor implements DragBehaviour
 
 		final long[] max = new long[ 3 ];
 		final long[] min = new long[ 3 ];
-		final ModifiableInterval initialInterval = model.getInterval();
-		initialInterval.max( max );
-		initialInterval.min( min );
+		interval.max( max );
+		interval.min( min );
 
 		// Z.
 		if ( boxOverlay.cornerId < 4 )
@@ -72,8 +71,8 @@ class BoundingBoxEditor implements DragBehaviour
 		else
 			max[ 0 ] = Math.round( gPos[ 0 ] );
 
-		initialInterval.set( new FinalInterval( min, max ) );
-		boxSelectionPanel.updateSliders( initialInterval );
+		interval.set( new FinalInterval( min, max ) );
+		boxSelectionPanel.updateSliders( interval );
 		viewerPanel.requestRepaint();
 	}
 

@@ -151,7 +151,7 @@ public class BoundingBoxMamut
 
 		editMode = true;
 
-		dialog.boxOverlay.editMode = true;
+		dialog.boxOverlay.setEditMode( true );
 		dialog.boxModePanel.modeLabel.setText( "Edit mode" );
 		if ( !dialog.boxModePanel.full.isSelected() )
 			dialog.boxModePanel.full.doClick();
@@ -170,7 +170,7 @@ public class BoundingBoxMamut
 	{
 		editMode = false;
 		dialog.boxModePanel.modeLabel.setText( "Navigation mode" );
-		dialog.boxOverlay.editMode = false;
+		dialog.boxOverlay.setEditMode( false );
 		dialog.boxModePanel.setEnabled( true );
 
 		final TriggerBehaviourBindings triggerBehaviourBindings = viewerFrame.getTriggerbindings();
@@ -218,8 +218,10 @@ public class BoundingBoxMamut
 		private BoundingBoxEditMode( final InputTriggerConfig keyConfig )
 		{
 			super( keyConfig, "bdv" );
-			behaviour( new ToggleEditModeBehaviour(), BOUNDING_BOX_TOGGLE_EDIT_MODE_OFF, BoundingBoxMamut.BOUNDING_BOX_TOGGLE_EDIT_MODE_KEYS );
-			behaviour( new BoundingBoxEditor( dialog.boxOverlay, model, viewerFrame.getViewerPanel(), dialog.boxSelectionPanel ), BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
+			behaviour( new ToggleEditModeBehaviour(),
+					BOUNDING_BOX_TOGGLE_EDIT_MODE_OFF, BOUNDING_BOX_TOGGLE_EDIT_MODE_KEYS );
+			behaviour( new BoundingBoxEditor( dialog.boxOverlay, viewerFrame.getViewerPanel(), dialog.boxSelectionPanel, model.getInterval() ),
+					BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
 		}
 
 		private class ToggleEditModeBehaviour implements ClickBehaviour

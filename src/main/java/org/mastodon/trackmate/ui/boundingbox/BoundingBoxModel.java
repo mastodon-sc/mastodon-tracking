@@ -12,7 +12,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 
-class BoundingBoxModel extends BoxRealRandomAccessible< UnsignedShortType >
+public class BoundingBoxModel extends BoxRealRandomAccessible< UnsignedShortType >
 {
 
 	private RealARGBColorConverterSetup boxConverterSetup;

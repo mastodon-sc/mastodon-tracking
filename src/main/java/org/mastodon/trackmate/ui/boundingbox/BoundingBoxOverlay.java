@@ -65,7 +65,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private DisplayMode displayMode = DisplayMode.FULL;
 
-	boolean editMode;
+	private boolean editMode;
 
 	private GeneralPath front;
 
@@ -91,6 +91,11 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	public void setPerspective( final double perspective )
 	{
 		this.perspective = perspective;
+	}
+
+	public void setEditMode( final boolean editMode )
+	{
+		this.editMode = editMode;
 	}
 
 	@Override
@@ -476,7 +481,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	}
 
-	class CornerHighlighter extends MouseMotionAdapter
+	public class CornerHighlighter extends MouseMotionAdapter
 	{
 		private static final double DISTANCE_TOLERANCE = 20.;
 
