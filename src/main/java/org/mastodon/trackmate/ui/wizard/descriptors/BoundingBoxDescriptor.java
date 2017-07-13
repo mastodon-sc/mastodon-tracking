@@ -161,8 +161,14 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 	@Override
 	public void aboutToHidePanel()
 	{
+		final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
+		if (panel.useRoi.isSelected())
+			settings.values.getDetectorSettings().put( KEY_ROI, roi.getInterval() );
+		else
+			settings.values.getDetectorSettings().put( KEY_ROI, null );
+
+		toggleEditModeOff();
 		toggleBoundingBox( false );
-		settings.values.getDetectorSettings().put( KEY_ROI, roi.getInterval() );
 	}
 
 	@Override
@@ -355,10 +361,13 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 		panel.boxModePanel.modeToggle.setSelected( false );
 		setPanelEnabled( panel.boxModePanel, true );
 
-		final TriggerBehaviourBindings triggerBehaviourBindings = viewerFrame.getTriggerbindings();
-		triggerBehaviourBindings.removeInputTriggerMap( EDIT_MODE );
-		triggerBehaviourBindings.removeBehaviourMap( EDIT_MODE );
-		bbVisualization.install( viewerFrame.getTriggerbindings(), VISUALIZATION_MODE );
+		if (null != viewerFrame )
+		{
+			final TriggerBehaviourBindings triggerBehaviourBindings = viewerFrame.getTriggerbindings();
+			triggerBehaviourBindings.removeInputTriggerMap( EDIT_MODE );
+			triggerBehaviourBindings.removeBehaviourMap( EDIT_MODE );
+			bbVisualization.install( viewerFrame.getTriggerbindings(), VISUALIZATION_MODE );
+		}
 	}
 
 	private class BoundingBoxVisualizationMode extends Behaviours
