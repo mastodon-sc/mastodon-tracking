@@ -1,6 +1,7 @@
 package org.mastodon.detection;
 
 import bdv.spimdata.SpimDataMinimal;
+import net.imglib2.Interval;
 
 public class DetectorKeys
 {
@@ -63,6 +64,18 @@ public class DetectorKeys
 	 * Default value for the {@link #KEY_THRESHOLD} parameter.
 	 */
 	public static final double DEFAULT_THRESHOLD = 1000.;
+
+	/**
+	 * Key for the parameter specifying what portion of the source image to
+	 * process, specified as {@link Interval}. A value of <code>null</code>
+	 * indicates that the whole image is to be processed.
+	 */
+	public static final String KEY_ROI = "ROI";
+
+	/**
+	 * Default value for the {@link #KEY_ROI} parameter.
+	 */
+	public static final Interval DEFAULT_ROI = null;
 
 	private DetectorKeys()
 	{}
