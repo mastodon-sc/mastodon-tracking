@@ -10,6 +10,8 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -25,6 +27,7 @@ import javax.swing.JButton;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
@@ -295,6 +298,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 			this.diameter = new JFormattedTextField( FORMAT );
 			diameter.setHorizontalAlignment( JLabel.RIGHT );
+			diameter.addFocusListener( new SelectAllOnFocus( diameter ) );
 			gbc.gridx++;
 			gbc.anchor = GridBagConstraints.CENTER;
 			add( diameter, gbc );
@@ -314,6 +318,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 			this.threshold = new JFormattedTextField( FORMAT );
 			threshold.setHorizontalAlignment( JLabel.RIGHT );
+			threshold.addFocusListener( new SelectAllOnFocus( threshold ) );
 			gbc.gridx++;
 			gbc.anchor = GridBagConstraints.CENTER;
 			add( threshold, gbc );
@@ -325,6 +330,21 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 			gbc.gridx = 2;
 			add( preview, gbc );
 		}
+	}
 
+	private static class SelectAllOnFocus extends FocusAdapter
+	{
+		private JFormattedTextField textField;
+
+		public SelectAllOnFocus( final JFormattedTextField textField )
+		{
+			this.textField = textField;
+		}
+
+		@Override
+		public void focusGained( final FocusEvent e )
+		{
+			SwingUtilities.invokeLater( () -> textField.selectAll() );
+		}
 	}
 }
