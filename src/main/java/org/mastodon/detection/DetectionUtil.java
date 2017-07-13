@@ -3,11 +3,13 @@ package org.mastodon.detection;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_RADIUS;
+import static org.mastodon.detection.DetectorKeys.DEFAULT_ROI;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_SETUP_ID;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_THRESHOLD;
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
+import static org.mastodon.detection.DetectorKeys.KEY_ROI;
 import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
 import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 import static org.mastodon.linking.LinkingUtils.checkMapKeys;
@@ -34,6 +36,7 @@ import mpicbg.spim.data.generic.sequence.BasicViewDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHints;
 import mpicbg.spim.data.sequence.ViewId;
+import net.imglib2.Interval;
 import net.imglib2.Point;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
@@ -309,6 +312,7 @@ public class DetectionUtil
 		settings.put( KEY_SETUP_ID, DEFAULT_SETUP_ID );
 		settings.put( KEY_RADIUS, DEFAULT_RADIUS );
 		settings.put( KEY_THRESHOLD, DEFAULT_THRESHOLD );
+		settings.put( KEY_ROI, DEFAULT_ROI );
 		return settings;
 	}
 
@@ -332,14 +336,15 @@ public class DetectionUtil
 		}
 
 		boolean ok = true;
-		// Linking
+		// Check proper class.
 		ok = ok & checkParameter( settings, KEY_SETUP_ID, Integer.class, errorHolder );
 		ok = ok & checkParameter( settings, KEY_MIN_TIMEPOINT, Integer.class, errorHolder );
 		ok = ok & checkParameter( settings, KEY_MAX_TIMEPOINT, Integer.class, errorHolder );
 		ok = ok & checkParameter( settings, KEY_RADIUS, Double.class, errorHolder );
 		ok = ok & checkParameter( settings, KEY_THRESHOLD, Double.class, errorHolder );
+		ok = ok & checkParameter( settings, KEY_ROI, Interval.class, errorHolder );
 
-		// Check keys
+		// Check key presence.
 		final List< String > mandatoryKeys = new ArrayList< String >();
 		mandatoryKeys.add( KEY_SETUP_ID );
 		mandatoryKeys.add( KEY_MIN_TIMEPOINT );
@@ -347,9 +352,10 @@ public class DetectionUtil
 		mandatoryKeys.add( KEY_RADIUS );
 		mandatoryKeys.add( KEY_THRESHOLD );
 		final List< String > optionalKeys = new ArrayList< String >();
+		optionalKeys.add( KEY_ROI );
 		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, errorHolder );
 
-		// Check min & max time-point
+		// Check min & max time-point.
 		final int minTimepoint = ( int ) settings.get( KEY_MIN_TIMEPOINT );
 		final int maxTimepoint = ( int ) settings.get( KEY_MAX_TIMEPOINT );
 		if ( maxTimepoint < minTimepoint )
