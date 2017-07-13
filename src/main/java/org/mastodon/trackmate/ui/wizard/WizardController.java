@@ -45,7 +45,11 @@ public class WizardController
 	{
 		System.out.println( "previous" ); // DEBUG
 		final WizardPanelDescriptor current = wizardModel.getCurrent();
-		if ( current == null || null == current.getBackPanelDescriptorIdentifier() )
+		if ( current == null )
+			return;
+
+		current.aboutToHidePanel();
+		if ( null == current.getBackPanelDescriptorIdentifier() )
 			return;
 
 		final String backId = current.getBackPanelDescriptorIdentifier();
@@ -53,7 +57,9 @@ public class WizardController
 		if ( null == back )
 			return;
 
+		back.aboutToDisplayPanel();
 		display( back, current, false );
+		back.displayingPanel();
 		wizardModel.setCurrent( back );
 		exec( back.getBackwardRunnable() );
 	}
