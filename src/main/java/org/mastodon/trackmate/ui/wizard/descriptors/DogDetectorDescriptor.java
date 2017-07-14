@@ -12,6 +12,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.MouseListener;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -29,12 +30,18 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.axis.NumberTickUnitSource;
+import org.jfree.chart.axis.TickUnitSource;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.title.TextTitle;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
 import org.mastodon.detection.DetectorKeys;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.LoGDetectorMamut;
 import org.mastodon.detection.mamut.SpotDetectorOp;
+import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.mamut.BdvManager.BdvWindow;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.revised.model.mamut.Model;
@@ -43,6 +50,7 @@ import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
+import org.mastodon.trackmate.ui.wizard.util.HistogramUtil;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -77,10 +85,18 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 	private ViewerFrame viewerFrame;
 
+	private ChartPanel chartPanel;
+
 	public DogDetectorDescriptor()
 	{
 		this.panelIdentifier = IDENTIFIER;
 		this.targetPanel = new DogDetectorPanel();
+	}
+
+	@Override
+	public void aboutToHidePanel()
+	{
+		grabSettings();
 	}
 
 	private void preview()
@@ -154,7 +170,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 					final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl,
 							graph, spimData,
 							detectorSettings );
-					log.info( "Detection with " + detector );
+					panel.lblInfo.setText( "Previewing..." );
 					detector.compute( spimData, graph );
 
 					if ( !detector.wasSuccessful() )
@@ -167,10 +183,12 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 					graph.notifyGraphChanged();
 
 					int nSpots = 0;
-					for ( @SuppressWarnings( "unused" ) final Spot spot : spatialIndex )
+					for ( @SuppressWarnings( "unused" )
+					final Spot spot : spatialIndex )
 						nSpots++;
 
-					log.info( "Found " + nSpots + " spots in time-point " + currentTimepoint ); // TODO
+					panel.lblInfo.setText( "Found " + nSpots + " spots in time-point " + currentTimepoint );
+					plotQualityHistogram( detector.getQualityFeature().getPropertyMap() );
 				}
 				finally
 				{
@@ -181,6 +199,46 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 	}
 
+	private void plotQualityHistogram( final DoublePropertyMap< Spot > qualities )
+	{
+		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
+		if ( null != chartPanel )
+			panel.remove( chartPanel );
+
+		final double[] values = qualities.getMap().values();
+		this.chartPanel = HistogramUtil.createHistogramPlot( values, false );
+		chartPanel.getChart().setTitle( new TextTitle( "Quality histogram", chartPanel.getFont() ) );
+
+		// Disable zoom.
+		for ( final MouseListener ml : chartPanel.getMouseListeners() )
+			chartPanel.removeMouseListener( ml );
+
+		// Re enable the X axis.
+		final XYPlot plot = chartPanel.getChart().getXYPlot();
+		plot.getDomainAxis().setVisible( true );
+		final TickUnitSource source = new NumberTickUnitSource( false, FORMAT );
+		plot.getDomainAxis().setStandardTickUnits( source );
+		final Font smallFont = chartPanel.getFont().deriveFont( chartPanel.getFont().getSize2D() - 2f );
+		plot.getDomainAxis().setTickLabelFont( smallFont );
+
+		// Transparent background.
+		chartPanel.getChart().setBackgroundPaint( null );
+
+		final GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridy = 5;
+		gbc.gridx = 0;
+		gbc.gridwidth = 3;
+		gbc.anchor = GridBagConstraints.BASELINE_LEADING;
+		gbc.fill = GridBagConstraints.BOTH;
+		gbc.insets = new Insets( 5, 5, 5, 5 );
+		panel.add( chartPanel, gbc );
+		panel.revalidate();
+	}
+
+	/**
+	 * Update the settings field of this descriptor with the values set on the
+	 * GUI.
+	 */
 	private void grabSettings()
 	{
 		if ( null == settings )
@@ -267,13 +325,15 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 		private JButton preview;
 
+		private JLabel lblInfo;
+
 		public DogDetectorPanel()
 		{
 			final GridBagLayout layout = new GridBagLayout();
 			layout.columnWidths = new int[] { 80, 80, 40 };
 			layout.columnWeights = new double[] { 0.2, 0.7, 0.1 };
-			layout.rowHeights = new int[] { 26, 0, 0, 0, 26 };
-			layout.rowWeights = new double[] { 1., 0., 0., 0., 1. };
+			layout.rowHeights = new int[] { 26, 0, 0, 0, 26, 26 };
+			layout.rowWeights = new double[] { 1., 0., 0., 0., 0., 1. };
 			setLayout( layout );
 
 			final GridBagConstraints gbc = new GridBagConstraints();
@@ -329,6 +389,16 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 			gbc.gridy++;
 			gbc.gridx = 2;
 			add( preview, gbc );
+
+			// Info text.
+			this.lblInfo = new JLabel( "", JLabel.RIGHT );
+			lblInfo.setFont( getFont().deriveFont( getFont().getSize2D() - 2f ) );
+			gbc.gridwidth = 3;
+			gbc.gridy++;
+			gbc.gridx = 0;
+			add( lblInfo, gbc );
+
+			// Quality histogram place holder.
 		}
 	}
 
