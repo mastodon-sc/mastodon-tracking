@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.Action;
 
 import org.mastodon.trackmate.ui.wizard.TransitionAnimator.Direction;
+import org.mastodon.trackmate.ui.wizard.descriptors.LogDescriptor;
 import org.scijava.ui.behaviour.util.AbstractNamedAction;
 
 public class WizardController
@@ -36,9 +37,19 @@ public class WizardController
 		wizardModel.registerPanel( panel );
 	}
 
-	protected void log()
+	protected void log( final boolean show )
 	{
-		System.out.println( "log" ); // DEBUG
+		System.out.println( "log " + show ); // DEBUG
+		final WizardPanelDescriptor logDescriptor = wizardModel.getDescriptor( LogDescriptor.IDENTIFIER );
+		final WizardPanelDescriptor current = wizardModel.getCurrent();
+
+		wizardPanel.btnNext.setEnabled( !show );
+		wizardPanel.btnPrevious.setEnabled( !show);
+		if (show)
+			display( logDescriptor, current, Direction.TOP );
+		else
+			display( current, logDescriptor, Direction.BOTTOM );
+
 	}
 
 	protected void previous()
@@ -58,7 +69,7 @@ public class WizardController
 			return;
 
 		back.aboutToDisplayPanel();
-		display( back, current, false );
+		display( back, current, Direction.LEFT );
 		back.displayingPanel();
 		wizardModel.setCurrent( back );
 		exec( back.getBackwardRunnable() );
@@ -81,7 +92,7 @@ public class WizardController
 			return;
 
 		next.aboutToDisplayPanel();
-		display( next, current, true );
+		display( next, current, Direction.RIGHT );
 		next.displayingPanel();
 		wizardModel.setCurrent( next );
 		exec( next.getForwardRunnable() );
@@ -109,14 +120,14 @@ public class WizardController
 		descriptor.displayingPanel();
 	}
 
-	private void display( final WizardPanelDescriptor to, final WizardPanelDescriptor from, final boolean forward )
+	private void display( final WizardPanelDescriptor to, final WizardPanelDescriptor from, final Direction direction )
 	{
 		if ( null == to )
 			return;
 
 		wizardPanel.btnPrevious.setEnabled( null != to.getBackPanelDescriptorIdentifier() );
 		wizardPanel.btnNext.setEnabled( null != to.getNextPanelDescriptorIdentifier() );
-		wizardPanel.transition( to, from, forward ? Direction.RIGHT : Direction.LEFT );
+		wizardPanel.transition( to, from, direction );
 	}
 
 	private Action getNextAction()
@@ -163,7 +174,7 @@ public class WizardController
 			@Override
 			public void actionPerformed( final ActionEvent e )
 			{
-				log();
+				log( wizardPanel.btnLog.isSelected() );
 			}
 		};
 		logAction.putValue( Action.SMALL_ICON, WizardPanel.LOG_ICON );

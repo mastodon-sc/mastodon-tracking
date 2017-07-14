@@ -16,8 +16,10 @@ import org.mastodon.trackmate.ui.wizard.descriptors.ChooseDetectorDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor1;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor2;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor3;
+import org.mastodon.trackmate.ui.wizard.descriptors.LogDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.SetupIdDecriptor;
 import org.scijava.AbstractContextual;
+import org.scijava.plugin.Parameter;
 
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
@@ -26,6 +28,9 @@ import net.imagej.ImageJ;
 
 public class Wizard extends AbstractContextual
 {
+	@Parameter
+	private WizardLogService logService;
+
 	private final TrackMate trackmate;
 
 	private final JFrame frame;
@@ -45,6 +50,11 @@ public class Wizard extends AbstractContextual
 
 	private void createDescriptors()
 	{
+		final LogDescriptor logDescriptor = new LogDescriptor(logService.getPanel());
+		controller.registerWizardPanel( logDescriptor );
+		logService.clearStatus();
+		logService.clearLog();
+
 		final SetupIdDecriptor setupIdDecriptor = new SetupIdDecriptor( trackmate.getSettings() );
 		controller.registerWizardPanel( setupIdDecriptor );
 
@@ -52,7 +62,7 @@ public class Wizard extends AbstractContextual
 		controller.registerWizardPanel( boundingBoxDescriptor );
 
 		final ChooseDetectorDescriptor chooseDetectorDescriptor = new ChooseDetectorDescriptor( trackmate, controller, windowManager );
-		context().inject( chooseDetectorDescriptor );
+		chooseDetectorDescriptor.setContext( context() );
 		controller.registerWizardPanel( chooseDetectorDescriptor );
 
 		controller.registerWizardPanel( new Descriptor1() );
@@ -82,7 +92,8 @@ public class Wizard extends AbstractContextual
 		 * Load SpimData
 		 */
 //		final String bdvFile = "samples/datasethdf5.xml";
-		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+//		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 
 		SpimDataMinimal sd = null;
 		try
