@@ -36,6 +36,8 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 	@Parameter
 	private LogService log;
 
+	private PluginProvider< SpotDetectorDescriptor > descriptorProvider;
+
 	private final DefaultComboBoxModel< String > model;
 
 	private List< String > names;
@@ -52,6 +54,8 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 
 	private final WindowManager windowManager;
 
+	private SpotDetectorDescriptor previousDetectorPanel = null;
+
 	public ChooseDetectorDescriptor( final TrackMate trackmate, final WizardController controller, final WindowManager windowManager )
 	{
 		this.trackmate = trackmate;
@@ -63,15 +67,23 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 	}
 
 	@Override
+	public void setContext( final Context context )
+	{
+		context.inject( this );
+
+		final PluginProvider< SpotDetectorOp > detectorprovider = new PluginProvider<>( SpotDetectorOp.class );
+		context.inject( detectorprovider );
+		this.names = detectorprovider.getVisibleNames();
+		this.descriptions = detectorprovider.getDescriptions();
+		this.classes = detectorprovider.getClasses();
+
+		this.descriptorProvider = new PluginProvider<>( SpotDetectorDescriptor.class );
+		context.inject( descriptorProvider );
+	}
+
+	@Override
 	public void aboutToDisplayPanel()
 	{
-		final PluginProvider< SpotDetectorOp > provider = new PluginProvider<>( SpotDetectorOp.class );
-		context.inject( provider );
-
-		this.names = provider.getVisibleNames();
-		this.descriptions = provider.getDescriptions();
-		this.classes = provider.getClasses();
-
 		int indexOf = 0;
 		final Settings settings = trackmate.getSettings();
 		final Class< ? extends SpotDetectorOp > detectorClass = settings.values.getDetector();
@@ -101,14 +113,13 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 		 * Determine and register the next descriptor.
 		 */
 
-		final PluginProvider< SpotDetectorDescriptor > provider = new PluginProvider<>( SpotDetectorDescriptor.class );
-		provider.setContext( context() );
-		final List< String > detectorPanelNames = provider.getNames();
+		final List< String > detectorPanelNames = descriptorProvider.getNames();
 		for ( final String key : detectorPanelNames )
 		{
-			final SpotDetectorDescriptor detectorPanel = provider.getInstance( key );
-			if ( detectorPanel.getTargetClasses().contains( detectorClass ) )
+			final SpotDetectorDescriptor detectorPanel = descriptorProvider.getInstance( key );
+			if ( detectorPanel.getTargetClasses().contains( detectorClass ) && detectorPanel != previousDetectorPanel  )
 			{
+				previousDetectorPanel = detectorPanel;
 				controller.registerWizardPanel( detectorPanel );
 				detectorPanel.getPanelComponent().setSize( targetPanel.getSize() );
 				detectorPanel.setTrackMate( trackmate );
