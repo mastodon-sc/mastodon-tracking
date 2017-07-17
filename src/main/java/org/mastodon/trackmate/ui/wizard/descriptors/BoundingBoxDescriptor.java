@@ -1,5 +1,7 @@
 package org.mastodon.trackmate.ui.wizard.descriptors;
 
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_ROI;
 import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
 
@@ -12,6 +14,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
 
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -36,6 +40,8 @@ import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
 import bdv.tools.boundingbox.BoxSelectionPanel;
 import bdv.tools.brightness.SetupAssignments;
+import bdv.tools.brightness.SliderPanel;
+import bdv.util.BoundedValue;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerFrame;
 import bdv.viewer.ViewerPanel;
@@ -91,7 +97,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 		this.wm = wm;
 		this.panelIdentifier = IDENTIFIER;
 		final long[] a = Util.getArrayFromValue( 1000l, 3 );
-		this.roi = new BoundingBoxModel( new FinalInterval( a, a ), new AffineTransform3D() );
+		this.roi = new BoundingBoxModel( new FinalInterval( a, a ), new FinalInterval( a, a ), new AffineTransform3D() );
 		this.targetPanel = new BoundingBoxPanel();
 	}
 
@@ -118,7 +124,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 			/*
 			 * Change ROI source and overlay.
 			 */
-			roi = getBoundingBoxModelFor();
+			roi = getBoundingBoxModel();
 			boxOverlay = new BoundingBoxOverlay( roi );
 			boxOverlay.setPerspective( 0 );
 			cornerHighlighter = boxOverlay.new CornerHighlighter();
@@ -127,8 +133,11 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 			 * We also have to recreate the selection panel linked to the new
 			 * ROI.
 			 */
-			panel.remove( panel.boxSelectionPanel );
-			panel.boxSelectionPanel = new BoxSelectionPanel( roi.getInterval(), roi.getInterval() );
+			panel.remove( panel.boundsPanel );
+			panel.boundsPanel = new JPanel();
+			panel.boundsPanel.setLayout( new BoxLayout( panel.boundsPanel, BoxLayout.PAGE_AXIS ) );
+
+			panel.boxSelectionPanel = new BoxSelectionPanel( roi.getInterval(), roi.getMaxInterval() );
 			panel.boxSelectionPanel.addSelectionUpdateListener( new BoxSelectionPanel.SelectionUpdateListener()
 			{
 				@Override
@@ -139,6 +148,24 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 				}
 			} );
 
+			/*
+			 * We reset time bounds.
+			 */
+
+			final int nTimepoints = wm.getSharedBigDataViewerData().getNumTimepoints();
+
+			panel.minT = new BoundedValue( 0, nTimepoints, 0 );
+			final SliderPanel tMinPanel = new SliderPanel( "t min", panel.minT, 1 );
+			tMinPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
+
+			panel.maxT = new BoundedValue( 0, nTimepoints, nTimepoints );
+			final SliderPanel tMaxPanel = new SliderPanel( "t max", panel.maxT, 1 );
+			tMaxPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
+
+			panel.boundsPanel.add( panel.boxSelectionPanel );
+			panel.boundsPanel.add( tMinPanel );
+			panel.boundsPanel.add( tMaxPanel );
+
 			final GridBagConstraints gbc = new GridBagConstraints();
 			gbc.gridx = 0;
 			gbc.gridy = 2;
@@ -146,13 +173,18 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 			gbc.fill = GridBagConstraints.HORIZONTAL;
 			gbc.weighty = 1.;
 			gbc.insets = new Insets( 5, 5, 5, 5 );
-			setPanelEnabled( panel.boxSelectionPanel, panel.useRoi.isSelected() );
+			setPanelEnabled( panel.boundsPanel, panel.useRoi.isSelected() );
 			setPanelEnabled( panel.boxModePanel, panel.useRoi.isSelected() );
-			panel.add( panel.boxSelectionPanel, gbc );
+			panel.add( panel.boundsPanel, gbc );
 
-			panel.boxSelectionPanel.setBoundsInterval( roi.getInterval() );
+			panel.boxSelectionPanel.setBoundsInterval( roi.getMaxInterval() );
 			panel.boxSelectionPanel.updateSliders( roi.getInterval() );
 			previousSetupID = setupID;
+		}
+		else
+		{
+			panel.minT.setCurrentValue( ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT ) );
+			panel.maxT.setCurrentValue( ( int ) settings.values.getDetectorSettings().get( KEY_MAX_TIMEPOINT ) );
 		}
 
 		toggleBoundingBox( panel.useRoi.isSelected() );
@@ -162,10 +194,13 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 	public void aboutToHidePanel()
 	{
 		final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
-		if (panel.useRoi.isSelected())
+		if ( panel.useRoi.isSelected() )
 			settings.values.getDetectorSettings().put( KEY_ROI, roi.getInterval() );
 		else
 			settings.values.getDetectorSettings().put( KEY_ROI, null );
+
+		settings.values.getDetectorSettings().put( KEY_MIN_TIMEPOINT, panel.minT.getCurrentValue() );
+		settings.values.getDetectorSettings().put( KEY_MAX_TIMEPOINT, panel.maxT.getCurrentValue() );
 
 		toggleEditModeOff();
 		toggleBoundingBox( false );
@@ -202,7 +237,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 	 *
 	 * @return a new {@link BoundingBoxModel}.
 	 */
-	private BoundingBoxModel getBoundingBoxModelFor()
+	private BoundingBoxModel getBoundingBoxModel()
 	{
 		Interval interval = ( Interval ) settings.values.getDetectorSettings().get( KEY_ROI );
 		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
@@ -234,22 +269,20 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 		{
 			if ( null == interval )
 				interval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
+			maxInterval = interval;
 		}
-
-		return new BoundingBoxModel( interval, sourceTransform );
+		return new BoundingBoxModel( interval, maxInterval, sourceTransform );
 	}
 
 	private void toggleBoundingBox( final boolean useRoi )
 	{
 		final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
-		setPanelEnabled( panel.boxSelectionPanel, useRoi );
+		setPanelEnabled( panel.boundsPanel, useRoi );
 		setPanelEnabled( panel.boxModePanel, useRoi );
 
 		if ( useRoi )
 		{
 			showViewer();
-			final int setupId = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
-			roi.install( viewerFrame.getViewerPanel(), setupId );
 			showOverlay();
 		}
 		else if ( viewerFrame != null )
@@ -268,7 +301,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 
 		if ( showBoxSource )
 		{
-			if ( viewer.isShowing() )
+			if ( viewer.isShowing() && null != roi.getBoxSourceAndConverter() )
 				viewer.removeSource( roi.getBoxSourceAndConverter().getSpimSource() );
 			setupAssignments.removeSetup( roi.getBoxConverterSetup() );
 		}
@@ -282,8 +315,10 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 
 	private void showOverlay()
 	{
-		final ViewerPanel viewer = viewerFrame.getViewerPanel();
 		final SetupAssignments setupAssignments = wm.getSharedBigDataViewerData().getSetupAssignments();
+		final ViewerPanel viewer = viewerFrame.getViewerPanel();
+		final int setupId = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
+		roi.install( viewerFrame.getViewerPanel(), setupId );
 
 		if ( showBoxSource )
 		{
@@ -361,7 +396,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 		panel.boxModePanel.modeToggle.setSelected( false );
 		setPanelEnabled( panel.boxModePanel, true );
 
-		if (null != viewerFrame )
+		if ( null != viewerFrame )
 		{
 			final TriggerBehaviourBindings triggerBehaviourBindings = viewerFrame.getTriggerbindings();
 			triggerBehaviourBindings.removeInputTriggerMap( EDIT_MODE );
@@ -423,7 +458,13 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 
 		private final BoxModePanel boxModePanel;
 
+		private JPanel boundsPanel;
+
 		private final JCheckBox useRoi;
+
+		private BoundedValue minT;
+
+		private BoundedValue maxT;
 
 		private BoundingBoxPanel()
 		{
@@ -451,7 +492,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 			add( useRoi, gbc );
 
 			gbc.gridy++;
-			this.boxSelectionPanel = new BoxSelectionPanel( roi.getInterval(), roi.getInterval() );
+			this.boxSelectionPanel = new BoxSelectionPanel( roi.getInterval(), roi.getMaxInterval() );
 			boxSelectionPanel.addSelectionUpdateListener( new BoxSelectionPanel.SelectionUpdateListener()
 			{
 				@Override
@@ -462,7 +503,25 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 				}
 			} );
 
-			add( boxSelectionPanel, gbc );
+			// Time panel
+			final int nTimepoints = wm.getSharedBigDataViewerData().getNumTimepoints();
+			final int minTimepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT );
+			final int maxTimepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MAX_TIMEPOINT );
+
+			this.minT = new BoundedValue( 0, nTimepoints, minTimepoint );
+			final SliderPanel tMinPanel = new SliderPanel( "t min", minT, 1 );
+			tMinPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
+
+			this.maxT = new BoundedValue( 0, nTimepoints, maxTimepoint );
+			final SliderPanel tMaxPanel = new SliderPanel( "t max", maxT, 1 );
+			tMaxPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
+
+			this.boundsPanel = new JPanel();
+			boundsPanel.setLayout( new BoxLayout( boundsPanel, BoxLayout.PAGE_AXIS ) );
+			boundsPanel.add( boxSelectionPanel );
+			boundsPanel.add( tMinPanel );
+			boundsPanel.add( tMaxPanel );
+			add( boundsPanel, gbc );
 
 			gbc.gridy++;
 			this.boxModePanel = new BoxModePanel();
