@@ -44,8 +44,8 @@ public class WizardController
 		final WizardPanelDescriptor current = wizardModel.getCurrent();
 
 		wizardPanel.btnNext.setEnabled( !show );
-		wizardPanel.btnPrevious.setEnabled( !show);
-		if (show)
+		wizardPanel.btnPrevious.setEnabled( !show );
+		if ( show )
 			display( logDescriptor, current, Direction.TOP );
 		else
 			display( current, logDescriptor, Direction.BOTTOM );
@@ -108,6 +108,15 @@ public class WizardController
 		System.out.println( "executing " + runnable ); // DEBUG
 		if ( null == runnable )
 			return;
+
+		new Thread()
+		{
+			@Override
+			public void run()
+			{
+				runnable.run();
+			};
+		}.start();
 	}
 
 	public void init( final WizardPanelDescriptor descriptor )

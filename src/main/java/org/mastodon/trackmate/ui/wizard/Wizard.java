@@ -1,5 +1,6 @@
 package org.mastodon.trackmate.ui.wizard;
 
+
 import java.util.Locale;
 
 import javax.swing.JFrame;
@@ -16,6 +17,7 @@ import org.mastodon.trackmate.ui.wizard.descriptors.ChooseDetectorDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor1;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor2;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor3;
+import org.mastodon.trackmate.ui.wizard.descriptors.ExecuteDetectionDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.LogDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.SetupIdDecriptor;
 import org.scijava.AbstractContextual;
@@ -50,7 +52,7 @@ public class Wizard extends AbstractContextual
 
 	private void createDescriptors()
 	{
-		final LogDescriptor logDescriptor = new LogDescriptor(logService.getPanel());
+		final LogDescriptor logDescriptor = new LogDescriptor( logService.getPanel() );
 		controller.registerWizardPanel( logDescriptor );
 		logService.clearStatus();
 		logService.clearLog();
@@ -65,6 +67,9 @@ public class Wizard extends AbstractContextual
 		chooseDetectorDescriptor.setContext( context() );
 		controller.registerWizardPanel( chooseDetectorDescriptor );
 
+		final ExecuteDetectionDescriptor executeDetectionDescriptor = new ExecuteDetectionDescriptor( trackmate, logService.getPanel() );
+		controller.registerWizardPanel( executeDetectionDescriptor );
+
 		controller.registerWizardPanel( new Descriptor1() );
 		controller.registerWizardPanel( new Descriptor2() );
 		controller.registerWizardPanel( new Descriptor3() );
@@ -76,7 +81,7 @@ public class Wizard extends AbstractContextual
 		createDescriptors();
 		frame.getContentPane().add( controller.getWizardPanel() );
 		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-		frame.setSize( 300, 500 );
+		frame.setSize( 300, 600 );
 		frame.setVisible( true );
 	}
 
@@ -92,8 +97,8 @@ public class Wizard extends AbstractContextual
 		 * Load SpimData
 		 */
 //		final String bdvFile = "samples/datasethdf5.xml";
-		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-//		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+//		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 
 		SpimDataMinimal sd = null;
 		try
@@ -111,11 +116,11 @@ public class Wizard extends AbstractContextual
 
 		final Model model = new Model();
 		final TrackMate trackmate = new TrackMate( settings, model );
-		trackmate.setContext( ij.context() );
+		ij.context().inject( trackmate );
 
 		final MainWindow mw = new MainWindow( model, spimData, bdvFile, MainWindow.getInputTriggerConfig() );
 		mw.setVisible( true );
-		final Wizard wizard = new Wizard( new TrackMate( settings, model ), mw.getWindowManager() );
+		final Wizard wizard = new Wizard( trackmate, mw.getWindowManager() );
 		ij.context().inject( wizard );
 		wizard.show();
 	}
