@@ -31,7 +31,7 @@ import net.imagej.ImageJ;
 public class Sandbox
 {
 
-	public static void main( final String[] args ) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException
+	public static void main( final String[] args ) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException, InterruptedException
 	{
 		Locale.setDefault( Locale.US );
 		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
@@ -42,9 +42,9 @@ public class Sandbox
 		/*
 		 * Load SpimData
 		 */
-		final String bdvFile = "samples/datasethdf5.xml";
+//		final String bdvFile = "samples/datasethdf5.xml";
 //		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-//		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 		SpimDataMinimal sd = null;
 		try
 		{
@@ -59,8 +59,8 @@ public class Sandbox
 
 		final int maxTimepoint = spimData.getSequenceDescription().getTimePoints().size() - 1;
 		final int minTimepoint = 0;
-		final double radius = 6.;
-		final double threshold = 1000.;
+		final double radius = 50.;
+		final double threshold = 500.;
 		final int setup = 0;
 
 		final Class< DoGDetectorMamut > detectorClass = DoGDetectorMamut.class;
@@ -90,7 +90,15 @@ public class Sandbox
 		final Model model = new Model();
 		final TrackMate trackmate = new TrackMate( settings, model );
 		trackmate.setContext( ij.context() );
-		trackmate.run();
+
+		new Thread( trackmate ).start();
+		System.out.println( "Started TrackMate thread." );
+		Thread.sleep( 5000 );
+		System.out.println( "Cancelling after 5s." );
+		trackmate.cancel( "I was bored." );
+
+		if ( trackmate.isCanceled() )
+			System.out.println( "Calculation was canceled. Reason: " + trackmate.getCancelReason() );
 
 		new MainWindow( model, spimData, bdvFile, getInputTriggerConfig() ).setVisible( true );
 	}

@@ -6,12 +6,14 @@ import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.linking.mamut.SpotLinkerOp;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
+import org.scijava.Cancelable;
 import org.scijava.app.StatusService;
 import org.scijava.command.ContextCommand;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 
 import bdv.spimdata.SpimDataMinimal;
+import net.imagej.ops.Op;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.hybrid.Hybrids;
 import net.imagej.ops.special.inplace.Inplaces;
@@ -32,6 +34,8 @@ public class TrackMate extends ContextCommand
 	private final Settings settings;
 
 	private final Model model;
+
+	private Op currentOp;
 
 	public TrackMate( final Settings settings )
 	{
@@ -62,6 +66,9 @@ public class TrackMate extends ContextCommand
 
 	public boolean execDetection()
 	{
+		if ( isCanceled() )
+			return true;
+
 		final ModelGraph graph = model.getGraph();
 		final SpimDataMinimal spimData = settings.values.getSpimData();
 		if ( null == spimData )
@@ -76,6 +83,7 @@ public class TrackMate extends ContextCommand
 		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl,
 				graph, spimData,
 				detectorSettings );
+		this.currentOp = detector;
 		log.info( "Detection with " + detector );
 		detector.compute( spimData, graph );
 
@@ -84,6 +92,7 @@ public class TrackMate extends ContextCommand
 			log.error( "Detection failed:\n" + detector.getErrorMessage() );
 			return false;
 		}
+		currentOp = null;
 
 		model.getGraphFeatureModel().declareFeature( detector.getQualityFeature() );
 		if ( detector instanceof Benchmark )
@@ -101,6 +110,9 @@ public class TrackMate extends ContextCommand
 
 	public boolean execParticleLinking()
 	{
+		if ( isCanceled() )
+			return true;
+
 		final Class< ? extends SpotLinkerOp > linkerCl = settings.values.getLinker();
 		final Map< String, Object > linkerSettings = settings.values.getLinkerSettings();
 
@@ -109,12 +121,14 @@ public class TrackMate extends ContextCommand
 						linkerSettings, model.getGraphFeatureModel() );
 
 		log.info( "Particle-linking with " + linker );
+		this.currentOp = linker;
 		linker.mutate1( model.getGraph(), model.getSpatioTemporalIndex() );
 		if ( !linker.wasSuccessful() )
 		{
 			log.error( "Particle-linking failed:\n" + linker.getErrorMessage() );
 			return false;
 		}
+		currentOp = null;
 		model.getGraphFeatureModel().declareFeature( linker.getLinkCostFeature() );
 		if ( linker instanceof Benchmark )
 			log.info( "Particle-linking completed in " + ( ( Benchmark ) linker ).getProcessingTime() + " ms." );
@@ -126,7 +140,19 @@ public class TrackMate extends ContextCommand
 	@Override
 	public void run()
 	{
-		if ( execDetection() && execParticleLinking() );
+		if ( execDetection() && execParticleLinking() )
+			;
+	}
+
+	@Override
+	public void cancel( final String reason )
+	{
+		super.cancel( reason );
+		if ( null != currentOp && ( currentOp instanceof Cancelable ) )
+		{
+			final Cancelable cancelable = ( Cancelable ) currentOp;
+			cancelable.cancel( reason );
+		}
 	}
 
 }
