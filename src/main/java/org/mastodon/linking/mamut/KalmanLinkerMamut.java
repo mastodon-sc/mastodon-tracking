@@ -15,6 +15,7 @@ import static org.mastodon.linking.LinkingUtils.checkParameter;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.StreamSupport;
 
 import org.mastodon.linking.ParticleLinkerOp;
 import org.mastodon.linking.kalman.KalmanLinker;
@@ -23,8 +24,6 @@ import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
 import org.scijava.plugin.Plugin;
-
-import com.google.common.collect.Streams;
 
 import net.imagej.ops.special.inplace.Inplaces;
 
@@ -55,7 +54,7 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 		final HashMap< String, Object > kalmanSettings = new HashMap<>( settings );
 		int t = minTimepoint;
 		while ( t <= maxTimepoint && spots.getSpatialIndex( t++ ).isEmpty() );
-		final double meanR2 = Streams.stream( spots.getSpatialIndex( t ) )
+		final double meanR2 = StreamSupport.stream( spots.getSpatialIndex( t ).spliterator(), false )
 				.mapToDouble( e -> e.getBoundingSphereRadiusSquared() )
 				.average()
 				.getAsDouble();
