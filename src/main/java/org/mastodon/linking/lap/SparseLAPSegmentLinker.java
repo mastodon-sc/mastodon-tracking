@@ -106,6 +106,13 @@ public class SparseLAPSegmentLinker< V extends Vertex< E > & HasTimepoint & Real
 
 		statusService.showStatus( "Creating the segment linking cost matrix..." );
 
+		/*
+		 * TODO Make these processes cancelable? The cost matrix calculation can
+		 * take a long time, and its solving too. It maybe makes sense to check
+		 * whether the user canceled in between to qui calculation early. But
+		 * then we have to make the JaqamanLinker cancelable.
+		 */
+
 		@SuppressWarnings( "unchecked" )
 		final JaqamanSegmentCostMatrixCreator< V, E > costMatrixCreator =
 				( JaqamanSegmentCostMatrixCreator< V, E > ) Functions.nullary( ops(), JaqamanSegmentCostMatrixCreator.class, SparseCostMatrix.class,

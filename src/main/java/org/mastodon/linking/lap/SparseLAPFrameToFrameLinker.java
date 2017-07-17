@@ -149,7 +149,7 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 				@Override
 				public Void call()
 				{
-					if ( !aok.get() )
+					if ( isCanceled() || !aok.get() )
 						return null;
 
 					// Get frame pairs

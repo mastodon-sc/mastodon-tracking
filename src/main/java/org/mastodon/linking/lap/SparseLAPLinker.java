@@ -35,6 +35,7 @@ import org.mastodon.linking.ParticleLinkerOp;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.spatial.HasTimepoint;
 import org.mastodon.spatial.SpatioTemporalIndex;
+import org.scijava.Cancelable;
 import org.scijava.ItemIO;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -52,6 +53,8 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 
 	@Parameter( type = ItemIO.OUTPUT )
 	private long processingTime;
+
+	private AbstractParticleLinkerOp< V, E > currentOp;
 
 	/*
 	 * METHODS
@@ -120,6 +123,8 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 				SparseLAPFrameToFrameLinker.class,
 				graph, spots,
 				ftfSettings, featureModel, spotComparator, edgeCreator );
+		this.currentOp = frameToFrameLinker;
+
 		frameToFrameLinker.mutate1( graph, spots );
 		if ( !frameToFrameLinker.isSuccessful() )
 		{
@@ -155,21 +160,28 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 		slSettings.put( KEY_CUTOFF_PERCENTILE, settings.get( KEY_CUTOFF_PERCENTILE ) );
 
 		// Solve.
-		@SuppressWarnings( { "unchecked", "rawtypes" } )
-		final SparseLAPSegmentLinker< V, E > segmentLinker = ( SparseLAPSegmentLinker ) Inplaces.binary1( ops(), SparseLAPSegmentLinker.class,
-				graph, spots,
-				slSettings, featureModel, spotComparator, edgeCreator );
-		segmentLinker.mutate1( graph, spots );
-		if ( !segmentLinker.isSuccessful() )
-		{
-			errorMessage = segmentLinker.getErrorMessage();
-			return;
-		}
-		// Copy link costs.
-		final DoublePropertyMap< E > slCosts = segmentLinker.getLinkCostFeature().getPropertyMap();
-		for ( final E e : slCosts.getMap().keySet() )
-			linkcost.set( e, slCosts.get( e ) );
 
+		if ( !isCanceled() )
+		{
+			@SuppressWarnings( { "unchecked", "rawtypes" } )
+			final SparseLAPSegmentLinker< V, E > segmentLinker = ( SparseLAPSegmentLinker ) Inplaces.binary1( ops(), SparseLAPSegmentLinker.class,
+					graph, spots,
+					slSettings, featureModel, spotComparator, edgeCreator );
+			this.currentOp = segmentLinker;
+			segmentLinker.mutate1( graph, spots );
+			if ( !segmentLinker.isSuccessful() )
+			{
+				errorMessage = segmentLinker.getErrorMessage();
+				return;
+			}
+
+			// Copy link costs.
+			final DoublePropertyMap< E > slCosts = segmentLinker.getLinkCostFeature().getPropertyMap();
+			for ( final E e : slCosts.getMap().keySet() )
+				linkcost.set( e, slCosts.get( e ) );
+		}
+
+		currentOp = null;
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
 		this.linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost );
@@ -262,6 +274,17 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 	public String getErrorMessage()
 	{
 		return errorMessage;
+	}
+
+	@Override
+	public void cancel( final String reason )
+	{
+		super.cancel( reason );
+		if ( null != currentOp && ( currentOp instanceof Cancelable ) )
+		{
+			final Cancelable cancelable = currentOp;
+			cancelable.cancel( reason );
+		}
 	}
 
 }

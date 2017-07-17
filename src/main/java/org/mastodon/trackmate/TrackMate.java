@@ -136,13 +136,14 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		log.info( "Particle-linking with " + linker );
 		this.currentOp = linker;
 		linker.mutate1( model.getGraph(), model.getSpatioTemporalIndex() );
-		if ( !linker.wasSuccessful() )
+		if ( !linker.isSuccessful() )
 		{
 			log.error( "Particle-linking failed:\n" + linker.getErrorMessage() );
 			succesful = false;
 			errorMessage = linker.getErrorMessage();
 			return false;
 		}
+
 		currentOp = null;
 		model.getGraphFeatureModel().declareFeature( linker.getLinkCostFeature() );
 		if ( linker instanceof Benchmark )

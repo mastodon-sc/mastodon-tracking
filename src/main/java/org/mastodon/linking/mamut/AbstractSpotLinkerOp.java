@@ -37,12 +37,14 @@ public abstract class AbstractSpotLinkerOp
 
 	protected String errorMessage;
 
-	protected void exec( final ModelGraph graph, final SpatioTemporalIndex< Spot > spots, @SuppressWarnings( "rawtypes" ) final Class< ? extends ParticleLinkerOp > cl )
+	protected ParticleLinkerOp< Spot, Link > linker;
+
+	@SuppressWarnings( { "unchecked", "rawtypes" } )
+	protected void exec( final ModelGraph graph, final SpatioTemporalIndex< Spot > spots, final Class< ? extends ParticleLinkerOp > cl )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
-		@SuppressWarnings( { "rawtypes", "unchecked" } )
-		final ParticleLinkerOp< Spot, Link > linker = ( ParticleLinkerOp ) Inplaces.binary1( ops(), cl,
+		this.linker = ( ParticleLinkerOp ) Inplaces.binary1( ops(), cl,
 				graph, spots,
 				settings, featureModel,
 				spotComparator(), edgeCreator() );
@@ -53,6 +55,7 @@ public abstract class AbstractSpotLinkerOp
 		linkCostFeature = linker.getLinkCostFeature();
 		ok = linker.isSuccessful();
 		errorMessage = linker.getErrorMessage();
+		linker = null;
 	}
 
 	protected EdgeCreator< Spot, Link > edgeCreator()
@@ -84,7 +87,7 @@ public abstract class AbstractSpotLinkerOp
 	}
 
 	@Override
-	public boolean wasSuccessful()
+	public boolean isSuccessful()
 	{
 		return ok;
 	}
@@ -93,6 +96,38 @@ public abstract class AbstractSpotLinkerOp
 	public String getErrorMessage()
 	{
 		return errorMessage;
+	}
+
+	// -- Cancelable methods --
+
+	/** Reason for cancelation, or null if not canceled. */
+	protected String cancelReason;
+
+	@Override
+	public boolean isCanceled()
+	{
+		return cancelReason != null;
+	}
+
+	/** Cancels the command execution, with the given reason for doing so. */
+	@Override
+	public void cancel( final String reason )
+	{
+		if ( reason != null && linker != null )
+		{
+			cancelReason = reason;
+			linker.cancel( reason );
+		}
+		else
+		{
+			cancelReason = "";
+		}
+	}
+
+	@Override
+	public String getCancelReason()
+	{
+		return cancelReason;
 	}
 
 	private static final Comparator< Spot > SPOT_COMPARATOR = new Comparator< Spot >()

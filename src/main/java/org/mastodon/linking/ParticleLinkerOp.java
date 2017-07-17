@@ -7,12 +7,13 @@ import org.mastodon.graph.Vertex;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.spatial.SpatioTemporalIndex;
+import org.scijava.Cancelable;
 
 import net.imagej.ops.special.inplace.BinaryInplace1OnlyOp;
 import net.imglib2.RealLocalizable;
 
 public interface ParticleLinkerOp< V extends Vertex< E > & RealLocalizable, E extends Edge< V > >
-		extends BinaryInplace1OnlyOp< Graph< V, E >, SpatioTemporalIndex< V > >, HasErrorMessage
+		extends BinaryInplace1OnlyOp< Graph< V, E >, SpatioTemporalIndex< V > >, HasErrorMessage, Cancelable
 {
 	/**
 	 * Returns the edge linking cost feature calculated by this particle-linker.

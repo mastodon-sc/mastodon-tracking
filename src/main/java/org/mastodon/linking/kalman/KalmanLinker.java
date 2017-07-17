@@ -215,6 +215,9 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 		int p = 0;
 		for ( int tp = secondFrame; tp <= maxTimepoint; tp++ )
 		{
+			if ( isCanceled() )
+				break;
+
 			p++;
 
 			/*

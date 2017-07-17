@@ -19,7 +19,6 @@ import java.util.stream.StreamSupport;
 
 import org.mastodon.linking.ParticleLinkerOp;
 import org.mastodon.linking.kalman.KalmanLinker;
-import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
@@ -31,6 +30,7 @@ import net.imagej.ops.special.inplace.Inplaces;
 public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 {
 
+	@SuppressWarnings( { "rawtypes", "unchecked" } )
 	@Override
 	public void mutate1( final ModelGraph graph, final SpatioTemporalIndex< Spot > spots )
 	{
@@ -61,8 +61,7 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 		final double meanR = Math.sqrt( meanR2 );
 		kalmanSettings.put( KEY_POSITION_SIGMA, meanR / 10. );
 
-		@SuppressWarnings( { "rawtypes", "unchecked" } )
-		final ParticleLinkerOp< Spot, Link > linker = ( ParticleLinkerOp ) Inplaces.binary1( ops(), KalmanLinker.class,
+		this.linker = ( ParticleLinkerOp ) Inplaces.binary1( ops(), KalmanLinker.class,
 				graph, spots,
 				kalmanSettings, featureModel,
 				spotComparator(), edgeCreator() );
@@ -72,6 +71,23 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 		processingTime = end - start;
 		linkCostFeature = linker.getLinkCostFeature();
 		ok = linker.isSuccessful();
+		linker = null;
+	}
+
+
+	/** Cancels the command execution, with the given reason for doing so. */
+	@Override
+	public void cancel( final String reason )
+	{
+		if ( reason != null && linker != null )
+		{
+			cancelReason = reason;
+			linker.cancel( reason );
+		}
+		else
+		{
+			cancelReason = "";
+		}
 	}
 
 	public static boolean checkSettingsValidity( final Map< String, Object > settings, final StringBuilder str )
