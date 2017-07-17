@@ -102,7 +102,7 @@ public class BoundingBoxMamut
 		 * Create bounding box dialog.
 		 */
 
-		this.model = new BoundingBoxModel( interval, sourceTransform );
+		this.model = new BoundingBoxModel( interval, interval, sourceTransform );
 		model.install( viewerFrame.getViewerPanel(), setupID );
 		this.dialog = new BoundingBoxDialog(
 				viewerFrame,

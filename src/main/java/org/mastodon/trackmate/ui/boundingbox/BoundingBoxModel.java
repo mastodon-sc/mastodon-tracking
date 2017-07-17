@@ -23,9 +23,12 @@ public class BoundingBoxModel extends BoxRealRandomAccessible< UnsignedShortType
 
 	private final TransformedSource< UnsignedShortType > ts;
 
-	public BoundingBoxModel( final Interval interval, final AffineTransform3D transform )
+	private final Interval maxInterval;
+
+	public BoundingBoxModel( final Interval interval, final Interval maxInterval, final AffineTransform3D transform )
 	{
 		super( interval, new UnsignedShortType( 1000 ), new UnsignedShortType( 0 ) );
+		this.maxInterval = maxInterval;
 		this.boxSource =
 				new RealRandomAccessibleSource< UnsignedShortType >(
 						BoundingBoxModel.this,
@@ -40,6 +43,11 @@ public class BoundingBoxModel extends BoxRealRandomAccessible< UnsignedShortType
 				};
 		this.ts = new TransformedSource<>( boxSource );
 		ts.setFixedTransform( transform );
+	}
+
+	public Interval getMaxInterval()
+	{
+		return maxInterval;
 	}
 
 	public void install(  final ViewerPanel viewer, final int boxSetupId )
