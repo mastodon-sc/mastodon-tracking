@@ -88,6 +88,10 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 		statusService.showStatus( "LoG detection" );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
 		{
+			// Did we get canceled?
+			if ( isCanceled() )
+				break;
+
 			// Check if there is some data at this timepoint.
 			if ( !DetectionUtil.isPresent( spimData, setup, tp ) )
 				continue;

@@ -90,6 +90,9 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 		statusService.showStatus( "DoG detection." );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
 		{
+			// Did we get canceled?
+			if ( isCanceled() )
+				break;
 
 			// Check if there is some data at this timepoint.
 			if ( !DetectionUtil.isPresent( spimData, setup, tp ) )

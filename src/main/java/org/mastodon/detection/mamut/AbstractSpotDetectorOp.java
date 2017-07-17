@@ -42,12 +42,14 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 
 	private long processingTime;
 
+	protected DetectorOp< Spot > detector;
+
+	@SuppressWarnings( { "unchecked", "rawtypes" } )
 	protected void exec( final SpimDataMinimal spimData, final ModelGraph graph, @SuppressWarnings( "rawtypes" ) final Class< ? extends DetectorOp > cl )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
-		@SuppressWarnings( { "rawtypes", "unchecked" } )
-		final DetectorOp< Spot > detector = ( DetectorOp ) Inplaces.binary1( ops(), cl,
+		this.detector = ( DetectorOp ) Inplaces.binary1( ops(), cl,
 				graph, spimData,
 				settings, vertexCreator() );
 		detector.mutate1( graph, spimData );
@@ -57,6 +59,8 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 		ok = detector.wasSuccessful();
 		if ( !ok )
 			errorMessage = detector.getErrorMessage();
+
+		this.detector = null;
 	}
 
 	@Override
@@ -103,5 +107,37 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 	protected VertexCreator< Spot > vertexCreator()
 	{
 		return VERTEX_CREATOR_INSTANCE;
+	}
+
+	// -- Cancelable methods --
+
+	/** Reason for cancelation, or null if not canceled. */
+	private String cancelReason;
+
+	@Override
+	public boolean isCanceled()
+	{
+		return cancelReason != null;
+	}
+
+	/** Cancels the command execution, with the given reason for doing so. */
+	@Override
+	public void cancel( final String reason )
+	{
+		if (reason!=null)
+		{
+			cancelReason = reason;
+			detector.cancel( reason );
+		}
+		else
+		{
+			cancelReason = "";
+		}
+	}
+
+	@Override
+	public String getCancelReason()
+	{
+		return cancelReason;
 	}
 }
