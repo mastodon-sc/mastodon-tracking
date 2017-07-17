@@ -121,7 +121,7 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 				graph, spots,
 				ftfSettings, featureModel, spotComparator, edgeCreator );
 		frameToFrameLinker.mutate1( graph, spots );
-		if ( !frameToFrameLinker.wasSuccessful() )
+		if ( !frameToFrameLinker.isSuccessful() )
 		{
 			errorMessage = frameToFrameLinker.getErrorMessage();
 			return;
@@ -160,7 +160,7 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 				graph, spots,
 				slSettings, featureModel, spotComparator, edgeCreator );
 		segmentLinker.mutate1( graph, spots );
-		if ( !segmentLinker.wasSuccessful() )
+		if ( !segmentLinker.isSuccessful() )
 		{
 			errorMessage = segmentLinker.getErrorMessage();
 			return;
@@ -253,7 +253,7 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 	}
 
 	@Override
-	public boolean wasSuccessful()
+	public boolean isSuccessful()
 	{
 		return ok;
 	}

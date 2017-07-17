@@ -52,7 +52,7 @@ public abstract class AbstractDetectorOp< V extends Vertex< ? > >
 	}
 
 	@Override
-	public boolean wasSuccessful()
+	public boolean isSuccessful()
 	{
 		return ok;
 	}

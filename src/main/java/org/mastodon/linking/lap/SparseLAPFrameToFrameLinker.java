@@ -263,7 +263,7 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 	}
 
 	@Override
-	public boolean wasSuccessful()
+	public boolean isSuccessful()
 	{
 		return ok;
 	}

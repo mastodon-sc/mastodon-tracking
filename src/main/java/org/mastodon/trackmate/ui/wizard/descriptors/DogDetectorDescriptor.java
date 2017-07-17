@@ -173,7 +173,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 					panel.lblInfo.setText( "Previewing..." );
 					detector.compute( spimData, graph );
 
-					if ( !detector.wasSuccessful() )
+					if ( !detector.isSuccessful() )
 					{
 						log.error( "Detection failed:\n" + detector.getErrorMessage() );
 						return;

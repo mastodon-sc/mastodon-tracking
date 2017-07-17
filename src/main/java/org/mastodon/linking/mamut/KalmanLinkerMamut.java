@@ -71,7 +71,7 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 
 		processingTime = end - start;
 		linkCostFeature = linker.getLinkCostFeature();
-		ok = linker.wasSuccessful();
+		ok = linker.isSuccessful();
 	}
 
 	public static boolean checkSettingsValidity( final Map< String, Object > settings, final StringBuilder str )

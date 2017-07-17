@@ -45,7 +45,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 	protected DetectorOp< Spot > detector;
 
 	@SuppressWarnings( { "unchecked", "rawtypes" } )
-	protected void exec( final SpimDataMinimal spimData, final ModelGraph graph, @SuppressWarnings( "rawtypes" ) final Class< ? extends DetectorOp > cl )
+	protected void exec( final SpimDataMinimal spimData, final ModelGraph graph, final Class< ? extends DetectorOp > cl )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
@@ -56,7 +56,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
 		qualityFeature = detector.getQualityFeature();
-		ok = detector.wasSuccessful();
+		ok = detector.isSuccessful();
 		if ( !ok )
 			errorMessage = detector.getErrorMessage();
 
@@ -88,7 +88,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 	}
 
 	@Override
-	public boolean wasSuccessful()
+	public boolean isSuccessful()
 	{
 		return ok;
 	}

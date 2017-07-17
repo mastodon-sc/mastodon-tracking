@@ -51,7 +51,7 @@ public abstract class AbstractSpotLinkerOp
 
 		processingTime = end - start;
 		linkCostFeature = linker.getLinkCostFeature();
-		ok = linker.wasSuccessful();
+		ok = linker.isSuccessful();
 		errorMessage = linker.getErrorMessage();
 	}
 

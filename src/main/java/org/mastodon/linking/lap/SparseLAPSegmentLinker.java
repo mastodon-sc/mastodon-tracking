@@ -187,7 +187,7 @@ public class SparseLAPSegmentLinker< V extends Vertex< E > & HasTimepoint & Real
 	}
 
 	@Override
-	public boolean wasSuccessful()
+	public boolean isSuccessful()
 	{
 		return ok;
 	}

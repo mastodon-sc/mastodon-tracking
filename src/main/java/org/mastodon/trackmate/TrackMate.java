@@ -2,6 +2,7 @@ package org.mastodon.trackmate;
 
 import java.util.Map;
 
+import org.mastodon.HasErrorMessage;
 import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.linking.mamut.SpotLinkerOp;
 import org.mastodon.revised.model.mamut.Model;
@@ -19,7 +20,7 @@ import net.imagej.ops.special.hybrid.Hybrids;
 import net.imagej.ops.special.inplace.Inplaces;
 import net.imglib2.algorithm.Benchmark;
 
-public class TrackMate extends ContextCommand
+public class TrackMate extends ContextCommand implements HasErrorMessage
 {
 
 	@Parameter
@@ -36,6 +37,10 @@ public class TrackMate extends ContextCommand
 	private final Model model;
 
 	private Op currentOp;
+
+	private boolean succesful;
+
+	private String errorMessage;
 
 	public TrackMate( final Settings settings )
 	{
@@ -66,6 +71,8 @@ public class TrackMate extends ContextCommand
 
 	public boolean execDetection()
 	{
+		succesful = true;
+		errorMessage = null;
 		if ( isCanceled() )
 			return true;
 
@@ -73,7 +80,9 @@ public class TrackMate extends ContextCommand
 		final SpimDataMinimal spimData = settings.values.getSpimData();
 		if ( null == spimData )
 		{
-			log.error( "Cannot start detection: SpimData obect is null." );
+			errorMessage = "Cannot start detection: SpimData obect is null.";
+			log.error( errorMessage );
+			succesful = false;
 			return false;
 		}
 
@@ -87,9 +96,11 @@ public class TrackMate extends ContextCommand
 		log.info( "Detection with " + detector );
 		detector.compute( spimData, graph );
 
-		if ( !detector.wasSuccessful() )
+		if ( !detector.isSuccessful() )
 		{
 			log.error( "Detection failed:\n" + detector.getErrorMessage() );
+			succesful = false;
+			errorMessage = detector.getErrorMessage();
 			return false;
 		}
 		currentOp = null;
@@ -110,6 +121,8 @@ public class TrackMate extends ContextCommand
 
 	public boolean execParticleLinking()
 	{
+		succesful = true;
+		errorMessage = null;
 		if ( isCanceled() )
 			return true;
 
@@ -126,6 +139,8 @@ public class TrackMate extends ContextCommand
 		if ( !linker.wasSuccessful() )
 		{
 			log.error( "Particle-linking failed:\n" + linker.getErrorMessage() );
+			succesful = false;
+			errorMessage = linker.getErrorMessage();
 			return false;
 		}
 		currentOp = null;
@@ -134,6 +149,7 @@ public class TrackMate extends ContextCommand
 			log.info( "Particle-linking completed in " + ( ( Benchmark ) linker ).getProcessingTime() + " ms." );
 		else
 			log.info( "Particle-linking completed." );
+
 		return true;
 	}
 
@@ -155,4 +171,15 @@ public class TrackMate extends ContextCommand
 		}
 	}
 
+	@Override
+	public String getErrorMessage()
+	{
+		return errorMessage;
+	}
+
+	@Override
+	public boolean isSuccessful()
+	{
+		return succesful;
+	}
 }

@@ -457,7 +457,7 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 	};
 
 	@Override
-	public boolean wasSuccessful()
+	public boolean isSuccessful()
 	{
 		return ok;
 	}
