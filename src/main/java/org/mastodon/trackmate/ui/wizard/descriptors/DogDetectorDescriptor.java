@@ -67,7 +67,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 	private static final NumberFormat FORMAT = new DecimalFormat( "0.0" );
 
-	private static final String IDENTIFIER = "Configure DoG detector";
+	public static final String IDENTIFIER = "Configure DoG detector";
 
 	private static final Icon PREVIEW_ICON = new ImageIcon( DogDetectorDescriptor.class.getResource( "../led-icon-eye-green.png" ) );
 
@@ -259,16 +259,19 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 	@Override
 	public String getNextPanelDescriptorIdentifier()
 	{
-		return Descriptor1.ID;
+		return ExecuteDetectionDescriptor.IDENTIFIER;
 	}
 
+	@SuppressWarnings( { "rawtypes", "unchecked" } )
 	@Override
 	public Collection< Class< ? extends SpotDetectorOp > > getTargetClasses()
 	{
-		return Collections.unmodifiableCollection( Arrays.asList( new Class[] {
+		final Collection b = Collections.unmodifiableCollection( Arrays.asList( new Class[] {
 				DoGDetectorMamut.class,
 				LoGDetectorMamut.class
 		} ) );
+		final Collection< Class< ? extends SpotDetectorOp > > a = b;
+		return  a ;
 	}
 
 	@Override
