@@ -212,13 +212,12 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 		final V vref1 = graph.vertexRef();
 		final V vref2 = graph.vertexRef();
 
-		int p = 0;
 		for ( int tp = secondFrame; tp <= maxTimepoint; tp++ )
 		{
+			statusService.showProgress( tp - minTimepoint + 1, maxTimepoint - minTimepoint + 1 );
+
 			if ( isCanceled() )
 				break;
-
-			p++;
 
 			/*
 			 * Predict for all Kalman filters, and use it to generate linking
@@ -381,8 +380,6 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 				if ( kf.getNOcclusion() > maxFrameGap )
 					kalmanFiltersMap.remove( kf );
 			}
-
-			statusService.showProgress( p, maxTimepoint - minTimepoint - 1 );
 		}
 
 		final long end = System.currentTimeMillis();

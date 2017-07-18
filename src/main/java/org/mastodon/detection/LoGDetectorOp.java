@@ -88,6 +88,8 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 		statusService.showStatus( "LoG detection" );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
 		{
+			statusService.showProgress( tp - minTimepoint + 1, maxTimepoint - minTimepoint + 1 );
+
 			// Did we get canceled?
 			if ( isCanceled() )
 				break;
@@ -228,8 +230,6 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 				}
 				graph.releaseRef( ref );
 			}
-
-			statusService.showProgress( tp, maxTimepoint - minTimepoint + 1 );
 		}
 
 		final long end = System.currentTimeMillis();

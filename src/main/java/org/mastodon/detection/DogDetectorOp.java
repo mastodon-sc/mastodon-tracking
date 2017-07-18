@@ -90,6 +90,8 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 		statusService.showStatus( "DoG detection." );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
 		{
+			statusService.showProgress( tp - minTimepoint + 1, maxTimepoint - minTimepoint + 1 );
+
 			// Did we get canceled?
 			if ( isCanceled() )
 				break;
@@ -189,8 +191,6 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 				quality.set( spot, normalizedValue );
 			}
 			graph.releaseRef( ref );
-
-			statusService.showProgress( tp, maxTimepoint - minTimepoint + 1 );
 		}
 
 		final long end = System.currentTimeMillis();
