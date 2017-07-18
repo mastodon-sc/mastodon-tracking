@@ -5,8 +5,10 @@ import java.util.Map;
 import org.mastodon.HasErrorMessage;
 import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.linking.mamut.SpotLinkerOp;
+import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
+import org.mastodon.revised.model.mamut.Spot;
 import org.scijava.Cancelable;
 import org.scijava.app.StatusService;
 import org.scijava.command.ContextCommand;
@@ -86,6 +88,17 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 			return false;
 		}
 
+		/*
+		 * Clear previous content.
+		 */
+
+		for ( final Spot spot : model.getGraph().vertices() )
+			model.getGraph().remove( spot );
+
+		/*
+		 * Exec detection.
+		 */
+
 		final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 
@@ -125,6 +138,18 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		errorMessage = null;
 		if ( isCanceled() )
 			return true;
+
+
+		/*
+		 * Clear previous content.
+		 */
+
+		for ( final Link link : model.getGraph().edges() )
+			model.getGraph().remove( link );
+
+		/*
+		 * Exec particle linking.
+		 */
 
 		final Class< ? extends SpotLinkerOp > linkerCl = settings.values.getLinker();
 		final Map< String, Object > linkerSettings = settings.values.getLinkerSettings();
