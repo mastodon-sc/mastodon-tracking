@@ -139,7 +139,6 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		if ( isCanceled() )
 			return true;
 
-
 		/*
 		 * Clear previous content.
 		 */
@@ -184,17 +183,35 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 	{
 		if ( execDetection() && execParticleLinking() )
 			;
+
 	}
+
+	// -- Cancelable methods --
+
+	/** Reason for cancelation, or null if not canceled. */
+	private String cancelReason;
 
 	@Override
 	public void cancel( final String reason )
 	{
-		super.cancel( reason );
+		cancelReason = reason;
 		if ( null != currentOp && ( currentOp instanceof Cancelable ) )
 		{
 			final Cancelable cancelable = ( Cancelable ) currentOp;
 			cancelable.cancel( reason );
 		}
+	}
+
+	@Override
+	public boolean isCanceled()
+	{
+		return cancelReason != null;
+	}
+
+	@Override
+	public String getCancelReason()
+	{
+		return cancelReason;
 	}
 
 	@Override
