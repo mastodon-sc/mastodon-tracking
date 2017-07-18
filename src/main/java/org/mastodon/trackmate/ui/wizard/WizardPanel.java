@@ -45,12 +45,14 @@ public class WizardPanel extends JPanel
 
 	final JButton btnCancel;
 
+	final JPanel panelButtons;
+
 	public WizardPanel()
 	{
 		setLayout( new BorderLayout( 0, 0 ) );
 		this.animatorPanel = new AnimatorPanel();
 
-		final JPanel panelButtons = new JPanel();
+		this.panelButtons = new JPanel();
 		panelButtons.setBorder( new EmptyBorder( 3, 3, 3, 3 ) );
 		add( panelButtons, BorderLayout.SOUTH );
 		panelButtons.setLayout( new BoxLayout( panelButtons, BoxLayout.X_AXIS ) );
