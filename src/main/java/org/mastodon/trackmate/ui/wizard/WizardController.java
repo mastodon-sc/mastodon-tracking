@@ -6,7 +6,11 @@ import javax.swing.Action;
 
 import org.mastodon.trackmate.ui.wizard.TransitionAnimator.Direction;
 import org.mastodon.trackmate.ui.wizard.descriptors.LogDescriptor;
+import org.mastodon.trackmate.ui.wizard.util.EverythingDisablerAndReenabler;
+import org.scijava.Cancelable;
 import org.scijava.ui.behaviour.util.AbstractNamedAction;
+
+import com.sun.codemodel.JLabel;
 
 public class WizardController
 {
@@ -52,7 +56,7 @@ public class WizardController
 
 	}
 
-	protected void previous()
+	protected synchronized void previous()
 	{
 		System.out.println( "previous" ); // DEBUG
 		final WizardPanelDescriptor current = wizardModel.getCurrent();
@@ -75,7 +79,7 @@ public class WizardController
 		exec( back.getBackwardRunnable() );
 	}
 
-	protected void next()
+	protected synchronized void next()
 	{
 		final WizardPanelDescriptor current = wizardModel.getCurrent();
 		if ( current == null )
@@ -100,7 +104,10 @@ public class WizardController
 
 	protected void cancel()
 	{
-		System.out.println( "cancel" ); // DEBUG
+		final Cancelable cancelable = wizardModel.getCurrent().getCancelable();
+		System.out.println( "canceling " + cancelable ); // DEBUG
+		if (null != cancelable)
+			cancelable.cancel( "User pressed cancel button." );
 	}
 
 	private void exec( final Runnable runnable )
@@ -109,12 +116,25 @@ public class WizardController
 		if ( null == runnable )
 			return;
 
-		new Thread()
+		final EverythingDisablerAndReenabler reenabler = new EverythingDisablerAndReenabler(
+				wizardPanel.panelButtons, new Class[] { JLabel.class } );
+		new Thread( "Wizard exec thread" )
 		{
 			@Override
 			public void run()
 			{
-				runnable.run();
+				try
+				{
+					reenabler.disable();
+					wizardPanel.btnCancel.setVisible( true );
+					wizardPanel.btnCancel.setEnabled( true );
+					runnable.run();
+				}
+				finally
+				{
+					wizardPanel.btnCancel.setVisible( false);
+					reenabler.reenable();
+				}
 			};
 		}.start();
 	}

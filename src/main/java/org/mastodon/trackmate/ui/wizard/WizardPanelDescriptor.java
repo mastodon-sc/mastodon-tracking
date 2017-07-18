@@ -2,6 +2,8 @@ package org.mastodon.trackmate.ui.wizard;
 
 import java.awt.Component;
 
+import org.scijava.Cancelable;
+
 public class WizardPanelDescriptor
 {
 
@@ -54,6 +56,11 @@ public class WizardPanelDescriptor
 	}
 
 	public Runnable getBackwardRunnable()
+	{
+		return null;
+	}
+
+	public Cancelable getCancelable()
 	{
 		return null;
 	}

@@ -2,6 +2,7 @@ package org.mastodon.trackmate.ui.wizard.descriptors;
 
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
+import org.scijava.Cancelable;
 
 public class ExecuteDetectionDescriptor extends WizardPanelDescriptor
 {
@@ -38,9 +39,18 @@ public class ExecuteDetectionDescriptor extends WizardPanelDescriptor
 			@Override
 			public void run()
 			{
+				// Reset cancel status.
+				trackmate.cancel( null );
+				// Run detection.
 				trackmate.execDetection();
 			}
 		};
+	}
+
+	@Override
+	public Cancelable getCancelable()
+	{
+		return trackmate;
 	}
 
 }
