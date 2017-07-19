@@ -26,7 +26,33 @@ import org.scijava.plugin.Plugin;
 
 import net.imagej.ops.special.inplace.Inplaces;
 
-@Plugin( type = SpotLinkerOp.class )
+@Plugin( type = SpotLinkerOp.class,
+		name = "Linear motion Kalman linker",
+		description = "<html>"
+				+ "This tracker is best suited for objects that "
+				+ "move with a roughly constant velocity vector."
+				+ "<p>"
+				+ "It relies on the Kalman filter to predict the next most likely position of a spot. "
+				+ "The predictions for all current tracks are linked to the spots actually "
+				+ "found in the next frame, thanks to the LAP framework already present in the LAP tracker. "
+				+ "Predictions are continuously refined and the tracker can accomodate moderate "
+				+ "velocity direction and magnitude changes. "
+				+ "<p>"
+				+ "This tracker can bridge gaps: If a spot is not found close enough to a prediction, "
+				+ "then the Kalman filter will make another prediction in the next frame and re-iterate "
+				+ "the search. "
+				+ "<p>"
+				+ "The first frames of a track are critical for this tracker to work properly: Tracks "
+				+ "are initiated by looking for close neighbors (again via the LAP tracker). "
+				+ "Spurious spots in the beginning of each track can confure the tracker. "
+				+ "<p>"
+				+ "This tracker needs two parameters (on top of the maximal frame gap tolerated): "
+				+ "<br/>"
+				+ "\t - the max search radius defines how far from a predicted position it should look "
+				+ "for candidate spots;<br/>"
+				+ "\t - the initial search radius defines how far two spots can be apart when initiating "
+				+ "a new track."
+				+ "<br/></html>")
 public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 {
 
@@ -37,7 +63,7 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 		final long start = System.currentTimeMillis();
 		ok = false;
 		final StringBuilder str = new StringBuilder();
-		if (!checkSettingsValidity( settings, str ))
+		if ( !checkSettingsValidity( settings, str ) )
 		{
 			errorMessage = str.toString();
 			return;
@@ -73,7 +99,6 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 		ok = linker.isSuccessful();
 		linker = null;
 	}
-
 
 	/** Cancels the command execution, with the given reason for doing so. */
 	@Override
