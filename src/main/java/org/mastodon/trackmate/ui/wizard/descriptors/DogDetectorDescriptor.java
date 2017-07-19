@@ -251,12 +251,6 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 	}
 
 	@Override
-	public String getBackPanelDescriptorIdentifier()
-	{
-		return ChooseDetectorDescriptor.IDENTIFIER;
-	}
-
-	@Override
 	public String getNextPanelDescriptorIdentifier()
 	{
 		return ExecuteDetectionDescriptor.IDENTIFIER;

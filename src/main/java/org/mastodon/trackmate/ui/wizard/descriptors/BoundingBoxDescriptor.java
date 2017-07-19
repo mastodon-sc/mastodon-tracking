@@ -207,12 +207,6 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 	}
 
 	@Override
-	public String getBackPanelDescriptorIdentifier()
-	{
-		return SetupIdDecriptor.IDENTIFIER;
-	}
-
-	@Override
 	public String getNextPanelDescriptorIdentifier()
 	{
 		return ChooseDetectorDescriptor.IDENTIFIER;

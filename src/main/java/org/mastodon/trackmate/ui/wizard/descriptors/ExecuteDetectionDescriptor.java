@@ -25,12 +25,6 @@ public class ExecuteDetectionDescriptor extends WizardPanelDescriptor
 	}
 
 	@Override
-	public String getBackPanelDescriptorIdentifier()
-	{
-		return DogDetectorDescriptor.IDENTIFIER;
-	}
-
-	@Override
 	public Runnable getForwardRunnable()
 	{
 		return new Runnable()

@@ -36,11 +36,6 @@ public class WizardPanelDescriptor
 		return null;
 	}
 
-	public String getBackPanelDescriptorIdentifier()
-	{
-		return null;
-	}
-
 	public void aboutToHidePanel()
 	{}
 

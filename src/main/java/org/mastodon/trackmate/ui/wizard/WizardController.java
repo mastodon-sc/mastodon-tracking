@@ -47,12 +47,16 @@ public class WizardController
 		final WizardPanelDescriptor logDescriptor = wizardModel.getDescriptor( LogDescriptor.IDENTIFIER );
 		final WizardPanelDescriptor current = wizardModel.getCurrent();
 
-		wizardPanel.btnNext.setEnabled( !show );
-		wizardPanel.btnPrevious.setEnabled( !show );
 		if ( show )
+		{
 			display( logDescriptor, current, Direction.TOP );
+			wizardPanel.btnNext.setEnabled( false );
+			wizardPanel.btnPrevious.setEnabled( false );
+		}
 		else
+		{
 			display( current, logDescriptor, Direction.BOTTOM );
+		}
 
 	}
 
@@ -64,10 +68,10 @@ public class WizardController
 			return;
 
 		current.aboutToHidePanel();
-		if ( null == current.getBackPanelDescriptorIdentifier() )
+		final String backId = wizardModel.popPreviousDescriptorId();
+		if ( null == backId )
 			return;
 
-		final String backId = current.getBackPanelDescriptorIdentifier();
 		final WizardPanelDescriptor back = wizardModel.getDescriptor( backId );
 		if ( null == back )
 			return;
@@ -94,6 +98,7 @@ public class WizardController
 		System.out.println( "next is " + next ); // DEBUG
 		if ( null == next )
 			return;
+		wizardModel.pushDescriptorId( current.getPanelDescriptorIdentifier() );
 
 		next.aboutToDisplayPanel();
 		display( next, current, Direction.RIGHT );
@@ -142,7 +147,7 @@ public class WizardController
 	public void init( final WizardPanelDescriptor descriptor )
 	{
 		wizardModel.setCurrent( descriptor );
-		wizardPanel.btnPrevious.setEnabled( null != descriptor.getBackPanelDescriptorIdentifier() );
+		wizardPanel.btnPrevious.setEnabled( wizardModel.hasPrevious() );
 		wizardPanel.btnNext.setEnabled( null != descriptor.getNextPanelDescriptorIdentifier() );
 		descriptor.aboutToDisplayPanel();
 		wizardPanel.display( descriptor );
@@ -154,7 +159,7 @@ public class WizardController
 		if ( null == to )
 			return;
 
-		wizardPanel.btnPrevious.setEnabled( null != to.getBackPanelDescriptorIdentifier() );
+		wizardPanel.btnPrevious.setEnabled( wizardModel.hasPrevious() );
 		wizardPanel.btnNext.setEnabled( null != to.getNextPanelDescriptorIdentifier() );
 		wizardPanel.transition( to, from, direction );
 	}

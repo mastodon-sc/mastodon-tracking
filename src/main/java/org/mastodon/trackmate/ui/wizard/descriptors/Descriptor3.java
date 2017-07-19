@@ -16,12 +16,6 @@ public class Descriptor3 extends WizardPanelDescriptor
 		targetPanel = new Descriptor3Panel();
 	}
 
-	@Override
-	public String getBackPanelDescriptorIdentifier()
-	{
-		return Descriptor2.ID;
-	}
-
 	private class Descriptor3Panel extends JPanel
 	{
 		private static final long serialVersionUID = 1L;

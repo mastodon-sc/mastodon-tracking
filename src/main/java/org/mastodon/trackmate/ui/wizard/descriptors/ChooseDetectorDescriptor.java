@@ -131,12 +131,6 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 	}
 
 	@Override
-	public String getBackPanelDescriptorIdentifier()
-	{
-		return BoundingBoxDescriptor.IDENTIFIER;
-	}
-
-	@Override
 	public String getNextPanelDescriptorIdentifier()
 	{
 		return nextDescriptorIdentifier;
