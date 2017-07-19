@@ -14,6 +14,7 @@ import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.descriptors.BoundingBoxDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.ChooseDetectorDescriptor;
+import org.mastodon.trackmate.ui.wizard.descriptors.ChooseLinkerDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor1;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor2;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor3;
@@ -69,6 +70,10 @@ public class Wizard extends AbstractContextual
 
 		final ExecuteDetectionDescriptor executeDetectionDescriptor = new ExecuteDetectionDescriptor( trackmate, logService.getPanel() );
 		controller.registerWizardPanel( executeDetectionDescriptor );
+
+		final ChooseLinkerDescriptor chooseLinkerDescriptor = new ChooseLinkerDescriptor( trackmate, controller, windowManager );
+		chooseLinkerDescriptor.setContext( context() );
+		controller.registerWizardPanel( chooseLinkerDescriptor );
 
 		controller.registerWizardPanel( new Descriptor1() );
 		controller.registerWizardPanel( new Descriptor2() );

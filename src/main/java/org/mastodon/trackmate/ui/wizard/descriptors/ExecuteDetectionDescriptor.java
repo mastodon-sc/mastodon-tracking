@@ -21,7 +21,7 @@ public class ExecuteDetectionDescriptor extends WizardPanelDescriptor
 	@Override
 	public String getNextPanelDescriptorIdentifier()
 	{
-		return Descriptor1.ID;
+		return ChooseLinkerDescriptor.IDENTIFIER;
 	}
 
 	@Override
