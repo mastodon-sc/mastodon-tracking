@@ -117,17 +117,22 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Con
 		for ( final String key : linkerPanelNames )
 		{
 			final SpotLinkerDescriptor linkerPanel = descriptorProvider.getInstance( key );
-			if ( linkerPanel.getTargetClasses().contains( linkerClass ) && linkerPanel != previousLinkerPanel  )
+			if ( linkerPanel.getTargetClasses().contains( linkerClass ) )
 			{
+				if ( linkerPanel == previousLinkerPanel )
+					return;
+
 				previousLinkerPanel = linkerPanel;
-				controller.registerWizardPanel( linkerPanel );
-				linkerPanel.getPanelComponent().setSize( targetPanel.getSize() );
 				linkerPanel.setTrackMate( trackmate );
 				linkerPanel.setWindowManager( windowManager );
 				context().inject( linkerPanel );
+				linkerPanel.getPanelComponent().setSize( targetPanel.getSize() );
+				controller.registerWizardPanel( linkerPanel );
 				nextDescriptorIdentifier = linkerPanel.getPanelDescriptorIdentifier();
+				return;
 			}
 		}
+		throw new RuntimeException( "Could not find a descriptor that can configure " + linkerClass );
 	}
 
 	@Override

@@ -61,7 +61,7 @@ import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.hybrid.Hybrids;
 
-@Plugin( type = SpotDetectorDescriptor.class )
+@Plugin( type = SpotDetectorDescriptor.class, name = "DoG detector configuration descriptor" )
 public class DogDetectorDescriptor extends SpotDetectorDescriptor
 {
 
