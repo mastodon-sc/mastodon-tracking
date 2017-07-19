@@ -53,6 +53,22 @@ final public class EverythingDisablerAndReenabler
 	}
 
 	/**
+	 * Convenience method that calls {@link #reenable()} or {@link #disable()}
+	 * depending on the specified boolean flag.
+	 *
+	 * @param enable
+	 *            whether to re-enable (<code>true</code>) or disable
+	 *            (<code>false</code>) the root container and descendants.
+	 */
+	public void setEnabled( final boolean enable )
+	{
+		if ( enable && disableHasBeenCalled )
+			reenable();
+		else if (!enable && !disableHasBeenCalled )
+			disable();
+	}
+
+	/**
 	 * Disables everything recursively, except the excluded types.
 	 *
 	 * @throws IllegalStateException
