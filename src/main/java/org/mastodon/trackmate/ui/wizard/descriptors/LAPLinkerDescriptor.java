@@ -17,6 +17,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.detection.DetectorKeys;
+import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.ProgressListeners;
 import org.mastodon.linking.mamut.SparseLAPLinkerMamut;
 import org.mastodon.linking.mamut.SpotLinkerOp;
@@ -73,6 +74,14 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 		final Collection< Class< ? extends SpotLinkerOp > > a = b;
 		return a;
 	}
+
+
+	@Override
+	public Map< String, Object > getDefaultSettings()
+	{
+		return LinkingUtils.getDefaultLAPSettingsMap();
+	}
+
 
 	@Override
 	public void setTrackMate( final TrackMate trackmate )

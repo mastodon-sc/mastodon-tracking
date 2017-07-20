@@ -123,9 +123,11 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Con
 					return;
 
 				previousLinkerPanel = linkerPanel;
+				context().inject( linkerPanel );
+				final Map< String, Object > defaultSettings = linkerPanel.getDefaultSettings();
+				settings.linkerSettings( defaultSettings );
 				linkerPanel.setTrackMate( trackmate );
 				linkerPanel.setWindowManager( windowManager );
-				context().inject( linkerPanel );
 				linkerPanel.getPanelComponent().setSize( targetPanel.getSize() );
 				controller.registerWizardPanel( linkerPanel );
 				nextDescriptorIdentifier = linkerPanel.getPanelDescriptorIdentifier();
