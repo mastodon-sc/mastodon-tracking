@@ -1,5 +1,18 @@
 package org.mastodon.trackmate.ui.wizard.descriptors;
 
+import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_GAP_CLOSING;
+import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_MERGING;
+import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_SPLITTING;
+import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_FEATURE_PENALTIES;
+import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_DISTANCE;
+import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
+import static org.mastodon.linking.LinkerKeys.KEY_LINKING_FEATURE_PENALTIES;
+import static org.mastodon.linking.LinkerKeys.KEY_LINKING_MAX_DISTANCE;
+import static org.mastodon.linking.LinkerKeys.KEY_MERGING_FEATURE_PENALTIES;
+import static org.mastodon.linking.LinkerKeys.KEY_MERGING_MAX_DISTANCE;
+import static org.mastodon.linking.LinkerKeys.KEY_SPLITTING_FEATURE_PENALTIES;
+import static org.mastodon.linking.LinkerKeys.KEY_SPLITTING_MAX_DISTANCE;
+
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -12,7 +25,11 @@ import java.awt.event.MouseWheelListener;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 import javax.swing.Box;
@@ -46,40 +63,65 @@ public class LAPLinkerConfigPanel extends JPanel
 
 	private static final NumberFormat FORMAT = new DecimalFormat( "0.0" );
 
-	private JFormattedTextField jTextFieldSplittingMaxDistance;
+	private static final NumberFormat INTEGER_FORMAT = new DecimalFormat( "0" );
 
-	private JCheckBox jCheckBoxAllowSplitting;
+	/*
+	 * Frame to frame linking fields.
+	 */
 
-	private JPanelFeatureSelectionGui jPanelGapClosing;
+	private final JFormattedTextField jTextFieldLinkingMaxDistance;
 
-	private JPanelFeatureSelectionGui jPanelMergingFeatures;
+	private final JPanelFeatureSelectionGui jPanelLinkingFeatures;
 
-	private JPanelFeatureSelectionGui jPanelLinkingFeatures;
+	/*
+	 * Gap-closing fields.
+	 */
 
-	private JPanelFeatureSelectionGui jPanelSplittingFeatures;
+	private final JCheckBox jCheckBoxAllowGapClosing;
 
-	private JScrollPane jScrollPaneMergingFeatures;
+	private final JPanelFeatureSelectionGui jPanelGapClosing;
 
-	private JFormattedTextField jTextFieldMergingMaxDistance;
+	private final JFormattedTextField jTextFieldGapClosingMaxFrameInterval;
 
-	private JCheckBox jCheckBoxAllowMerging;
+	private final JFormattedTextField jTextFieldGapClosingMaxDistance;
 
-	private JScrollPane jScrollPaneSplittingFeatures;
+	private final EverythingDisablerAndReenabler enablerGapClosing;
 
-	private JScrollPane jScrollPaneGapClosingFeatures;
+	/*
+	 * Splitting fields.
+	 */
 
-	private JFormattedTextField jTextFieldGapClosingMaxFrameInterval;
+	private final JCheckBox jCheckBoxAllowSplitting;
 
-	private JFormattedTextField jTextFieldGapClosingMaxDistance;
+	private final JFormattedTextField jTextFieldSplittingMaxDistance;
 
-	private JCheckBox jCheckBoxAllowGapClosing;
+	private final JPanelFeatureSelectionGui jPanelSplittingFeatures;
 
-	private JFormattedTextField jTextFieldLinkingMaxDistance;
+	private final EverythingDisablerAndReenabler enablerSplitting;
+
+	/*
+	 * Merging fields.
+	 */
+
+	private final JCheckBox jCheckBoxAllowMerging;
+
+	private final JFormattedTextField jTextFieldMergingMaxDistance;
+
+	private final JPanelFeatureSelectionGui jPanelMergingFeatures;
+
+	private final EverythingDisablerAndReenabler enablerMerging;
+
+	/*
+	 * Other fields.
+	 */
 
 	private final ScrollToFocusListener scrollToFocusListener;
 
+	private final FeatureModel< Spot, Link > featureModel;
+
 	public LAPLinkerConfigPanel( final String trackerName, final String spaceUnits, final FeatureModel< Spot, Link > featureModel )
 	{
+		this.featureModel = featureModel;
 		this.scrollToFocusListener = new ScrollToFocusListener( this );
 
 		/*
@@ -217,7 +259,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		gbc1.gridy++;
 		panelGapClosing.add( jLabel7, gbc1 );
 
-		jTextFieldGapClosingMaxFrameInterval = new JFormattedTextField( FORMAT );
+		jTextFieldGapClosingMaxFrameInterval = new JFormattedTextField( INTEGER_FORMAT );
 		jTextFieldGapClosingMaxFrameInterval.setHorizontalAlignment( JLabel.RIGHT );
 		jTextFieldGapClosingMaxFrameInterval.setFont( smallFont );
 		jTextFieldGapClosingMaxFrameInterval.addFocusListener( fl );
@@ -232,7 +274,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		gbc1.anchor = GridBagConstraints.WEST;
 		panelGapClosing.add( jLabel8, gbc1 );
 
-		jScrollPaneGapClosingFeatures = new JScrollPane();
+		final JScrollPane jScrollPaneGapClosingFeatures = new JScrollPane();
 		final MouseWheelListener[] l1 = jScrollPaneGapClosingFeatures.getMouseWheelListeners();
 		jScrollPaneGapClosingFeatures.removeMouseWheelListener( l1[ 0 ] );
 		jScrollPaneGapClosingFeatures.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
@@ -247,8 +289,8 @@ public class LAPLinkerConfigPanel extends JPanel
 		gbc1.anchor = GridBagConstraints.CENTER;
 		panelGapClosing.add( jScrollPaneGapClosingFeatures, gbc1 );
 
-		final EverythingDisablerAndReenabler enabler1 = new EverythingDisablerAndReenabler( panelGapClosing, new Class[] { JLabel.class } );
-		jCheckBoxAllowGapClosing.addActionListener( ( e ) -> enabler1.setEnabled( jCheckBoxAllowGapClosing.isSelected() ) );
+		this.enablerGapClosing = new EverythingDisablerAndReenabler( panelGapClosing, new Class[] { JLabel.class } );
+		jCheckBoxAllowGapClosing.addActionListener( ( e ) -> enablerGapClosing.setEnabled( jCheckBoxAllowGapClosing.isSelected() ) );
 
 		gbc.gridy++;
 		gbc.gridwidth = 3;
@@ -314,7 +356,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		gbc2.fill = GridBagConstraints.HORIZONTAL;
 		panelSplitting.add( jLabel15, gbc2 );
 
-		jScrollPaneSplittingFeatures = new JScrollPane();
+		final JScrollPane jScrollPaneSplittingFeatures = new JScrollPane();
 		final MouseWheelListener[] l2 = jScrollPaneSplittingFeatures.getMouseWheelListeners();
 		jScrollPaneSplittingFeatures.removeMouseWheelListener( l2[ 0 ] );
 		jScrollPaneSplittingFeatures.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
@@ -327,8 +369,8 @@ public class LAPLinkerConfigPanel extends JPanel
 		gbc2.fill = GridBagConstraints.BOTH;
 		panelSplitting.add( jScrollPaneSplittingFeatures, gbc2 );
 
-		final EverythingDisablerAndReenabler enabler2 = new EverythingDisablerAndReenabler( panelSplitting, new Class[] { JLabel.class } );
-		jCheckBoxAllowSplitting.addActionListener( ( e ) -> enabler2.setEnabled( jCheckBoxAllowSplitting.isSelected() ) );
+		this.enablerSplitting = new EverythingDisablerAndReenabler( panelSplitting, new Class[] { JLabel.class } );
+		jCheckBoxAllowSplitting.addActionListener( ( e ) -> enablerSplitting.setEnabled( jCheckBoxAllowSplitting.isSelected() ) );
 
 		gbc.gridy++;
 		gbc.gridx = 0;
@@ -394,7 +436,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		gbc3.anchor = GridBagConstraints.CENTER;
 		panelMerging.add( jLabel16, gbc3 );
 
-		jScrollPaneMergingFeatures = new JScrollPane();
+		final JScrollPane jScrollPaneMergingFeatures = new JScrollPane();
 		final MouseWheelListener[] l3 = jScrollPaneMergingFeatures.getMouseWheelListeners();
 		jScrollPaneMergingFeatures.removeMouseWheelListener( l3[ 0 ] );
 		jScrollPaneMergingFeatures.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
@@ -407,8 +449,8 @@ public class LAPLinkerConfigPanel extends JPanel
 		gbc3.fill = GridBagConstraints.BOTH;
 		panelMerging.add( jScrollPaneMergingFeatures, gbc3 );
 
-		final EverythingDisablerAndReenabler enabler3 = new EverythingDisablerAndReenabler( panelMerging, new Class[] { JLabel.class } );
-		jCheckBoxAllowMerging.addActionListener( ( e ) -> enabler3.setEnabled( jCheckBoxAllowMerging.isSelected() ) );
+		this.enablerMerging = new EverythingDisablerAndReenabler( panelMerging, new Class[] { JLabel.class } );
+		jCheckBoxAllowMerging.addActionListener( ( e ) -> enablerMerging.setEnabled( jCheckBoxAllowMerging.isSelected() ) );
 
 		gbc.gridy++;
 		gbc.gridwidth = 3;
@@ -425,6 +467,107 @@ public class LAPLinkerConfigPanel extends JPanel
 		 */
 
 		installFocusListener( scrollToFocusListener, this );
+	}
+
+	/**
+	 * Returns a settings map with the values displayed in this panel.
+	 *
+	 * @return a new map.
+	 */
+	Map< String, Object > getSettings()
+	{
+		final Map< String, Object > settings = new HashMap<>();
+
+		// Frame to frame linking
+		settings.put( KEY_LINKING_MAX_DISTANCE, ( ( Number ) jTextFieldLinkingMaxDistance.getValue() ).doubleValue() );
+		settings.put( KEY_LINKING_FEATURE_PENALTIES, toMap( jPanelLinkingFeatures.getFeaturePenalties() ) );
+
+		// Gap-closing.
+		settings.put( KEY_ALLOW_GAP_CLOSING, jCheckBoxAllowGapClosing.isSelected() );
+		settings.put( KEY_GAP_CLOSING_MAX_DISTANCE, ( ( Number ) jTextFieldGapClosingMaxDistance.getValue() ).doubleValue() );
+		settings.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, ( ( Number ) jTextFieldGapClosingMaxFrameInterval.getValue() ).intValue() );
+		settings.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, toMap( jPanelGapClosing.getFeaturePenalties() ) );
+
+		// Track splitting.
+		settings.put( KEY_ALLOW_TRACK_SPLITTING, jCheckBoxAllowSplitting.isSelected() );
+		settings.put( KEY_SPLITTING_MAX_DISTANCE, ( ( Number ) jTextFieldSplittingMaxDistance.getValue() ).doubleValue() );
+		settings.put( KEY_SPLITTING_FEATURE_PENALTIES, toMap( jPanelSplittingFeatures.getFeaturePenalties() ) );
+
+		// Track merging.
+		settings.put( KEY_ALLOW_TRACK_MERGING, jCheckBoxAllowMerging.isSelected() );
+		settings.put( KEY_MERGING_MAX_DISTANCE, ( ( Number ) jTextFieldMergingMaxDistance.getValue() ).doubleValue() );
+		settings.put( KEY_MERGING_FEATURE_PENALTIES, toMap( jPanelMergingFeatures.getFeaturePenalties() ) );
+
+		return settings;
+	}
+
+	/**
+	 * Displays the content of the specified settings map onto this panel. This
+	 * method will throw an error if some expected keys are missing in the
+	 * specified map.
+	 *
+	 * @param settings
+	 *            the map of settings.
+	 */
+	@SuppressWarnings( "unchecked" )
+	void echoSettings( final Map< String, Object > settings )
+	{
+		final Set< String > projectionKeys = featureModel.getProjectionKeys( FeatureTarget.VERTEX );
+
+		// Frame to frame linking
+		jTextFieldLinkingMaxDistance.setValue( settings.get( KEY_LINKING_MAX_DISTANCE ) );
+		final Map< String, Double > linkingPenalties = ( Map< String, Double > ) settings.get( KEY_LINKING_FEATURE_PENALTIES );
+		for ( final String featureKey : linkingPenalties.keySet() )
+		{
+			if ( !projectionKeys.contains( featureKey ) )
+				continue;
+
+			final FeaturePenalty featurePenalty = new FeaturePenalty( featureKey, linkingPenalties.get( featureKey ) );
+			jPanelLinkingFeatures.addPanel( featurePenalty );
+		}
+
+		// Gap-closing.
+		jCheckBoxAllowGapClosing.setSelected( ( boolean ) settings.get( KEY_ALLOW_GAP_CLOSING ) );
+		enablerGapClosing.setEnabled( jCheckBoxAllowGapClosing.isSelected() );
+		jTextFieldGapClosingMaxDistance.setValue( settings.get( KEY_GAP_CLOSING_MAX_DISTANCE ) );
+		jTextFieldGapClosingMaxFrameInterval.setValue( settings.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) );
+		final Map< String, Double > gapClosingPenalties = ( Map< String, Double > ) settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES );
+		for ( final String featureKey : gapClosingPenalties.keySet() )
+		{
+			if ( !projectionKeys.contains( featureKey ) )
+				continue;
+
+			final FeaturePenalty featurePenalty = new FeaturePenalty( featureKey, gapClosingPenalties.get( featureKey ) );
+			jPanelGapClosing.addPanel( featurePenalty );
+		}
+
+		// Track splitting.
+		jCheckBoxAllowSplitting.setSelected( ( boolean ) settings.get( KEY_ALLOW_TRACK_SPLITTING ) );
+		enablerSplitting.setEnabled( jCheckBoxAllowSplitting.isSelected() );
+		jTextFieldSplittingMaxDistance.setValue( settings.get( KEY_SPLITTING_MAX_DISTANCE ) );
+		final Map< String, Double > splittingPenalties = ( Map< String, Double > ) settings.get( KEY_SPLITTING_FEATURE_PENALTIES );
+		for ( final String featureKey : splittingPenalties.keySet() )
+		{
+			if ( !projectionKeys.contains( featureKey ) )
+				continue;
+
+			final FeaturePenalty featurePenalty = new FeaturePenalty( featureKey, splittingPenalties.get( featureKey ) );
+			jPanelSplittingFeatures.addPanel( featurePenalty );
+		}
+
+		// Track merging.
+		jCheckBoxAllowMerging.setSelected( ( boolean ) settings.get( KEY_ALLOW_TRACK_MERGING ) );
+		enablerMerging.setEnabled( jCheckBoxAllowMerging.isSelected() );
+		jTextFieldMergingMaxDistance.setValue( settings.get( KEY_MERGING_MAX_DISTANCE ) );
+		final Map< String, Double > mergingPenalties = ( Map< String, Double > ) settings.get( KEY_MERGING_FEATURE_PENALTIES );
+		for ( final String featureKey : mergingPenalties.keySet() )
+		{
+			if ( !projectionKeys.contains( featureKey ) )
+				continue;
+
+			final FeaturePenalty featurePenalty = new FeaturePenalty( featureKey, mergingPenalties.get( featureKey ) );
+			jPanelMergingFeatures.addPanel( featurePenalty );
+		}
 	}
 
 	/**
@@ -447,7 +590,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		}
 	}
 
-	private class JPanelFeatureSelectionGui extends JPanel
+	class JPanelFeatureSelectionGui extends JPanel
 	{
 
 		private static final long serialVersionUID = 1l;
@@ -494,6 +637,24 @@ public class LAPLinkerConfigPanel extends JPanel
 			return featurePenalties;
 		}
 
+		private void addPanel( final FeaturePenalty featurePenalty )
+		{
+			final List< String > projectionKeys = new ArrayList<>( featureModel.getProjectionKeys( FeatureTarget.VERTEX ) );
+			if ( projectionKeys.isEmpty() || !projectionKeys.contains( featurePenalty.feature ) )
+				return;
+
+			final JPanelFeaturePenalty panel = new JPanelFeaturePenalty( projectionKeys, featurePenalty.feature, featurePenalty.penalty );
+			panel.setMaximumSize( new Dimension( 500, 30 ) );
+			installFocusListener( scrollToFocusListener, panel );
+
+			featurePanels.push( panel );
+			remove( jPanelButtons );
+			add( panel );
+			add( jPanelButtons );
+			LAPLinkerConfigPanel.this.revalidate();
+			jButtonAdd.requestFocusInWindow();
+		}
+
 		private void addButtonPushed()
 		{
 			final List< String > projectionKeys = new ArrayList<>( featureModel.getProjectionKeys( FeatureTarget.VERTEX ) );
@@ -505,16 +666,8 @@ public class LAPLinkerConfigPanel extends JPanel
 				index = 0;
 
 			final String projectionKey = projectionKeys.get( index );
-			final JPanelFeaturePenalty panel = new JPanelFeaturePenalty( projectionKeys, projectionKey, 1.0 );
-			panel.setMaximumSize( new Dimension( 500, 30 ) );
-			installFocusListener( scrollToFocusListener, panel );
-
-			featurePanels.push( panel );
-			remove( jPanelButtons );
-			add( panel );
-			add( jPanelButtons );
-			LAPLinkerConfigPanel.this.revalidate();
-			jButtonAdd.requestFocusInWindow();
+			final FeaturePenalty featurePenalty = new FeaturePenalty( projectionKey, 1.0 );
+			addPanel( featurePenalty );
 		}
 
 		private void removeButtonPushed()
@@ -558,17 +711,32 @@ public class LAPLinkerConfigPanel extends JPanel
 
 		private FeaturePenalty getFeaturePenalty()
 		{
-			final FeaturePenalty featurePenalty = new FeaturePenalty();
-			featurePenalty.feature = ( String ) jComboBoxFeature.getSelectedItem();
-			featurePenalty.penalty = ( ( Number ) jTextFieldFeatureWeight.getValue() ).doubleValue();
+			final FeaturePenalty featurePenalty = new FeaturePenalty(
+					( String ) jComboBoxFeature.getSelectedItem(),
+					( ( Number ) jTextFieldFeatureWeight.getValue() ).doubleValue() );
 			return featurePenalty;
 		}
 	}
 
 	private static class FeaturePenalty
 	{
+		public FeaturePenalty( final String feature, final double penalty )
+		{
+			this.feature = feature;
+			this.penalty = penalty;
+		}
+
 		public String feature;
 
 		public double penalty;
+	}
+
+	private static final Map< String, Double > toMap( final Collection< FeaturePenalty > penalties )
+	{
+		final Map< String, Double > map = new HashMap<>();
+		for ( final FeaturePenalty featurePenalty : penalties )
+			map.put( featurePenalty.feature, featurePenalty.penalty );
+
+		return map;
 	}
 }

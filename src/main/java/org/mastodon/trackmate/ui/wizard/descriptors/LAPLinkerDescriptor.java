@@ -1,11 +1,14 @@
 package org.mastodon.trackmate.ui.wizard.descriptors;
 
+import static org.mastodon.linking.LinkerKeys.KEY_LINKING_FEATURE_PENALTIES;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -13,6 +16,7 @@ import javax.swing.JScrollPane;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import org.mastodon.detection.DetectorKeys;
 import org.mastodon.linking.ProgressListeners;
 import org.mastodon.linking.mamut.SparseLAPLinkerMamut;
 import org.mastodon.linking.mamut.SpotLinkerOp;
@@ -45,6 +49,20 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 		return Descriptor1.ID;
 	}
 
+	@Override
+	public void aboutToDisplayPanel()
+	{
+		final LAPLinkerPanel panel = ( LAPLinkerPanel ) targetPanel;
+		panel.configPanel.echoSettings( settings.values.getLinkerSettings() );
+	}
+
+	@Override
+	public void aboutToHidePanel()
+	{
+		final LAPLinkerPanel panel = ( LAPLinkerPanel ) targetPanel;
+		settings.linkerSettings( panel.configPanel.getSettings() );
+	}
+
 	@SuppressWarnings( { "rawtypes", "unchecked" } )
 	@Override
 	public Collection< Class< ? extends SpotLinkerOp > > getTargetClasses()
@@ -73,6 +91,8 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 
 		private static final long serialVersionUID = 1L;
 
+		private final LAPLinkerConfigPanel configPanel;
+
 		public LAPLinkerPanel()
 		{
 			setLayout( new BorderLayout() );
@@ -83,8 +103,14 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 			jScrollPaneMain.setVerticalScrollBarPolicy( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS );
 			jScrollPaneMain.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
 			jScrollPaneMain.getVerticalScrollBar().setUnitIncrement( 24 );
-			final LAPLinkerConfigPanel jPanelMain = new LAPLinkerConfigPanel( "LAP linker.", "TODO", model.getGraphFeatureModel() );
-			jScrollPaneMain.setViewportView( jPanelMain );
+
+			final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
+			final String units = ( null != setupID )
+					? settings.values.getSpimData().getSequenceDescription()
+							.getViewSetups().get( setupID ).getVoxelSize().unit()
+					: "pixels";
+			this.configPanel = new LAPLinkerConfigPanel( "LAP linker.", units, model.getGraphFeatureModel() );
+			jScrollPaneMain.setViewportView( configPanel );
 		}
 	}
 
@@ -98,6 +124,10 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 
 		final Model model = new Model();
 		final Settings settings = new Settings();
+		@SuppressWarnings( "unchecked" )
+		final Map< String, Double > linkingPenalties = ( Map< String, Double > ) settings.values.getLinkerSettings().get( KEY_LINKING_FEATURE_PENALTIES );
+		linkingPenalties.put( "Spot N links", 36.9 );
+
 		final TrackMate trackmate = new TrackMate( settings, model );
 		context.inject( trackmate );
 
@@ -115,6 +145,8 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 		context.inject( descriptor );
 		descriptor.setTrackMate( trackmate );
 		frame.getContentPane().add( descriptor.targetPanel );
+		descriptor.aboutToDisplayPanel();
 		frame.setVisible( true );
+		descriptor.displayingPanel();
 	}
 }
