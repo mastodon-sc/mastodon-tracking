@@ -44,7 +44,7 @@ import net.imagej.ops.special.inplace.Inplaces;
 				+ "<p>"
 				+ "The first frames of a track are critical for this tracker to work properly: Tracks "
 				+ "are initiated by looking for close neighbors (again via the LAP tracker). "
-				+ "Spurious spots in the beginning of each track can confure the tracker. "
+				+ "Spurious spots in the beginning of each track can confuse the tracker. "
 				+ "<p>"
 				+ "This tracker needs two parameters (on top of the maximal frame gap tolerated): "
 				+ "<br/>"
