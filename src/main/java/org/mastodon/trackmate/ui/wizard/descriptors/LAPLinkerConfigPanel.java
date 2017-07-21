@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.function.BinaryOperator;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -644,12 +645,13 @@ public class LAPLinkerConfigPanel extends JPanel
 				return;
 
 			final JPanelFeaturePenalty panel = new JPanelFeaturePenalty( projectionKeys, featurePenalty.feature, featurePenalty.penalty );
-			panel.setMaximumSize( new Dimension( 500, 30 ) );
+			panel.setMaximumSize( new Dimension( 5000, 30 ) );
 			installFocusListener( scrollToFocusListener, panel );
 
 			featurePanels.push( panel );
 			remove( jPanelButtons );
 			add( panel );
+			add( Box.createVerticalStrut( 5 ) );
 			add( jPanelButtons );
 			LAPLinkerConfigPanel.this.revalidate();
 			jButtonAdd.requestFocusInWindow();
@@ -696,10 +698,16 @@ public class LAPLinkerConfigPanel extends JPanel
 			setLayout( new BoxLayout( this, BoxLayout.LINE_AXIS ) );
 			final Font smallFont = getFont().deriveFont( getFont().getSize2D() - 2f );
 
+			final BinaryOperator< String > longest = ( t, u ) -> t.length() > u.length() ? t : u;
+			final String comboBoxWidth = features.stream().reduce( "", longest ) + "  ";
+
 			jComboBoxFeature = new JComboBox< String >( features.toArray( new String[] {} ) );
 			jComboBoxFeature.setFont( smallFont );
 			jComboBoxFeature.setSelectedIndex( features.indexOf( selectedFeature ) );
+			jComboBoxFeature.setPrototypeDisplayValue( comboBoxWidth );
 			add( jComboBoxFeature );
+
+			add( Box.createHorizontalStrut( 5 ) );
 
 			jTextFieldFeatureWeight = new JFormattedTextField( FORMAT );
 			jTextFieldFeatureWeight.setValue( selectedPenalty );
