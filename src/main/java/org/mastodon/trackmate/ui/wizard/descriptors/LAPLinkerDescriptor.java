@@ -75,13 +75,11 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 		return a;
 	}
 
-
 	@Override
 	public Map< String, Object > getDefaultSettings()
 	{
 		return LinkingUtils.getDefaultLAPSettingsMap();
 	}
-
 
 	@Override
 	public void setTrackMate( final TrackMate trackmate )
@@ -114,7 +112,7 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 			jScrollPaneMain.getVerticalScrollBar().setUnitIncrement( 24 );
 
 			final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
-			final String units = ( null != setupID )
+			final String units = ( null != setupID && null != settings.values.getSpimData() )
 					? settings.values.getSpimData().getSequenceDescription()
 							.getViewSetups().get( setupID ).getVoxelSize().unit()
 					: "pixels";
