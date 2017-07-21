@@ -1,6 +1,7 @@
 package org.mastodon.trackmate.ui.wizard.descriptors;
 
 import java.util.Collection;
+import java.util.Map;
 
 import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.revised.mamut.WindowManager;
@@ -44,4 +45,11 @@ public abstract class SpotDetectorDescriptor extends WizardPanelDescriptor imple
 
 	public abstract void setWindowManager( final WindowManager windowManager );
 
+	/**
+	 * Returns a default settings map, suitable to be configured with this
+	 * descriptor.
+	 *
+	 * @return a default settings map.
+	 */
+	public abstract Map< String, Object > getDefaultSettings();
 }

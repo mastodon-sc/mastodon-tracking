@@ -113,21 +113,29 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 		 * Determine and register the next descriptor.
 		 */
 
-		final List< String > detectorPanelNames = descriptorProvider.getNames();
-		for ( final String key : detectorPanelNames )
+		final List< String > linkerPanelNames = descriptorProvider.getNames();
+		for ( final String key : linkerPanelNames )
 		{
 			final SpotDetectorDescriptor detectorPanel = descriptorProvider.getInstance( key );
-			if ( detectorPanel.getTargetClasses().contains( detectorClass ) && detectorPanel != previousDetectorPanel  )
+			if ( detectorPanel.getTargetClasses().contains( detectorClass ) )
 			{
+				if ( detectorPanel == previousDetectorPanel )
+					return;
+
 				previousDetectorPanel = detectorPanel;
-				controller.registerWizardPanel( detectorPanel );
-				detectorPanel.getPanelComponent().setSize( targetPanel.getSize() );
+				if (detectorPanel.getContext() == null)
+					context().inject( detectorPanel );
+				final Map< String, Object > defaultSettings = detectorPanel.getDefaultSettings();
+				settings.linkerSettings( defaultSettings );
 				detectorPanel.setTrackMate( trackmate );
 				detectorPanel.setWindowManager( windowManager );
-				context().inject( detectorPanel );
+				detectorPanel.getPanelComponent().setSize( targetPanel.getSize() );
+				controller.registerWizardPanel( detectorPanel );
 				nextDescriptorIdentifier = detectorPanel.getPanelDescriptorIdentifier();
+				return;
 			}
 		}
+		throw new RuntimeException( "Could not find a descriptor that can configure " + detectorClass );
 	}
 
 	@Override

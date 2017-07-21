@@ -37,6 +37,7 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.title.TextTitle;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
+import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorKeys;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.LoGDetectorMamut;
@@ -266,6 +267,12 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 		} ) );
 		final Collection< Class< ? extends SpotDetectorOp > > a = b;
 		return  a ;
+	}
+
+	@Override
+	public Map< String, Object > getDefaultSettings()
+	{
+		return DetectionUtil.getDefaultDetectorSettingsMap();
 	}
 
 	@Override
