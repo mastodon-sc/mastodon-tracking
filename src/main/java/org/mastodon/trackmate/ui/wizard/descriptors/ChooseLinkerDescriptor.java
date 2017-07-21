@@ -123,7 +123,8 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Con
 					return;
 
 				previousLinkerPanel = linkerPanel;
-				context().inject( linkerPanel );
+				if (linkerPanel.getContext() == null)
+					context().inject( linkerPanel );
 				final Map< String, Object > defaultSettings = linkerPanel.getDefaultSettings();
 				settings.linkerSettings( defaultSettings );
 				linkerPanel.setTrackMate( trackmate );
