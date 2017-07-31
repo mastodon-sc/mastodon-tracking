@@ -129,6 +129,8 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 			log.info( "Detection completed." );
 		}
 		log.info( "Found " + graph.vertices().size() + " spots." );
+
+		model.getGraph().notifyGraphChanged();
 		return true;
 	}
 
@@ -175,6 +177,7 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		else
 			log.info( "Particle-linking completed." );
 
+		model.getGraph().notifyGraphChanged();
 		return true;
 	}
 
