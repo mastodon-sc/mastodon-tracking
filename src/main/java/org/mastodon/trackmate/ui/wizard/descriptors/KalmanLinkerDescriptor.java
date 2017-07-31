@@ -1,5 +1,7 @@
 package org.mastodon.trackmate.ui.wizard.descriptors;
 
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.linking.LinkerKeys.KEY_KALMAN_SEARCH_RADIUS;
 import static org.mastodon.linking.LinkerKeys.KEY_LINKING_MAX_DISTANCE;
@@ -60,6 +62,12 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 	}
 
 	@Override
+	public String getNextPanelDescriptorIdentifier()
+	{
+		return ExecuteLinkingDescriptor.IDENTIFIER;
+	}
+
+	@Override
 	public void aboutToDisplayPanel()
 	{
 		final Map< String, Object > ls = settings.values.getLinkerSettings();
@@ -72,11 +80,18 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 	@Override
 	public void aboutToHidePanel()
 	{
+		// Panel settings.
 		final Map< String, Object > ls = new HashMap<>();
 		final KalmanLinkerPanel panel = ( KalmanLinkerPanel ) targetPanel;
 		ls.put( KEY_KALMAN_SEARCH_RADIUS, ( ( Number ) panel.searchRadius.getValue() ).doubleValue() );
 		ls.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, ( ( Number ) panel.maxFrameGap.getValue() ).intValue() );
 		ls.put( KEY_LINKING_MAX_DISTANCE, ( ( Number ) panel.initialSearchRadius.getValue() ).doubleValue() );
+
+		// Timepoints - copy from detection step.
+		final Map< String, Object > ds = settings.values.getDetectorSettings();
+		ls.put( KEY_MIN_TIMEPOINT, ds.get( KEY_MIN_TIMEPOINT ) );
+		ls.put( KEY_MAX_TIMEPOINT, ds.get( KEY_MAX_TIMEPOINT ) );
+
 		settings.linkerSettings( ls );
 	}
 

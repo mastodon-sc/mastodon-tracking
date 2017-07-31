@@ -1,8 +1,14 @@
 package org.mastodon.trackmate.ui.wizard.descriptors;
 
+import static org.mastodon.linking.LinkerKeys.DEFAULT_ALTERNATIVE_LINKING_COST_FACTOR;
+import static org.mastodon.linking.LinkerKeys.DEFAULT_BLOCKING_VALUE;
+import static org.mastodon.linking.LinkerKeys.DEFAULT_CUTOFF_PERCENTILE;
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_GAP_CLOSING;
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_MERGING;
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_SPLITTING;
+import static org.mastodon.linking.LinkerKeys.KEY_ALTERNATIVE_LINKING_COST_FACTOR;
+import static org.mastodon.linking.LinkerKeys.KEY_BLOCKING_VALUE;
+import static org.mastodon.linking.LinkerKeys.KEY_CUTOFF_PERCENTILE;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_FEATURE_PENALTIES;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
@@ -498,6 +504,11 @@ public class LAPLinkerConfigPanel extends JPanel
 		settings.put( KEY_ALLOW_TRACK_MERGING, jCheckBoxAllowMerging.isSelected() );
 		settings.put( KEY_MERGING_MAX_DISTANCE, ( ( Number ) jTextFieldMergingMaxDistance.getValue() ).doubleValue() );
 		settings.put( KEY_MERGING_FEATURE_PENALTIES, toMap( jPanelMergingFeatures.getFeaturePenalties() ) );
+
+		// Other - use defaults.
+		settings.put( KEY_BLOCKING_VALUE, DEFAULT_BLOCKING_VALUE );
+		settings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, DEFAULT_ALTERNATIVE_LINKING_COST_FACTOR );
+		settings.put( KEY_CUTOFF_PERCENTILE, DEFAULT_CUTOFF_PERCENTILE );
 
 		return settings;
 	}

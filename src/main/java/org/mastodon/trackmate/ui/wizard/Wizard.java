@@ -19,6 +19,7 @@ import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor1;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor2;
 import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor3;
 import org.mastodon.trackmate.ui.wizard.descriptors.ExecuteDetectionDescriptor;
+import org.mastodon.trackmate.ui.wizard.descriptors.ExecuteLinkingDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.LogDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.SetupIdDecriptor;
 import org.scijava.AbstractContextual;
@@ -75,6 +76,9 @@ public class Wizard extends AbstractContextual
 		chooseLinkerDescriptor.setContext( context() );
 		controller.registerWizardPanel( chooseLinkerDescriptor );
 
+		final ExecuteLinkingDescriptor executeLinkingDescriptor = new ExecuteLinkingDescriptor( trackmate, logService.getPanel() );
+		controller.registerWizardPanel( executeLinkingDescriptor );
+
 		controller.registerWizardPanel( new Descriptor1() );
 		controller.registerWizardPanel( new Descriptor2() );
 		controller.registerWizardPanel( new Descriptor3() );
@@ -102,8 +106,8 @@ public class Wizard extends AbstractContextual
 		 * Load SpimData
 		 */
 //		final String bdvFile = "samples/datasethdf5.xml";
-//		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+//		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 
 		SpimDataMinimal sd = null;
 		try
