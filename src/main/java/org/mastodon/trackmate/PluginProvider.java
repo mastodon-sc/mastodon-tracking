@@ -47,7 +47,7 @@ public class PluginProvider< K extends SciJavaPlugin > extends AbstractContextua
 				return o1.getPriority() > o2.getPriority() ? 1 : o1.getPriority() < o2.getPriority() ? -1 : 0;
 			}
 		};
-		Collections.sort( infos, priorityComparator );
+		Collections.sort( infos, priorityComparator.reversed() );
 
 		this.keys = new ArrayList<>( infos.size() );
 		this.visibleKeys = new ArrayList<>( infos.size() );

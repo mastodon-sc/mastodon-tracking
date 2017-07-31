@@ -4,10 +4,12 @@ import org.mastodon.linking.lap.SparseLAPLinker;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
+import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
 
 @Plugin( type = SpotLinkerOp.class,
 		name = "Simple LAP linker",
+		priority  = Priority.HIGH_PRIORITY,
 		description = "<html>"
 				+ "This tracker is a simplified version of the LAP tracker, based on the "
 				+ "following paper: "
@@ -15,7 +17,9 @@ import org.scijava.plugin.Plugin;
 				+ "<i>Robust single-particle tracking in live-cell time-lapse sequences</i> - "
 				+ "Jaqaman <i> et al.</i>, 2008, Nature Methods. "
 				+ "<p>"
-				+ "It simply offers fewer configuration options. Namely, it limits itself  "
+				+ "It simply offers fewer configuration options. Namely, only gap closing is "
+				+ "allowed, based solely on a distance and time condition. Track splitting "
+				+ "and merging are not allowed, resulting in having non-branching tracks.  "
 				+ "</html>" )
 public class SimpleSparseLAPLinkerMamut extends AbstractSpotLinkerOp
 {
