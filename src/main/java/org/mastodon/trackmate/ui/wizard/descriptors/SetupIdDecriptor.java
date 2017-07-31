@@ -21,19 +21,31 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.mastodon.trackmate.Settings;
+import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
+import org.scijava.Context;
+import org.scijava.Contextual;
+import org.scijava.NullContextException;
+import org.scijava.plugin.Parameter;
 
 import bdv.spimdata.SpimDataMinimal;
+import bdv.util.Affine3DHelpers;
 import mpicbg.spim.data.generic.base.Entity;
 import mpicbg.spim.data.generic.base.NamedEntity;
+import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
+import mpicbg.spim.data.generic.sequence.BasicMultiResolutionSetupImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.Dimensions;
+import net.imglib2.realtransform.AffineTransform3D;
 
-public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionListener
+public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionListener, Contextual
 {
 
 	public static final String IDENTIFIER = "Setup ID config";
+
+	@Parameter
+	WizardLogService log;
 
 	private final Map< String, Integer > idMap;
 
@@ -102,27 +114,25 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 		final Integer setupID = idMap.get( obj );
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 		detectorSettings.put( KEY_SETUP_ID, setupID );
+
+		log.info( String.format( "Selected setup ID %d for detection:\n", (int) setupID ) );
+		log.info( echoSetupIDInfo(setupID) );
 	}
 
-	@Override
-	public void actionPerformed( final ActionEvent e )
+	private String echoSetupIDInfo( final int setupID )
 	{
-		final SetupIdConfigPanel panel = ( SetupIdConfigPanel ) targetPanel;
-		final Object obj = panel.comboBox.getSelectedItem();
-		final Integer setupID = idMap.get( obj );
 		final BasicViewSetup setup = settings.values.getSpimData().getSequenceDescription().getViewSetups().get( setupID );
 		if ( null == setup )
-			return;
+			return "";
 
 		final StringBuilder str = new StringBuilder();
-		str.append( "<html>" );
 
 		final Dimensions size = setup.getSize();
-		str.append( "  - size: " + size.dimension( 0 ) + " x " + size.dimension( 1 ) + " x " + size.dimension( 2 ) + "<br>" );
+		str.append( "  - size: " + size.dimension( 0 ) + " x " + size.dimension( 1 ) + " x " + size.dimension( 2 ) + "\n" );
 
 		final VoxelDimensions voxelSize = setup.getVoxelSize();
 		str.append( "  - voxel size: " + voxelSize.dimension( 0 ) + " x " + voxelSize.dimension( 1 ) + " x "
-				+ voxelSize.dimension( 2 ) + " " + voxelSize.unit() + "<br>" );
+				+ voxelSize.dimension( 2 ) + " " + voxelSize.unit() + "\n" );
 
 		final Map< String, Entity > attributes = setup.getAttributes();
 		for ( final String key : attributes.keySet() )
@@ -131,12 +141,49 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 			if ( entity instanceof NamedEntity )
 			{
 				final NamedEntity ne = ( NamedEntity ) entity;
-				str.append( " - " + key + ": " + ne.getName() + " <br> " );
+				str.append( " - " + key + ": " + ne.getName() + "\n" );
 			}
-
 		}
-		str.append( "</html>" );
-		panel.lblFill.setText( str.toString() );
+
+		final SpimDataMinimal spimData = settings.values.getSpimData();
+		if ( spimData.getSequenceDescription().getImgLoader() instanceof BasicMultiResolutionImgLoader )
+		{
+			final BasicMultiResolutionSetupImgLoader< ? > loader =
+					( ( BasicMultiResolutionImgLoader ) spimData.getSequenceDescription().getImgLoader() )
+							.getSetupImgLoader( setupID );
+
+			final int numMipmapLevels = loader.numMipmapLevels();
+			final AffineTransform3D[] mipmapTransforms = loader.getMipmapTransforms();
+			str.append( String.format( " - multi-resolution image with %d levels:\n", numMipmapLevels ) );
+			for ( int level = 0; level < mipmapTransforms.length; level++ )
+			{
+				final double sx = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 0 );
+				final double sy = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 1 );
+				final double sz = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 2 );
+				str.append( String.format( "    - level %d: %.0f x %.0f x %.0f\n", level, sx, sy, sz ) );
+			}
+		}
+		else
+		{
+			str.append( " - single-resolution image.\n" );
+		}
+
+		return str.toString();
+	}
+
+	@Override
+	public void actionPerformed( final ActionEvent e )
+	{
+		final SetupIdConfigPanel panel = ( SetupIdConfigPanel ) targetPanel;
+		final Object obj = panel.comboBox.getSelectedItem();
+		final Integer setupID = idMap.get( obj );
+
+		String info = echoSetupIDInfo( setupID );
+		// HTMLize the info
+		info = "<html>" + info + "</html>";
+		info = info.replace( "\n", "<br>" );
+		info = info.replace( "    ", "&#160&#160&#160&#160" );
+		panel.lblFill.setText( info );
 	}
 
 	private class SetupIdConfigPanel extends JPanel
@@ -155,7 +202,7 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 		{
 
 			final GridBagLayout layout = new GridBagLayout();
-			layout.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 26 };
+			layout.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 126 };
 			layout.rowWeights = new double[] { 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 };
 			layout.columnWidths = new int[] { 83, 80 };
 			layout.columnWeights = new double[] { 0.0, 0.5 };
@@ -224,6 +271,7 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 
 			this.lblFill = new JLabel();
 			lblFill.setFont( getFont().deriveFont( getFont().getSize2D() - 2f ) );
+			lblFill.setVerticalAlignment( JLabel.TOP );
 			final GridBagConstraints gbc_lblFill = new GridBagConstraints();
 			gbc_lblFill.gridwidth = 2;
 			gbc_lblFill.insets = new Insets( 5, 5, 5, 5 );
@@ -235,5 +283,24 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 			add( lblFill, gbc_lblFill );
 
 		}
+	}
+
+	// -- Contextual methods --
+
+	@Parameter
+	private Context context;
+
+	@Override
+	public Context context()
+	{
+		if ( context == null )
+			throw new NullContextException();
+		return context;
+	}
+
+	@Override
+	public Context getContext()
+	{
+		return context;
 	}
 }

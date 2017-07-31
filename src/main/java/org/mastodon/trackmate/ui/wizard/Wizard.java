@@ -60,6 +60,7 @@ public class Wizard extends AbstractContextual
 		logService.clearLog();
 
 		final SetupIdDecriptor setupIdDecriptor = new SetupIdDecriptor( trackmate.getSettings() );
+		setupIdDecriptor.setContext( context() );
 		controller.registerWizardPanel( setupIdDecriptor );
 
 		final BoundingBoxDescriptor boundingBoxDescriptor = new BoundingBoxDescriptor( trackmate.getSettings(), windowManager );
@@ -82,6 +83,7 @@ public class Wizard extends AbstractContextual
 		controller.registerWizardPanel( new Descriptor1() );
 		controller.registerWizardPanel( new Descriptor2() );
 		controller.registerWizardPanel( new Descriptor3() );
+
 		controller.init( setupIdDecriptor );
 	}
 
