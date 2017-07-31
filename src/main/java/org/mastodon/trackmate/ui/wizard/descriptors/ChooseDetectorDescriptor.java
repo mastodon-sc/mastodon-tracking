@@ -185,6 +185,7 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 			add( comboBox, gbc );
 
 			final JLabel lblInfo = new JLabel();
+			lblInfo.setVerticalAlignment( JLabel.TOP );
 			lblInfo.setFont( getFont().deriveFont( getFont().getSize2D() - 2f ) );
 			gbc.fill = GridBagConstraints.BOTH;
 			gbc.gridy = 3;

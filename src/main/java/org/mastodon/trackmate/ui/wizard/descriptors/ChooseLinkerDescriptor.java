@@ -186,6 +186,7 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Con
 
 			final JLabel lblInfo = new JLabel();
 			lblInfo.setFont( getFont().deriveFont( getFont().getSize2D() - 2f ) );
+			lblInfo.setVerticalAlignment( JLabel.TOP );
 			gbc.fill = GridBagConstraints.BOTH;
 			gbc.gridy = 3;
 			gbc.weighty = 1.;
