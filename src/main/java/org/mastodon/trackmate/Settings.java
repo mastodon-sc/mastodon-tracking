@@ -6,7 +6,7 @@ import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.linking.LinkingUtils;
-import org.mastodon.linking.mamut.SparseLAPLinkerMamut;
+import org.mastodon.linking.mamut.SimpleSparseLAPLinkerMamut;
 import org.mastodon.linking.mamut.SpotLinkerOp;
 
 import bdv.spimdata.SpimDataMinimal;
@@ -54,7 +54,7 @@ public class Settings
 
 		private Map< String, Object > detectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
 
-		private Class< ? extends SpotLinkerOp > linker = SparseLAPLinkerMamut.class;
+		private Class< ? extends SpotLinkerOp > linker = SimpleSparseLAPLinkerMamut.class;
 
 		private Map< String, Object > linkerSettings = LinkingUtils.getDefaultLAPSettingsMap();
 
