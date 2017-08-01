@@ -59,7 +59,7 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 	/**
 	 * The minimal diameter size, in pixel, under which we stop down-sampling.
 	 */
-	private static final double MIN_SPOT_PIXEL_SIZE = 10d;
+	public static final double MIN_SPOT_PIXEL_SIZE = 10d;
 
 	private long processingTime;
 

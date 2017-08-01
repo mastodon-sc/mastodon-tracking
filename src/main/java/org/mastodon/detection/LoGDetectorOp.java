@@ -6,6 +6,7 @@ import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
 import static org.mastodon.detection.DetectorKeys.KEY_ROI;
 import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
 import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
+import static org.mastodon.detection.DogDetectorOp.MIN_SPOT_PIXEL_SIZE;
 
 import java.util.List;
 
@@ -47,11 +48,6 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 		extends AbstractDetectorOp< V >
 		implements DetectorOp< V >, Benchmark
 {
-
-	/**
-	 * The minimal diameter size, in pixel, under which we stop down-sampling.
-	 */
-	private static final double MIN_SPOT_PIXEL_SIZE = 10d;
 
 	@Parameter
 	private ThreadService threadService;
