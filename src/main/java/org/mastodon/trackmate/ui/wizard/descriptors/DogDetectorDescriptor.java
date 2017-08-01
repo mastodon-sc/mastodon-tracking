@@ -39,6 +39,7 @@ import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorKeys;
+import org.mastodon.detection.DogDetectorOp;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.LoGDetectorMamut;
 import org.mastodon.detection.mamut.SpotDetectorOp;
@@ -57,10 +58,12 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 import bdv.spimdata.SpimDataMinimal;
+import bdv.util.Affine3DHelpers;
 import bdv.viewer.ViewerFrame;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.hybrid.Hybrids;
+import net.imglib2.realtransform.AffineTransform3D;
 
 @Plugin( type = SpotDetectorDescriptor.class, name = "DoG detector configuration descriptor" )
 public class DogDetectorDescriptor extends SpotDetectorDescriptor
@@ -98,6 +101,41 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 	public void aboutToHidePanel()
 	{
 		grabSettings();
+
+		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
+		final String units = ( null != setupID && null != settings.values.getSpimData() )
+				? settings.values.getSpimData().getSequenceDescription()
+						.getViewSetups().get( setupID ).getVoxelSize().unit()
+				: "pixels";
+
+		final SpimDataMinimal spimData = settings.values.getSpimData();
+		final double radius = ( double ) settings.values.getDetectorSettings().get( KEY_RADIUS );
+		final double minSizePixel = DogDetectorOp.MIN_SPOT_PIXEL_SIZE / 2.;
+		final int timepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT );
+		final int level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, minSizePixel, timepoint, setupID );
+		final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( spimData, timepoint, setupID, level );
+		final AffineTransform3D transform = DetectionUtil.getTransform( spimData, timepoint, setupID, level );
+
+		final double sx = Affine3DHelpers.extractScale( mipmapTransform, 0 );
+		final double sy = Affine3DHelpers.extractScale( mipmapTransform, 1 );
+		final double sz = Affine3DHelpers.extractScale( mipmapTransform, 2 );
+
+		final double px = Affine3DHelpers.extractScale( transform, 0 );
+		final double py = Affine3DHelpers.extractScale( transform, 1 );
+		final double pz = Affine3DHelpers.extractScale( transform, 2 );
+
+		final double rx = radius / px;
+		final double ry = radius / py;
+		final double rz = radius / pz;
+
+		log.info( "Configured detector with parameters:\n" );
+		log.info( String.format( "  - spot radius: %.1f %s\n", radius, units ) );
+		log.info( String.format( "  - quality threshold: %.1f\n", ( double ) settings.values.getDetectorSettings().get( KEY_THRESHOLD ) ) );
+		log.info( String.format( "  - will operate on resolution level %d (%.0f x %.0f x %.0f)\n", level, sx, sy, sz ) );
+		log.info( String.format( "  - at this level, radius = %.1f %s corresponds to:\n", radius, units ) );
+		log.info( String.format( "      - %.1f pixels in X.\n", rx ) );
+		log.info( String.format( "      - %.1f pixels in Y.\n", ry ) );
+		log.info( String.format( "      - %.1f pixels in Z.\n", rz ) );
 	}
 
 	private void preview()
@@ -266,7 +304,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 				LoGDetectorMamut.class
 		} ) );
 		final Collection< Class< ? extends SpotDetectorOp > > a = b;
-		return  a ;
+		return a;
 	}
 
 	@Override
