@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.mastodon.HasErrorMessage;
 import org.mastodon.detection.mamut.SpotDetectorOp;
+import org.mastodon.graph.algorithm.RootFinder;
 import org.mastodon.linking.mamut.SpotLinkerOp;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
@@ -20,7 +21,6 @@ import net.imagej.ops.Op;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.hybrid.Hybrids;
 import net.imagej.ops.special.inplace.Inplaces;
-import net.imglib2.algorithm.Benchmark;
 
 public class TrackMate extends ContextCommand implements HasErrorMessage
 {
@@ -82,8 +82,8 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		final SpimDataMinimal spimData = settings.values.getSpimData();
 		if ( null == spimData )
 		{
-			errorMessage = "Cannot start detection: SpimData obect is null.";
-			log.error( errorMessage );
+			errorMessage = "Cannot start detection: SpimData object is null.\n";
+			log.error( errorMessage + '\n' );
 			succesful = false;
 			return false;
 		}
@@ -99,6 +99,7 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		 * Exec detection.
 		 */
 
+		final long start = System.currentTimeMillis();
 		final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 
@@ -106,12 +107,12 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 				graph, spimData,
 				detectorSettings );
 		this.currentOp = detector;
-		log.info( "Detection with " + detector );
+		log.info( "Detection with " + cl.getSimpleName() + '\n' );
 		detector.compute( spimData, graph );
 
 		if ( !detector.isSuccessful() )
 		{
-			log.error( "Detection failed:\n" + detector.getErrorMessage() );
+			log.error( "Detection failed:\n" + detector.getErrorMessage() + '\n' );
 			succesful = false;
 			errorMessage = detector.getErrorMessage();
 			return false;
@@ -119,16 +120,9 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		currentOp = null;
 
 		model.getGraphFeatureModel().declareFeature( detector.getQualityFeature() );
-		if ( detector instanceof Benchmark )
-		{
-			final Benchmark bm = ( Benchmark ) detector;
-			log.info( "Detection completed in " + bm.getProcessingTime() + " ms." );
-		}
-		else
-		{
-			log.info( "Detection completed." );
-		}
-		log.info( "Found " + graph.vertices().size() + " spots." );
+		final long end = System.currentTimeMillis();
+		log.info( String.format( "Detection completed in %.1f s.\n", ( end - start ) / 1000. ) );
+		log.info( "Found " + graph.vertices().size() + " spots.\n" );
 
 		model.getGraph().notifyGraphChanged();
 		return true;
@@ -152,6 +146,7 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		 * Exec particle linking.
 		 */
 
+		final long start = System.currentTimeMillis();
 		final Class< ? extends SpotLinkerOp > linkerCl = settings.values.getLinker();
 		final Map< String, Object > linkerSettings = settings.values.getLinkerSettings();
 
@@ -159,12 +154,12 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 				( SpotLinkerOp ) Inplaces.binary1( ops, linkerCl, model.getGraph(), model.getSpatioTemporalIndex(),
 						linkerSettings, model.getGraphFeatureModel() );
 
-		log.info( "Particle-linking with " + linker );
+		log.info( "Particle-linking with " + linkerCl.getSimpleName() + '\n' );
 		this.currentOp = linker;
 		linker.mutate1( model.getGraph(), model.getSpatioTemporalIndex() );
 		if ( !linker.isSuccessful() )
 		{
-			log.error( "Particle-linking failed:\n" + linker.getErrorMessage() );
+			log.error( "Particle-linking failed:\n" + linker.getErrorMessage() + '\n' );
 			succesful = false;
 			errorMessage = linker.getErrorMessage();
 			return false;
@@ -172,10 +167,11 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 
 		currentOp = null;
 		model.getGraphFeatureModel().declareFeature( linker.getLinkCostFeature() );
-		if ( linker instanceof Benchmark )
-			log.info( "Particle-linking completed in " + ( ( Benchmark ) linker ).getProcessingTime() + " ms." );
-		else
-			log.info( "Particle-linking completed." );
+		final long end = System.currentTimeMillis();
+		log.info( String.format( "Particle-linking completed in %.1f s.\n", ( end - start ) / 1000. ) );
+
+		final int nTracks = RootFinder.getRoots( model.getGraph() ).size();
+		log.info( String.format( "Found %d tracks.\n", nTracks ) );
 
 		model.getGraph().notifyGraphChanged();
 		return true;
