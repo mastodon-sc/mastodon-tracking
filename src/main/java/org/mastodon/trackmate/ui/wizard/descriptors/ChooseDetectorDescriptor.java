@@ -18,11 +18,11 @@ import org.mastodon.trackmate.PluginProvider;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.WizardController;
+import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 import org.scijava.Context;
 import org.scijava.Contextual;
 import org.scijava.NullContextException;
-import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 
 public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements Contextual
@@ -34,7 +34,7 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 	private Context context;
 
 	@Parameter
-	private LogService log;
+	private WizardLogService log;
 
 	private PluginProvider< SpotDetectorDescriptor > descriptorProvider;
 
@@ -91,7 +91,7 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 		{
 			indexOf = classes.indexOf( detectorClass );
 			if ( indexOf < -1 )
-				log.error( "Unkown detector class: " + detectorClass );
+				log.error( "Unkown detector class: " + detectorClass + '\n' );
 		}
 
 		model.removeAllElements();
@@ -108,6 +108,7 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 		final Class< ? extends SpotDetectorOp > detectorClass = classes.get( names.indexOf( name ) );
 		final Settings settings = trackmate.getSettings();
 		settings.detector( detectorClass );
+		log.info( "Selected detector: " + name + " of class " + detectorClass.getSimpleName() + '\n' );
 
 		/*
 		 * Determine and register the next descriptor.
@@ -123,7 +124,7 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 					return;
 
 				previousDetectorPanel = detectorPanel;
-				if (detectorPanel.getContext() == null)
+				if ( detectorPanel.getContext() == null )
 					context().inject( detectorPanel );
 				final Map< String, Object > defaultSettings = detectorPanel.getDefaultSettings();
 				settings.linkerSettings( defaultSettings );

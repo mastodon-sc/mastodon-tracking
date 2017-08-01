@@ -18,11 +18,11 @@ import org.mastodon.trackmate.PluginProvider;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.WizardController;
+import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 import org.scijava.Context;
 import org.scijava.Contextual;
 import org.scijava.NullContextException;
-import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 
 public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Contextual
@@ -34,7 +34,7 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Con
 	private Context context;
 
 	@Parameter
-	private LogService log;
+	private WizardLogService log;
 
 	private PluginProvider< SpotLinkerDescriptor > descriptorProvider;
 
@@ -91,7 +91,7 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Con
 		{
 			indexOf = classes.indexOf( linkerClass );
 			if ( indexOf < -1 )
-				log.error( "Unkown linker class: " + linkerClass );
+				log.error( "Unkown linker class: " + linkerClass + '\n' );
 		}
 
 		model.removeAllElements();
@@ -108,6 +108,7 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Con
 		final Class< ? extends SpotLinkerOp > linkerClass = classes.get( names.indexOf( name ) );
 		final Settings settings = trackmate.getSettings();
 		settings.linker( linkerClass );
+		log.info( "Selected linker: " + name + " of class " + linkerClass.getSimpleName() + '\n' );
 
 		/*
 		 * Determine and register the next descriptor.
@@ -123,7 +124,7 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Con
 					return;
 
 				previousLinkerPanel = linkerPanel;
-				if (linkerPanel.getContext() == null)
+				if ( linkerPanel.getContext() == null )
 					context().inject( linkerPanel );
 				final Map< String, Object > defaultSettings = linkerPanel.getDefaultSettings();
 				settings.linkerSettings( defaultSettings );

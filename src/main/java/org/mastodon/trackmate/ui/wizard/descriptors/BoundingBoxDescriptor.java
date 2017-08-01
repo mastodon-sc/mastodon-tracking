@@ -32,7 +32,12 @@ import org.mastodon.trackmate.ui.boundingbox.BoundingBoxModel;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.CornerHighlighter;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.DisplayMode;
+import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
+import org.scijava.Context;
+import org.scijava.Contextual;
+import org.scijava.NullContextException;
+import org.scijava.plugin.Parameter;
 import org.scijava.ui.behaviour.ClickBehaviour;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Behaviours;
@@ -52,7 +57,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.Util;
 
-public class BoundingBoxDescriptor extends WizardPanelDescriptor
+public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Contextual
 {
 
 	public static final String IDENTIFIER = "Setup bounding-box";
@@ -74,6 +79,9 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 	private static final boolean showBoxSource = true;
 
 	private static final boolean showBoxOverlay = true;
+
+	@Parameter
+	private WizardLogService log;
 
 	private final Settings settings;
 
@@ -194,16 +202,26 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 	public void aboutToHidePanel()
 	{
 		final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
+		final String info;
 		if ( panel.useRoi.isSelected() )
+		{
 			settings.values.getDetectorSettings().put( KEY_ROI, roi.getInterval() );
+			info = "Processing within ROI with bounds: " + Util.printInterval( roi.getInterval() ) + '\n';
+		}
 		else
+		{
 			settings.values.getDetectorSettings().put( KEY_ROI, null );
+			info = "Processing whole image.\n";
+		}
 
 		settings.values.getDetectorSettings().put( KEY_MIN_TIMEPOINT, panel.minT.getCurrentValue() );
 		settings.values.getDetectorSettings().put( KEY_MAX_TIMEPOINT, panel.maxT.getCurrentValue() );
 
 		toggleEditModeOff();
 		toggleBoundingBox( false );
+		log.info( info );
+		log.info( String.format( "  - min time-point: %d\n", ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT ) ) );
+		log.info( String.format( "  - max time-point: %d\n", ( int ) settings.values.getDetectorSettings().get( KEY_MAX_TIMEPOINT ) ) );
 	}
 
 	@Override
@@ -593,4 +611,23 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 		}
 	}
 
+
+	// -- Contextual methods --
+
+	@Parameter
+	private Context context;
+
+	@Override
+	public Context context()
+	{
+		if ( context == null )
+			throw new NullContextException();
+		return context;
+	}
+
+	@Override
+	public Context getContext()
+	{
+		return context;
+	}
 }

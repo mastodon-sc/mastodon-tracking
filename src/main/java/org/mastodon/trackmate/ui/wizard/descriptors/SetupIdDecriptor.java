@@ -45,7 +45,7 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 	public static final String IDENTIFIER = "Setup ID config";
 
 	@Parameter
-	WizardLogService log;
+	private WizardLogService log;
 
 	private final Map< String, Integer > idMap;
 
@@ -141,7 +141,7 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 			if ( entity instanceof NamedEntity )
 			{
 				final NamedEntity ne = ( NamedEntity ) entity;
-				str.append( " - " + key + ": " + ne.getName() + "\n" );
+				str.append( "  - " + key + ": " + ne.getName() + "\n" );
 			}
 		}
 
@@ -154,13 +154,13 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 
 			final int numMipmapLevels = loader.numMipmapLevels();
 			final AffineTransform3D[] mipmapTransforms = loader.getMipmapTransforms();
-			str.append( String.format( " - multi-resolution image with %d levels:\n", numMipmapLevels ) );
+			str.append( String.format( "  - multi-resolution image with %d levels:\n", numMipmapLevels ) );
 			for ( int level = 0; level < mipmapTransforms.length; level++ )
 			{
 				final double sx = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 0 );
 				final double sy = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 1 );
 				final double sz = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 2 );
-				str.append( String.format( "    - level %d: %.0f x %.0f x %.0f\n", level, sx, sy, sz ) );
+				str.append( String.format( "     - level %d: %.0f x %.0f x %.0f\n", level, sx, sy, sz ) );
 			}
 		}
 		else

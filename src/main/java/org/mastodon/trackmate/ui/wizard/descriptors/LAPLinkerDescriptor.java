@@ -28,7 +28,9 @@ import org.mastodon.revised.mamut.feature.DefaultMamutFeatureComputerService;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
+import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.scijava.Context;
+import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 @Plugin( type = SpotLinkerDescriptor.class, name = "LAP linker configuration descriptor" )
@@ -36,6 +38,9 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 {
 
 	public static final String IDENTIFIER = "Configure LAP linker";
+
+	@Parameter
+	private WizardLogService log;
 
 	private Settings settings;
 
@@ -72,6 +77,17 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 		ls.put( KEY_MAX_TIMEPOINT, ds.get( KEY_MAX_TIMEPOINT ) );
 
 		settings.linkerSettings( ls );
+
+
+		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
+		final String units = ( null != setupID && null != settings.values.getSpimData() )
+				? settings.values.getSpimData().getSequenceDescription()
+						.getViewSetups().get( setupID ).getVoxelSize().unit()
+				: "pixels";
+		log.info( "Configured LAP linker with the following parameters:\n" );
+		log.info( LAPLinkerConfigPanel.echoSettingsMap( ls, units ) );
+		log.info( String.format( "  - min time-point: %d\n", ( int ) ls.get( KEY_MIN_TIMEPOINT ) ) );
+		log.info( String.format( "  - max time-point: %d\n", ( int ) ls.get( KEY_MAX_TIMEPOINT ) ) );
 	}
 
 	@SuppressWarnings( { "rawtypes", "unchecked" } )

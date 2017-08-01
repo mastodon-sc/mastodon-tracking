@@ -32,6 +32,7 @@ import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
+import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.util.SelectOnFocusListener;
 import org.python.icu.text.DecimalFormat;
 import org.scijava.Context;
@@ -53,6 +54,9 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 
 	@Parameter
 	private PluginService pluginService;
+
+	@Parameter
+	private WizardLogService log;
 
 	private Settings settings;
 
@@ -93,6 +97,18 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 		ls.put( KEY_MAX_TIMEPOINT, ds.get( KEY_MAX_TIMEPOINT ) );
 
 		settings.linkerSettings( ls );
+
+		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
+		final String units = ( null != setupID && null != settings.values.getSpimData() )
+				? settings.values.getSpimData().getSequenceDescription()
+						.getViewSetups().get( setupID ).getVoxelSize().unit()
+				: "pixels";
+		log.info( "Configured Kalman linker with the following parameters:\n" );
+		log.info( String.format( "  - initial search radius: %.1f %s\n", ( double ) ls.get( KEY_LINKING_MAX_DISTANCE ), units ) );
+		log.info( String.format( "  - search radius: %.1f %s\n", ( double ) ls.get( KEY_KALMAN_SEARCH_RADIUS ), units ) );
+		log.info( String.format( "  - max frame gap: %d\n", ( int ) ls.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) ) );
+		log.info( String.format( "  - min time-point: %d\n", ( int ) ls.get( KEY_MIN_TIMEPOINT ) ) );
+		log.info( String.format( "  - max time-point: %d\n", ( int ) ls.get( KEY_MAX_TIMEPOINT ) ) );
 	}
 
 	@SuppressWarnings( { "rawtypes", "unchecked" } )
