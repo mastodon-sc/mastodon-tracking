@@ -169,12 +169,8 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		model.getGraphFeatureModel().declareFeature( linker.getLinkCostFeature() );
 		final long end = System.currentTimeMillis();
 		log.info( String.format( "Particle-linking completed in %.1f s.\n", ( end - start ) / 1000. ) );
-<<<<<<< HEAD
-
 		final int nTracks = RootFinder.getRoots( model.getGraph() ).size();
 		log.info( String.format( "Found %d tracks.\n", nTracks ) );
-=======
->>>>>>> 8607a095de92219a1b73f2bc219b0e5add069c7f
 
 		model.getGraph().notifyGraphChanged();
 		return true;
