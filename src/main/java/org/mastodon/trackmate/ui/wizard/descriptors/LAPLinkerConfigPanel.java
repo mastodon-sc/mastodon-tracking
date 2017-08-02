@@ -529,6 +529,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		// Frame to frame linking
 		jTextFieldLinkingMaxDistance.setValue( settings.get( KEY_LINKING_MAX_DISTANCE ) );
 		final Map< String, Double > linkingPenalties = ( Map< String, Double > ) settings.get( KEY_LINKING_FEATURE_PENALTIES );
+		jPanelLinkingFeatures.removeAllPanels();
 		for ( final String featureKey : linkingPenalties.keySet() )
 		{
 			if ( !projectionKeys.contains( featureKey ) )
@@ -544,6 +545,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		jTextFieldGapClosingMaxDistance.setValue( settings.get( KEY_GAP_CLOSING_MAX_DISTANCE ) );
 		jTextFieldGapClosingMaxFrameInterval.setValue( settings.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) );
 		final Map< String, Double > gapClosingPenalties = ( Map< String, Double > ) settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES );
+		jPanelGapClosing.removeAllPanels();
 		for ( final String featureKey : gapClosingPenalties.keySet() )
 		{
 			if ( !projectionKeys.contains( featureKey ) )
@@ -558,6 +560,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		enablerSplitting.setEnabled( jCheckBoxAllowSplitting.isSelected() );
 		jTextFieldSplittingMaxDistance.setValue( settings.get( KEY_SPLITTING_MAX_DISTANCE ) );
 		final Map< String, Double > splittingPenalties = ( Map< String, Double > ) settings.get( KEY_SPLITTING_FEATURE_PENALTIES );
+		jPanelSplittingFeatures.removeAllPanels();
 		for ( final String featureKey : splittingPenalties.keySet() )
 		{
 			if ( !projectionKeys.contains( featureKey ) )
@@ -572,6 +575,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		enablerMerging.setEnabled( jCheckBoxAllowMerging.isSelected() );
 		jTextFieldMergingMaxDistance.setValue( settings.get( KEY_MERGING_MAX_DISTANCE ) );
 		final Map< String, Double > mergingPenalties = ( Map< String, Double > ) settings.get( KEY_MERGING_FEATURE_PENALTIES );
+		jPanelMergingFeatures.removeAllPanels();
 		for ( final String featureKey : mergingPenalties.keySet() )
 		{
 			if ( !projectionKeys.contains( featureKey ) )
@@ -693,6 +697,16 @@ public class LAPLinkerConfigPanel extends JPanel
 			LAPLinkerConfigPanel.this.revalidate();
 			jButtonRemove.requestFocusInWindow();
 		}
+
+		private void removeAllPanels()
+		{
+			while ( !featurePanels.isEmpty() )
+			{
+				final JPanelFeaturePenalty panel = featurePanels.pop();
+				remove( panel );
+			}
+			LAPLinkerConfigPanel.this.revalidate();
+		}
 	}
 
 	private class JPanelFeaturePenalty extends javax.swing.JPanel
@@ -760,18 +774,18 @@ public class LAPLinkerConfigPanel extends JPanel
 	}
 
 	@SuppressWarnings( "unchecked" )
-	public static final String echoSettingsMap(final Map<String, Object> sm, final String units)
+	public static final String echoSettingsMap( final Map< String, Object > sm, final String units )
 	{
 		final StringBuilder str = new StringBuilder();
 
 		str.append( "  - linking conditions:\n" );
-		str.append( String.format( "      - max distance: %.1f %s\n", (double) sm.get( KEY_LINKING_MAX_DISTANCE ), units ) );
+		str.append( String.format( "      - max distance: %.1f %s\n", ( double ) sm.get( KEY_LINKING_MAX_DISTANCE ), units ) );
 		str.append( echoFeaturePenalties( ( Map< String, Double > ) sm.get( KEY_LINKING_FEATURE_PENALTIES ) ) );
 
 		if ( ( Boolean ) sm.get( KEY_ALLOW_GAP_CLOSING ) )
 		{
 			str.append( "  - gap-closing conditions:\n" );
-			str.append( String.format( "      - max distance: %.1f %s\n", (double) sm.get( KEY_GAP_CLOSING_MAX_DISTANCE ), units ) );
+			str.append( String.format( "      - max distance: %.1f %s\n", ( double ) sm.get( KEY_GAP_CLOSING_MAX_DISTANCE ), units ) );
 			str.append( String.format( "      - max frame gap: %d\n", ( int ) sm.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) ) );
 			str.append( echoFeaturePenalties( ( Map< String, Double > ) sm.get( KEY_GAP_CLOSING_FEATURE_PENALTIES ) ) );
 		}
@@ -815,7 +829,7 @@ public class LAPLinkerConfigPanel extends JPanel
 			str += "      - with feature penalties:\n";
 			for ( final String feature : featurePenalties.keySet() )
 			{
-				str += "      - " + feature.toString() + ": weight = " + String.format( "%.1f", featurePenalties.get( feature ) ) + '\n';
+				str += "          - " + feature.toString() + ": weight = " + String.format( "%.1f", featurePenalties.get( feature ) ) + '\n';
 			}
 		}
 		return str;
