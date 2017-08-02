@@ -262,7 +262,7 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 			ls.put( KEY_LINKING_FEATURE_PENALTIES, null );
 
 			// Gap-closing.
-			ls.put( KEY_ALLOW_GAP_CLOSING, false );
+			ls.put( KEY_ALLOW_GAP_CLOSING, true );
 			ls.put( KEY_GAP_CLOSING_MAX_DISTANCE, ( ( Number ) maxGapClosingDistance.getValue() ).doubleValue() );
 			ls.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, ( ( Number ) maxFrameGap.getValue() ).intValue() );
 			ls.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, null );

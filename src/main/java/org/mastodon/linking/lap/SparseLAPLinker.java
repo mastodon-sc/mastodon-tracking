@@ -286,5 +286,4 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 			cancelable.cancel( reason );
 		}
 	}
-
 }

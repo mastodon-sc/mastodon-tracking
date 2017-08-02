@@ -43,10 +43,9 @@ public class GraphSegmentSplitter< V extends Vertex< E > & HasTimepoint, E exten
 		this.segmentEnds = RefCollections.createRefList( graph.vertices(), ccs.size() );
 		this.segmentMiddles = findMiddlePoints ? new ArrayList<>( ccs.size() ) : Collections.emptyList();
 
-		final RefList< V > list = RefCollections.createRefList( graph.vertices() );
 		for ( final RefSet< V > cc : ccs )
 		{
-			list.clear();
+			final RefList< V > list = RefCollections.createRefList( graph.vertices() );
 			list.addAll( cc );
 			list.sort( timepointComparator );
 

@@ -259,14 +259,12 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 				final int sourceFrame = source.getTimepoint();
 				for ( final V target : segmentStarts )
 				{
+
 					// Check frame interval, must be 1.
 					final int targetFrame = target.getTimepoint();
 					final int tdiff = targetFrame - sourceFrame;
-
 					if ( tdiff != 1 )
-					{
 						continue;
-					}
 
 					// Check max distance
 					final double cost = sCostFunction.linkingCost( source, target );
