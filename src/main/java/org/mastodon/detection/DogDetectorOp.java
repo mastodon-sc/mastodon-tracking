@@ -33,7 +33,6 @@ import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
-import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 /**
@@ -113,7 +112,8 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 			 */
 
 			final RandomAccessibleInterval< ? > img = DetectionUtil.getImage( spimData, tp, setup, level );
-			final IntervalView< ? > zeroMin = Views.zeroMin( img );
+			// If 2D, the 3rd dimension will be dropped here.
+			final RandomAccessibleInterval< ? > zeroMin = Views.dropSingletonDimensions( Views.zeroMin( img ) );
 
 			@SuppressWarnings( { "unchecked", "rawtypes" } )
 			final RandomAccessible< FloatType > source = DetectionUtil.asExtendedFloat( ( RandomAccessibleInterval ) zeroMin );
@@ -139,9 +139,10 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 				mipmapTransform.applyInverse( minTarget, minSource );
 				mipmapTransform.applyInverse( maxTarget, maxSource );
 
-				final long[] tmin = new long[ 3 ];
-				final long[] tmax = new long[ 3 ];
-				for ( int d = 0; d < tmax.length; d++ )
+				// Only take 2D or 3D version of the transformed interval.
+				final long[] tmin = new long[ zeroMin.numDimensions() ];
+				final long[] tmax = new long[ zeroMin.numDimensions() ];
+				for ( int d = 0; d < zeroMin.numDimensions(); d++ )
 				{
 					tmin[ d ] = ( long ) Math.ceil( minTarget[ d ] );
 					tmax[ d ] = ( long ) Math.floor( maxTarget[ d ] );
@@ -162,7 +163,7 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 
 			final int stepsPerOctave = 4;
 			final double k = Math.pow( 2.0, 1.0 / stepsPerOctave );
-			final double sigma = radius / Math.sqrt( img.numDimensions() ) / scale;
+			final double sigma = radius / Math.sqrt( zeroMin.numDimensions() ) / scale;
 			final double sigmaSmaller = sigma;
 			final double sigmaLarger = k * sigmaSmaller;
 			final double normalization = 1.0 / ( sigmaLarger / sigmaSmaller - 1.0 );
@@ -182,11 +183,15 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 			final V ref = graph.vertexRef();
 			final double[] pos = new double[ 3 ];
 			final RealPoint sp = RealPoint.wrap( pos );
+			final RealPoint p3d = new RealPoint( 3 );
 			for ( final RefinedPeak< Point > p : refinedPeaks )
 			{
 				final double value = p.getValue();
 				final double normalizedValue = -value * normalization;
-				transform.apply( p, sp );
+
+				// In case p is 2D we pass it to a 3D RealPoint to work nicely with the 3D transform.
+				p3d.setPosition( p );
+				transform.apply( p3d, sp );
 				final V spot = vertexCreator.createVertex( graph, ref, pos, radius, tp, normalizedValue );
 				quality.set( spot, normalizedValue );
 			}

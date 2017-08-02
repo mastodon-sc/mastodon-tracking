@@ -109,7 +109,7 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 			@SuppressWarnings( "rawtypes" )
 			final RandomAccessibleInterval img = DetectionUtil.getImage( spimData, tp, setup, level );
 			@SuppressWarnings( "unchecked" )
-			final IntervalView< ? > zeroMin = Views.zeroMin( img );
+			final RandomAccessibleInterval< ? > zeroMin = Views.dropSingletonDimensions( Views.zeroMin( img ) );
 
 			/*
 			 * Transform ROI in higher level.
@@ -132,9 +132,9 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 				mipmapTransform.applyInverse( minTarget, minSource );
 				mipmapTransform.applyInverse( maxTarget, maxSource );
 
-				final long[] tmin = new long[ 3 ];
-				final long[] tmax = new long[ 3 ];
-				for ( int d = 0; d < tmax.length; d++ )
+				final long[] tmin = new long[ zeroMin.numDimensions() ];
+				final long[] tmax = new long[ zeroMin.numDimensions() ];
+				for ( int d = 0; d < zeroMin.numDimensions(); d++ )
 				{
 					tmin[ d ] = ( long ) Math.ceil( minTarget[ d ] );
 					tmax[ d ] = ( long ) Math.floor( maxTarget[ d ] );
@@ -152,14 +152,12 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 			final double zs = Affine3DHelpers.extractScale( transform, 2 );
 			final double[] calibration = new double[] { xs, ys, zs };
 
-			final RandomAccessibleInterval< FloatType > kernel = createLoGKernel( radius, img.numDimensions(), calibration );
+			final RandomAccessibleInterval< FloatType > kernel = createLoGKernel( radius, zeroMin.numDimensions(), calibration );
 			@SuppressWarnings( "rawtypes" )
 			final IntervalView source = Views.interval( zeroMin, interval );
 
-			System.out.println( "Convolving" );
 			@SuppressWarnings( "unchecked" )
 			final RandomAccessibleInterval< FloatType > output = ops().filter().convolve( source, kernel );
-			System.out.println( "Convolving done" );
 
 			/*
 			 * LoG normalization factor, so that the filtered peak have the
@@ -197,13 +195,14 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 				final V ref = graph.vertexRef();
 				final double[] pos = new double[ 3 ];
 				final RealPoint point = RealPoint.wrap( pos );
+				final RealPoint p3d = new RealPoint( 3 );
 				for ( final RefinedPeak< Point > refinedPeak : refined )
 				{
 					ra.setPosition( refinedPeak.getOriginalPeak() );
 					final double q = ra.get().getRealDouble();
 
-					point.setPosition( refinedPeak );
-					transform.apply( refinedPeak, point );
+					p3d.setPosition( refinedPeak );
+					transform.apply( p3d, point );
 					final V spot = vertexCreator.createVertex( graph, ref, pos, radius, tp, q );
 					quality.set( spot, q );
 				}
@@ -260,11 +259,10 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 		// Optimal sigma for LoG approach and dimensionality.
 		final double sigma = radius / Math.sqrt( nDims );
 		final double[] sigmaPixels = new double[ nDims ];
-		for ( int i = 0; i < sigmaPixels.length; i++ )
-			sigmaPixels[ i ] = sigma / calibration[ i ];
+		for ( int d = 0; d < nDims; d++ )
+			sigmaPixels[ d ] = sigma / calibration[ d ];
 
 		final RandomAccessibleInterval< FloatType > kernel = ops().create().kernelLog( sigmaPixels, new FloatType() );
 		return kernel;
 	}
-
 }
