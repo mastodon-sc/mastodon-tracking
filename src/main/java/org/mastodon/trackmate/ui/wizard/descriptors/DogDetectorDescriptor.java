@@ -57,9 +57,11 @@ import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
+import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.util.Affine3DHelpers;
 import bdv.viewer.ViewerFrame;
+import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.hybrid.Hybrids;
@@ -131,11 +133,20 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 		log.info( "Configured detector with parameters:\n" );
 		log.info( String.format( "  - spot radius: %.1f %s\n", radius, units ) );
 		log.info( String.format( "  - quality threshold: %.1f\n", ( double ) settings.values.getDetectorSettings().get( KEY_THRESHOLD ) ) );
-		log.info( String.format( "  - will operate on resolution level %d (%.0f x %.0f x %.0f)\n", level, sx, sy, sz ) );
-		log.info( String.format( "  - at this level, radius = %.1f %s corresponds to:\n", radius, units ) );
+		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
+		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
+		{
+			log.info( String.format( "  - will operate on resolution level %d (%.0f x %.0f x %.0f)\n", level, sx, sy, sz ) );
+			log.info( String.format( "  - at this level, radius = %.1f %s corresponds to:\n", radius, units ) );
+		}
+		else
+		{
+			log.info( String.format( "  - equivalent radius = %.1f %s in pixels:\n", radius, units ) );
+		}
 		log.info( String.format( "      - %.1f pixels in X.\n", rx ) );
 		log.info( String.format( "      - %.1f pixels in Y.\n", ry ) );
 		log.info( String.format( "      - %.1f pixels in Z.\n", rz ) );
+
 	}
 
 	private void preview()

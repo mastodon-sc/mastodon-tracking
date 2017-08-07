@@ -115,8 +115,8 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 		detectorSettings.put( KEY_SETUP_ID, setupID );
 
-		log.info( String.format( "Selected setup ID %d for detection:\n", (int) setupID ) );
-		log.info( echoSetupIDInfo(setupID) );
+		log.info( String.format( "Selected setup ID %d for detection:\n", ( int ) setupID ) );
+		log.info( echoSetupIDInfo( setupID ) );
 	}
 
 	private String echoSetupIDInfo( final int setupID )
@@ -153,14 +153,22 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 							.getSetupImgLoader( setupID );
 
 			final int numMipmapLevels = loader.numMipmapLevels();
-			final AffineTransform3D[] mipmapTransforms = loader.getMipmapTransforms();
-			str.append( String.format( "  - multi-resolution image with %d levels:\n", numMipmapLevels ) );
-			for ( int level = 0; level < mipmapTransforms.length; level++ )
+
+			if ( numMipmapLevels > 1 )
 			{
-				final double sx = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 0 );
-				final double sy = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 1 );
-				final double sz = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 2 );
-				str.append( String.format( "     - level %d: %.0f x %.0f x %.0f\n", level, sx, sy, sz ) );
+				final AffineTransform3D[] mipmapTransforms = loader.getMipmapTransforms();
+				str.append( String.format( "  - multi-resolution image with %d levels:\n", numMipmapLevels ) );
+				for ( int level = 0; level < mipmapTransforms.length; level++ )
+				{
+					final double sx = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 0 );
+					final double sy = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 1 );
+					final double sz = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 2 );
+					str.append( String.format( "     - level %d: %.0f x %.0f x %.0f\n", level, sx, sy, sz ) );
+				}
+			}
+			else
+			{
+				str.append( " - single-resolution image.\n" );
 			}
 		}
 		else
