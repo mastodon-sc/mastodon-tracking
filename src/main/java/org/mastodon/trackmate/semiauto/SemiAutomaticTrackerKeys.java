@@ -80,6 +80,7 @@ public class SemiAutomaticTrackerKeys
 		mandatoryKeys.add( KEY_ALLOW_LINKING_IF_HAS_OUTGOING );
 		mandatoryKeys.add( KEY_CONTINUE_IF_LINK_EXISTS );
 		final List< String > optionalKeys = new ArrayList< String >();
+		optionalKeys.add( KEY_RESOLUTION_LEVEL );
 		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, errorHolder );
 
 		// Check some parameter values.
@@ -238,6 +239,22 @@ public class SemiAutomaticTrackerKeys
 	 * Default value for the {@link #KEY_CONTINUE_IF_LINK_EXISTS} parameter.
 	 */
 	public static final boolean DEFAULT_CONTINUE_IF_LINK_EXISTS = true;
+
+	/**
+	 * Key for the parameter that specifies what resolution level to use for
+	 * detection, in the case of a multi-resolution level image. This parameter
+	 * is not mandatory.
+	 * <p>
+	 * Expected values are {@link Integer}s, larger than or equal to 0. If it is
+	 * <code>null</code> or negative, the optimal resolution level is determined
+	 * automatically from the spot radius.
+	 */
+	public static final String KEY_RESOLUTION_LEVEL = "RESOLUTION_LEVEL";
+
+	/**
+	 * Default value for the {@link #KEY_RESOLUTION_LEVEL} parameter.
+	 */
+	public static final Integer DEFAULT_RESOLUTION_LEVEL = null;
 
 	/** Minimal size of neighborhoods, in spot diameter units. */
 	public static final double NEIGHBORHOOD_FACTOR = 2.;

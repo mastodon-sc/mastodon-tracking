@@ -104,6 +104,31 @@ public class DetectionUtil
 	}
 
 	/**
+	 * Returns the number of resolution levels present in the specified data,
+	 * for the setup with specified id.
+	 *
+	 * @param spimData
+	 *            the {@link SpimDataMinimal} linking to the image data.
+	 * @param setup
+	 *            the setup id to query.
+	 * @return the number of resolution levels.
+	 */
+	public static int getNResolutionLevels( final SpimDataMinimal spimData, final int setup )
+	{
+		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
+		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
+		{
+			final BasicMultiResolutionSetupImgLoader< ? > loader = ( ( BasicMultiResolutionImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
+			final int numMipmapLevels = loader.numMipmapLevels();
+			return numMipmapLevels;
+		}
+		else
+		{
+			return 1;
+		}
+	}
+
+	/**
 	 * Determines the optimal resolution level.
 	 * <p>
 	 * This optimal resolution is the largest resolution level for which an
@@ -167,7 +192,6 @@ public class DetectionUtil
 		{
 			return 0;
 		}
-
 	}
 
 	/**
@@ -393,5 +417,4 @@ public class DetectionUtil
 
 	private DetectionUtil()
 	{}
-
 }

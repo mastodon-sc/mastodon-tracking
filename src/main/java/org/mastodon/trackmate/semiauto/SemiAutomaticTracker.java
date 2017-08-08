@@ -9,6 +9,7 @@ import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_DISTA
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_FORWARD_IN_TIME;
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_N_TIMEPOINTS;
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_QUALITY_FACTOR;
+import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_RESOLUTION_LEVEL;
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.NEIGHBORHOOD_FACTOR;
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.checkSettingsValidity;
 
@@ -137,7 +138,10 @@ public class SemiAutomaticTracker
 		final boolean allowLinkingIfIncoming = ( boolean ) settings.get( KEY_ALLOW_LINKING_IF_HAS_INCOMING );
 		final boolean allowLinkingIfOutgoing = ( boolean ) settings.get( KEY_ALLOW_LINKING_IF_HAS_OUTGOING );
 		final boolean continueIfLinkExists = ( boolean ) settings.get( KEY_CONTINUE_IF_LINK_EXISTS );
-		final double neighborhoodFactor = Math.max( NEIGHBORHOOD_FACTOR, distanceFactor + 2. );
+		final double neighborhoodFactor = Math.max( NEIGHBORHOOD_FACTOR, distanceFactor + 1. );
+		int resolutionLevel = -1;
+		if (settings.containsKey( KEY_RESOLUTION_LEVEL ))
+			resolutionLevel = (int) settings.get( KEY_RESOLUTION_LEVEL );
 
 		/*
 		 * Loop over each spot input.
@@ -168,7 +172,12 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				 */
 
 				final double radius = Math.sqrt( source.getBoundingSphereRadiusSquared() );
-				final int level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, DogDetectorOp.MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
+				final int nResolutionLevels = DetectionUtil.getNResolutionLevels( spimData, setup );
+				final int level;
+				if ( resolutionLevel < 0 )
+					level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, DogDetectorOp.MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
+				else
+					level = Math.min( nResolutionLevels - 1, resolutionLevel );
 				final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );
 
 				/*
@@ -448,4 +457,5 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 		}
 
 	}
+
 }
