@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.Map;
@@ -144,7 +145,7 @@ INPUT: 	for ( final Spot first : input )
 			final Spot source = model.getGraph().vertexRef();
 			source.refTo( first );
 
-			log.info( "Semi-automatic tracking from " + first + ".\n" );
+			log.info( "Semi-automatic tracking from spot " + first.getLabel() + ".\n" );
 TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 			{
 				// Are we canceled?
@@ -271,7 +272,8 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 
 				if ( !found )
 				{
-					log.info( "Suitable spot found, but outside the tolerance radius.\n" );
+					log.info( "Suitable spot found, but outside the tolerance radius. "
+							+ "Stopping semi-automatic tracking for spot " + first.getLabel() + ".\n" );
 					continue INPUT;
 				}
 
@@ -281,7 +283,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 
 				final SpatialIndex< Spot > spatialIndex = spatioTemporalIndex.getSpatialIndex( tp );
 				final NearestNeighborSearch< Spot > nn = spatialIndex.getNearestNeighborSearch();
-				nn.search( candidate );
+				nn.search( sp );
 				if ( nn.getSampler().get() != null && nn.getDistance() < radius )
 				{
 
@@ -290,29 +292,34 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 					 */
 
 					final Spot target = nn.getSampler().get();
-					log.info( "Found an exising spot close to candidate: " + target + ".\n" );
+					log.info( "Found an exising spot close to candidate: " + target.getLabel() + ".\n" );
 					if ( !allowLinkingToExisting )
 					{
-						log.info( "Stopping semi-automatic tracking for " + first + ".\n" );
-						continue INPUT;
-					}
-					if ( !allowLinkingIfIncoming && !target.incomingEdges().isEmpty() )
-					{
-						log.info( "Existing spot has incoming links. Stopping semi-automatic tracking for " + first + ".\n" );
-						continue INPUT;
-					}
-					if ( !allowLinkingIfOutgoing && !target.outgoingEdges().isEmpty() )
-					{
-						log.info( "Existing spot has outgoing links. Stopping semi-automatic tracking for " + first + ".\n" );
+						log.info( "Stopping semi-automatic tracking for spot " + first.getLabel() + ".\n" );
 						continue INPUT;
 					}
 
+					// Are they connected?
 					final Link eref = graph.edgeRef();
 					final boolean connected = forward
 							? graph.getEdge( source, target, eref ) != null
 							: graph.getEdge( target, source, eref ) != null;
 					if ( !connected )
 					{
+						// They are not connected.
+						// Should we link them?
+						if ( !allowLinkingIfIncoming && !target.incomingEdges().isEmpty() )
+						{
+							log.info( "Existing spot has incoming links. Stopping semi-automatic tracking for spot " + first.getLabel() + ".\n" );
+							continue INPUT;
+						}
+						if ( !allowLinkingIfOutgoing && !target.outgoingEdges().isEmpty() )
+						{
+							log.info( "Existing spot has outgoing links. Stopping semi-automatic tracking for spot " + first.getLabel() + ".\n" );
+							continue INPUT;
+						}
+
+						// Yes.
 						final Link edge;
 						if ( forward )
 							edge = graph.addEdge( source, target, eref ).init();
@@ -320,19 +327,21 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 							edge = graph.addEdge( target, source, eref ).init();
 
 						final double cost = nn.getSquareDistance();
-						log.info( "Linking " + source + " to " + target + " with linking cost " + cost + '\n');
+						log.info( "Linking spot " + source.getLabel() + " to spot " + target.getLabel() + " with linking cost " + cost + '\n' );
 						if ( linkCostFeature != null )
 							linkCostFeature.getPropertyMap().set( edge, cost );
 					}
 					else
 					{
-						log.info( "Spots " + source + " and " + target + " are already linked.\n" );
+						// They are connected.
+						log.info( "Spots " + source.getLabel() + " and " + target.getLabel() + " are already linked.\n" );
 						if ( !continueIfLinkExists )
 						{
-							log.info( "Stopping semi-automatic tracking for " + first + ".\n" );
+							log.info( "Stopping semi-automatic tracking for spot " + first.getLabel() + ".\n" );
 							continue INPUT;
 						}
 					}
+
 					source.refTo( target );
 					graph.releaseRef( eref );
 				}
@@ -359,7 +368,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 						cost += dx * dx;
 					}
 					final double quality = -candidate.getValue() * normalization;
-					log.info( "Linking " + source + " to " + target + " with linking cost " + cost + '\n');
+					log.info( "Linking spot " + source.getLabel() + " to new spot " + target.getLabel() + " with linking cost " + cost + '\n' );
 					if ( linkCostFeature != null )
 						linkCostFeature.getPropertyMap().set( edge, cost );
 					if ( qualityFeature != null )
@@ -372,6 +381,8 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 
 				graph.notifyGraphChanged();
 			}
+
+			log.info( "Finished semi-automatic tracking for spot " + first.getLabel() + ".\n" );
 		}
 
 		/*
@@ -442,8 +453,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 		final ImageJ ij = new ImageJ();
 		ij.launch( args );
 
-		// Please use a model file where there is only 1 or 2 unconnected spots.
-		final File modelFile = new File( "samples/TestSemiAutoTracking.raw" );
+		final File modelFile = new File( "samples/TestSemiAutoTracking3.raw" );
 		final String bdvFile = "samples/datasethdf5.xml";
 
 		final Model model = new Model();
@@ -454,10 +464,11 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 		mw.getWindowManager().createBigDataViewer();
 		mw.getWindowManager().createTrackScheme();
 
-
 		final PoolCollectionWrapper< Spot > vertices = model.getGraph().vertices();
 		final Collection< Spot > spots = RefCollections.createRefList( vertices );
-		spots.addAll( vertices );
+		final SpatialIndex< Spot > spatialIndex = model.getSpatioTemporalIndex().getSpatialIndex( 0 );
+		for ( final Spot spot : spatialIndex )
+			spots.add( spot );
 
 		final Map< String, Object > settings = SemiAutomaticTrackerKeys.getDefaultDetectorSettingsMap();
 		settings.put( KEY_N_TIMEPOINTS, 50 );
@@ -469,6 +480,25 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 		System.out.println( "Starting semi-auto tracking with " + tracker );
 		tracker.compute( spots, model );
 
+		if ( !tracker.isSuccessful() )
+		{
+			System.out.println( "Tracking was not successful:\n" + tracker.getErrorMessage() );
+			return;
+		}
+		System.out.println( "Done." );
+
+		// Deal with backward tracking.
+		Spot back = null;
+		for ( final Spot spot : vertices )
+			if ( spot.getInternalPoolIndex() == 24 )
+			{
+				back = spot;
+				break;
+			}
+
+		settings.put( KEY_FORWARD_IN_TIME, false );
+		settings.put( KEY_DISTANCE_FACTOR, 2. );
+		tracker.compute( Collections.singleton( back ), model );
 		if ( !tracker.isSuccessful() )
 		{
 			System.out.println( "Tracking was not successful:\n" + tracker.getErrorMessage() );
