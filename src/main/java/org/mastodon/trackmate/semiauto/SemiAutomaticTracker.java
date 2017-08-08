@@ -12,25 +12,16 @@ import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_QUALI
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.NEIGHBORHOOD_FACTOR;
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.checkSettingsValidity;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.Locale;
 import java.util.Map;
 
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-
 import org.mastodon.HasErrorMessage;
-import org.mastodon.collection.RefCollections;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DogDetectorOp;
-import org.mastodon.pool.PoolCollectionWrapper;
+import org.mastodon.linking.LinkingUtils;
 import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.mamut.MainWindow;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
@@ -47,13 +38,9 @@ import org.scijava.plugin.Plugin;
 import org.scijava.thread.ThreadService;
 
 import bdv.spimdata.SpimDataMinimal;
-import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.util.Affine3DHelpers;
-import mpicbg.spim.data.SpimDataException;
-import net.imagej.ImageJ;
 import net.imagej.ops.OpService;
-import net.imagej.ops.special.hybrid.AbstractUnaryHybridCF;
-import net.imagej.ops.special.hybrid.Hybrids;
+import net.imagej.ops.special.computer.AbstractBinaryComputerOp;
 import net.imglib2.FinalInterval;
 import net.imglib2.Point;
 import net.imglib2.RandomAccessible;
@@ -70,7 +57,9 @@ import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 
 @Plugin( type = SemiAutomaticTracker.class )
-public class SemiAutomaticTracker extends AbstractUnaryHybridCF< Collection< Spot >, Model > implements HasErrorMessage, Cancelable
+public class SemiAutomaticTracker
+		extends AbstractBinaryComputerOp< Collection< Spot >, Map< String, Object >, Model >
+		implements HasErrorMessage, Cancelable
 {
 
 	private LogService log = new StderrLogService();
@@ -84,15 +73,6 @@ public class SemiAutomaticTracker extends AbstractUnaryHybridCF< Collection< Spo
 	@Parameter( type = ItemIO.INPUT )
 	private SpimDataMinimal spimData;
 
-	@Parameter( type = ItemIO.INPUT )
-	private Map< String, Object > settings;
-
-	@Parameter( type = ItemIO.INPUT, required = false )
-	protected Feature< Spot, Double, DoublePropertyMap< Spot > > qualityFeature;
-
-	@Parameter( type = ItemIO.INPUT, required = false )
-	protected Feature< Link, Double, DoublePropertyMap< Link > > linkCostFeature;
-
 	@Parameter( type = ItemIO.OUTPUT )
 	protected String errorMessage;
 
@@ -102,10 +82,35 @@ public class SemiAutomaticTracker extends AbstractUnaryHybridCF< Collection< Spo
 	private final Comparator< RefinedPeak< ? > > refinedPeakComparator = new RefinedPeakComparator();
 
 	@Override
-	public void compute( final Collection< Spot > input, final Model model )
+	public void compute( final Collection< Spot > input, final Map< String, Object > settings, final Model model )
 	{
+
 		final ModelGraph graph = model.getGraph();
 		final SpatioTemporalIndex< Spot > spatioTemporalIndex = model.getSpatioTemporalIndex();
+
+		/*
+		 * Quality and link-cost features. If they do not exist, create them and register them.
+		 */
+
+		@SuppressWarnings( "unchecked" )
+		Feature< Spot, Double, DoublePropertyMap< Spot > > qualityFeature =
+				( Feature< Spot, Double, DoublePropertyMap< Spot > > ) model.getGraphFeatureModel().getFeature( DetectionUtil.QUALITY_FEATURE_NAME );
+		if ( null == qualityFeature )
+		{
+			final DoublePropertyMap< Spot > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
+			qualityFeature = DetectionUtil.getQualityFeature( quality );
+			model.getGraphFeatureModel().declareFeature( qualityFeature );
+		}
+
+		@SuppressWarnings( "unchecked" )
+		Feature< Link, Double, DoublePropertyMap< Link > > linkCostFeature =
+				( Feature< Link, Double, DoublePropertyMap< Link > > ) model.getGraphFeatureModel().getFeature( LinkingUtils.LINK_COST_FEATURE_NAME );
+		if ( null == linkCostFeature )
+		{
+			final DoublePropertyMap< Link > linkcost = new DoublePropertyMap<>( graph.edges(), Double.NaN );
+			linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost );
+			model.getGraphFeatureModel().declareFeature( linkCostFeature );
+		}
 
 		/*
 		 * Check settings map.
@@ -132,7 +137,7 @@ public class SemiAutomaticTracker extends AbstractUnaryHybridCF< Collection< Spo
 		final boolean allowLinkingIfIncoming = ( boolean ) settings.get( KEY_ALLOW_LINKING_IF_HAS_INCOMING );
 		final boolean allowLinkingIfOutgoing = ( boolean ) settings.get( KEY_ALLOW_LINKING_IF_HAS_OUTGOING );
 		final boolean continueIfLinkExists = ( boolean ) settings.get( KEY_CONTINUE_IF_LINK_EXISTS );
-		final double neighborhoodFactor = Math.max( NEIGHBORHOOD_FACTOR, distanceFactor + 1 );
+		final double neighborhoodFactor = Math.max( NEIGHBORHOOD_FACTOR, distanceFactor + 2. );
 
 		/*
 		 * Loop over each spot input.
@@ -145,7 +150,7 @@ INPUT: 	for ( final Spot first : input )
 			final Spot source = model.getGraph().vertexRef();
 			source.refTo( first );
 
-			log.info( "Semi-automatic tracking from spot " + first.getLabel() + ".\n" );
+			log.info( "Semi-automatic tracking from spot " + first.getLabel() + ", going " + ( forward ? "forward" : "backward" ) + " in time." );
 TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 			{
 				// Are we canceled?
@@ -197,7 +202,15 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				final long[] min = new long[] { x - rx, y - ry, z - rz };
 				final long[] max = new long[] { x + rx, y + ry, z + rz };
 
-				final FinalInterval transformedRoi = new FinalInterval( min, max );
+				// Only take 2D or 3D version of the transformed interval.
+				final long[] tmin = new long[ zeroMin.numDimensions() ];
+				final long[] tmax = new long[ zeroMin.numDimensions() ];
+				for ( int d = 0; d < zeroMin.numDimensions(); d++ )
+				{
+					tmin[ d ] = min[ d ];
+					tmax[ d ] = max[ d ];
+				}
+				final FinalInterval transformedRoi = new FinalInterval( tmin, tmax );
 				final FinalInterval roi = Intervals.intersect( transformedRoi, zeroMin );
 
 				/*
@@ -216,7 +229,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 
 				// Does the source have a quality value?
 				final double threshold;
-				if ( qualityFeature != null && qualityFeature.getPropertyMap().isSet( source ) )
+				if ( qualityFeature.getPropertyMap().isSet( source ) )
 					threshold = qualityFeature.getPropertyMap().get( source ) * qualityFactor;
 				else
 					threshold = 0.;
@@ -228,13 +241,13 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 						sigmaSmaller,
 						sigmaLarger,
 						ExtremaType.MINIMA,
-						threshold / normalization,
+						threshold,
 						true );
 				dog.setExecutorService( threadService.getExecutorService() );
 				final ArrayList< RefinedPeak< Point > > refinedPeaks = dog.getSubpixelPeaks();
 				if ( refinedPeaks.isEmpty() )
 				{
-					log.info( "No spot found above desired quality threshold.\n" );
+					log.info( "No spot found above desired quality threshold." );
 					continue INPUT;
 				}
 
@@ -273,7 +286,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				if ( !found )
 				{
 					log.info( "Suitable spot found, but outside the tolerance radius. "
-							+ "Stopping semi-automatic tracking for spot " + first.getLabel() + ".\n" );
+							+ "Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
 					continue INPUT;
 				}
 
@@ -292,10 +305,10 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 					 */
 
 					final Spot target = nn.getSampler().get();
-					log.info( "Found an exising spot close to candidate: " + target.getLabel() + ".\n" );
+					log.info( "Found an exising spot close to candidate: " + target.getLabel() + "." );
 					if ( !allowLinkingToExisting )
 					{
-						log.info( "Stopping semi-automatic tracking for spot " + first.getLabel() + ".\n" );
+						log.info( "Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
 						continue INPUT;
 					}
 
@@ -310,12 +323,12 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 						// Should we link them?
 						if ( !allowLinkingIfIncoming && !target.incomingEdges().isEmpty() )
 						{
-							log.info( "Existing spot has incoming links. Stopping semi-automatic tracking for spot " + first.getLabel() + ".\n" );
+							log.info( "Existing spot has incoming links. Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
 							continue INPUT;
 						}
 						if ( !allowLinkingIfOutgoing && !target.outgoingEdges().isEmpty() )
 						{
-							log.info( "Existing spot has outgoing links. Stopping semi-automatic tracking for spot " + first.getLabel() + ".\n" );
+							log.info( "Existing spot has outgoing links. Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
 							continue INPUT;
 						}
 
@@ -327,17 +340,16 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 							edge = graph.addEdge( target, source, eref ).init();
 
 						final double cost = nn.getSquareDistance();
-						log.info( "Linking spot " + source.getLabel() + " to spot " + target.getLabel() + " with linking cost " + cost + '\n' );
-						if ( linkCostFeature != null )
-							linkCostFeature.getPropertyMap().set( edge, cost );
+						log.info( "Linking spot " + source.getLabel() + " to spot " + target.getLabel() + " with linking cost " + cost );
+						linkCostFeature.getPropertyMap().set( edge, cost );
 					}
 					else
 					{
 						// They are connected.
-						log.info( "Spots " + source.getLabel() + " and " + target.getLabel() + " are already linked.\n" );
+						log.info( "Spots " + source.getLabel() + " and " + target.getLabel() + " are already linked." );
 						if ( !continueIfLinkExists )
 						{
-							log.info( "Stopping semi-automatic tracking for spot " + first.getLabel() + ".\n" );
+							log.info( "Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
 							continue INPUT;
 						}
 					}
@@ -368,11 +380,9 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 						cost += dx * dx;
 					}
 					final double quality = -candidate.getValue() * normalization;
-					log.info( "Linking spot " + source.getLabel() + " to new spot " + target.getLabel() + " with linking cost " + cost + '\n' );
-					if ( linkCostFeature != null )
-						linkCostFeature.getPropertyMap().set( edge, cost );
-					if ( qualityFeature != null )
-						qualityFeature.getPropertyMap().set( target, quality );
+					log.info( "Linking spot " + source.getLabel() + " to new spot " + target.getLabel() + " with linking cost " + cost );
+					linkCostFeature.getPropertyMap().set( edge, cost );
+					qualityFeature.getPropertyMap().set( target, quality );
 
 					source.refTo( target );
 					graph.releaseRef( eref );
@@ -382,7 +392,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				graph.notifyGraphChanged();
 			}
 
-			log.info( "Finished semi-automatic tracking for spot " + first.getLabel() + ".\n" );
+			log.info( "Finished semi-automatic tracking for spot " + first.getLabel() + "." );
 		}
 
 		/*
@@ -390,12 +400,6 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 		 */
 
 		ok = true;
-	}
-
-	@Override
-	public Model createOutput( final Collection< Spot > input )
-	{
-		return new Model();
 	}
 
 	@Override
@@ -440,70 +444,8 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 		@Override
 		public int compare( final RefinedPeak< ? > o1, final RefinedPeak< ? > o2 )
 		{
-			return -Double.compare( o1.getValue(), o2.getValue() );
+			return Double.compare( o1.getValue(), o2.getValue() );
 		}
 
-	}
-
-	public static void main( final String[] args ) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException, IOException, SpimDataException
-	{
-		Locale.setDefault( Locale.US );
-		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
-
-		final ImageJ ij = new ImageJ();
-		ij.launch( args );
-
-		final File modelFile = new File( "samples/TestSemiAutoTracking3.raw" );
-		final String bdvFile = "samples/datasethdf5.xml";
-
-		final Model model = new Model();
-		model.loadRaw( modelFile );
-		final SpimDataMinimal sd = new XmlIoSpimDataMinimal().load( bdvFile );
-		final MainWindow mw = new MainWindow( model, sd, bdvFile, MainWindow.getInputTriggerConfig() );
-		mw.setVisible( true );
-		mw.getWindowManager().createBigDataViewer();
-		mw.getWindowManager().createTrackScheme();
-
-		final PoolCollectionWrapper< Spot > vertices = model.getGraph().vertices();
-		final Collection< Spot > spots = RefCollections.createRefList( vertices );
-		final SpatialIndex< Spot > spatialIndex = model.getSpatioTemporalIndex().getSpatialIndex( 0 );
-		for ( final Spot spot : spatialIndex )
-			spots.add( spot );
-
-		final Map< String, Object > settings = SemiAutomaticTrackerKeys.getDefaultDetectorSettingsMap();
-		settings.put( KEY_N_TIMEPOINTS, 50 );
-
-		final SemiAutomaticTracker tracker = ( SemiAutomaticTracker ) Hybrids.unaryCF( ij.op(), SemiAutomaticTracker.class,
-				model, spots,
-				sd, settings );
-
-		System.out.println( "Starting semi-auto tracking with " + tracker );
-		tracker.compute( spots, model );
-
-		if ( !tracker.isSuccessful() )
-		{
-			System.out.println( "Tracking was not successful:\n" + tracker.getErrorMessage() );
-			return;
-		}
-		System.out.println( "Done." );
-
-		// Deal with backward tracking.
-		Spot back = null;
-		for ( final Spot spot : vertices )
-			if ( spot.getInternalPoolIndex() == 24 )
-			{
-				back = spot;
-				break;
-			}
-
-		settings.put( KEY_FORWARD_IN_TIME, false );
-		settings.put( KEY_DISTANCE_FACTOR, 2. );
-		tracker.compute( Collections.singleton( back ), model );
-		if ( !tracker.isSuccessful() )
-		{
-			System.out.println( "Tracking was not successful:\n" + tracker.getErrorMessage() );
-			return;
-		}
-		System.out.println( "Done." );
 	}
 }
