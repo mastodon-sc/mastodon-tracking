@@ -175,7 +175,7 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 					sigmaSmaller,
 					sigmaLarger,
 					ExtremaType.MINIMA,
-					threshold / normalization,
+					threshold,
 					true );
 			dog.setExecutorService( threadService.getExecutorService() );
 			final ArrayList< RefinedPeak< Point > > refinedPeaks = dog.getSubpixelPeaks();
