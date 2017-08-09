@@ -300,8 +300,7 @@ public class DetectionUtil
 		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
 		{
 			final BasicMultiResolutionSetupImgLoader< ? > loader = ( ( BasicMultiResolutionImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
-			final RandomAccessibleInterval< ? > img = loader
-					.getImage( timepoint, level, ImgLoaderHints.LOAD_COMPLETELY );
+			final RandomAccessibleInterval< ? > img = loader.getImage( timepoint, level );
 			return img;
 		}
 		else
