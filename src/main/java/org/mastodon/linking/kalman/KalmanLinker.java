@@ -101,13 +101,21 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 
 		// Check that at least one inner collection contains an object.
 		boolean empty = true;
-		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
+		spots.readLock().lock();
+		try
 		{
-			if ( !spots.getSpatialIndex( tp ).isEmpty() )
+			for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
 			{
-				empty = false;
-				break;
+				if ( !spots.getSpatialIndex( tp ).isEmpty() )
+				{
+					empty = false;
+					break;
+				}
 			}
+		}
+		finally
+		{
+			spots.readLock().unlock();
 		}
 		if ( empty )
 		{
@@ -431,10 +439,19 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 	 */
 	private static final < V extends Vertex< ? > > RefList< V > generateSpotList( final int timepoint, final SpatioTemporalIndex< V > spots, final Graph< V, ? > graph )
 	{
-		final SpatialIndex< V > si = spots.getSpatialIndex( timepoint );
-		final RefList< V > list = RefCollections.createRefList( graph.vertices(), si.size() );
-		for ( final V v : si )
-			list.add( v );
+		final RefList< V > list;
+		spots.readLock().lock();
+		try
+		{
+			final SpatialIndex< V > si = spots.getSpatialIndex( timepoint );
+			list = RefCollections.createRefList( graph.vertices(), si.size() );
+			for ( final V v : si )
+				list.add( v );
+		}
+		finally
+		{
+			spots.readLock().unlock();
+		}
 		return list;
 	}
 

@@ -196,10 +196,20 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 					 * Delete spots from current time-point if we have some.
 					 */
 
-					final SpatialIndex< Spot > spatialIndex = model.getSpatioTemporalIndex().getSpatialIndex( currentTimepoint );
+
+					SpatialIndex< Spot > spatialIndex;
+					model.getSpatioTemporalIndex().readLock().lock();
 					final RefList< Spot > toRemove = RefCollections.createRefList( graph.vertices() );
-					for ( final Spot spot : spatialIndex )
-						toRemove.add( spot );
+					try
+					{
+						spatialIndex = model.getSpatioTemporalIndex().getSpatialIndex( currentTimepoint );
+						for ( final Spot spot : spatialIndex )
+							toRemove.add( spot );
+					}
+					finally
+					{
+						model.getSpatioTemporalIndex().readLock().unlock();
+					}
 
 					for ( final Spot spot : toRemove )
 						graph.remove( spot );

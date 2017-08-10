@@ -78,15 +78,22 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 		 * radii in the first non-empty frame.
 		 */
 		final HashMap< String, Object > kalmanSettings = new HashMap<>( settings );
-		int t = minTimepoint;
-		while ( t <= maxTimepoint && spots.getSpatialIndex( t++ ).isEmpty() );
-		final double meanR2 = StreamSupport.stream( spots.getSpatialIndex( t ).spliterator(), false )
-				.mapToDouble( e -> e.getBoundingSphereRadiusSquared() )
-				.average()
-				.getAsDouble();
-		final double meanR = Math.sqrt( meanR2 );
-		kalmanSettings.put( KEY_POSITION_SIGMA, meanR / 10. );
-
+		spots.readLock().lock();
+		try
+		{
+			int t = minTimepoint;
+			while ( t <= maxTimepoint && spots.getSpatialIndex( t++ ).isEmpty() );
+			final double meanR2 = StreamSupport.stream( spots.getSpatialIndex( t ).spliterator(), false )
+					.mapToDouble( e -> e.getBoundingSphereRadiusSquared() )
+					.average()
+					.getAsDouble();
+			final double meanR = Math.sqrt( meanR2 );
+			kalmanSettings.put( KEY_POSITION_SIGMA, meanR / 10. );
+		}
+		finally
+		{
+			spots.readLock().unlock();
+		}
 		this.linker = ( ParticleLinkerOp ) Inplaces.binary1( ops(), KalmanLinker.class,
 				graph, spots,
 				kalmanSettings, featureModel,

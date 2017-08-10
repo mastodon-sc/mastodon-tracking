@@ -86,13 +86,21 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 
 		// Check that at least one inner collection contains an object.
 		boolean empty = true;
-		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
+		spots.readLock().lock();
+		try
 		{
-			if ( !spots.getSpatialIndex( tp ).isEmpty() )
+			for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
 			{
-				empty = false;
-				break;
+				if ( !spots.getSpatialIndex( tp ).isEmpty() )
+				{
+					empty = false;
+					break;
+				}
 			}
+		}
+		finally
+		{
+			spots.readLock().unlock();
 		}
 		if ( empty )
 		{

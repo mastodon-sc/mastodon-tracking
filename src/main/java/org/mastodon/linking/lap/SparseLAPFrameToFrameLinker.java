@@ -95,13 +95,21 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 
 		// Check that at least one inner collection contains an object.
 		boolean empty = true;
-		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
+		spots.readLock().lock();
+		try
 		{
-			if ( !spots.getSpatialIndex( tp ).isEmpty() )
+			for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
 			{
-				empty = false;
-				break;
+				if ( !spots.getSpatialIndex( tp ).isEmpty() )
+				{
+					empty = false;
+					break;
+				}
 			}
+		}
+		finally
+		{
+			spots.readLock().unlock();
 		}
 		if ( empty )
 		{
@@ -156,27 +164,36 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 					final int frame0 = framePairs.get( i )[ 0 ];
 					final int frame1 = framePairs.get( i )[ 1 ];
 
-					final SpatialIndex< V > sources = spots.getSpatialIndex( frame0 );
-					final SpatialIndex< V > targets = spots.getSpatialIndex( frame1 );
-
-					if ( sources.isEmpty() || targets.isEmpty() )
-						return null;
-
-					/*
-					 * Run the linker.
-					 */
-
-					@SuppressWarnings( "unchecked" )
-					final JaqamanLinkingCostMatrixCreator< V, V > creator = ( JaqamanLinkingCostMatrixCreator< V, V > ) Functions.nullary( ops(), JaqamanLinkingCostMatrixCreator.class, SparseCostMatrix.class,
-							sources, targets, costFunction, costThreshold, alternativeCostFactor, 1d,
-							graph.vertices(), graph.vertices(),
-							spotComparator, spotComparator );
-					final JaqamanLinker< V, V > linker = new JaqamanLinker< V, V >( creator, graph.vertices(), graph.vertices() );
-					if ( !linker.checkInput() || !linker.process() )
+					spots.readLock().lock();
+					JaqamanLinker< V, V > linker = null;
+					try
 					{
-						errorMessage = "Linking frame " + frame0 + " to " + frame1 + ": " + linker.getErrorMessage();
-						aok.set( false );
-						return null;
+						final SpatialIndex< V > sources = spots.getSpatialIndex( frame0 );
+						final SpatialIndex< V > targets = spots.getSpatialIndex( frame1 );
+
+						if ( sources.isEmpty() || targets.isEmpty() )
+							return null;
+
+						/*
+						 * Run the linker.
+						 */
+
+						@SuppressWarnings( "unchecked" )
+						final JaqamanLinkingCostMatrixCreator< V, V > creator = ( JaqamanLinkingCostMatrixCreator< V, V > ) Functions.nullary( ops(), JaqamanLinkingCostMatrixCreator.class, SparseCostMatrix.class,
+								sources, targets, costFunction, costThreshold, alternativeCostFactor, 1d,
+								graph.vertices(), graph.vertices(),
+								spotComparator, spotComparator );
+						linker = new JaqamanLinker< V, V >( creator, graph.vertices(), graph.vertices() );
+						if ( !linker.checkInput() || !linker.process() )
+						{
+							errorMessage = "Linking frame " + frame0 + " to " + frame1 + ": " + linker.getErrorMessage();
+							aok.set( false );
+							return null;
+						}
+					}
+					finally
+					{
+						spots.readLock().unlock();
 					}
 
 					/*

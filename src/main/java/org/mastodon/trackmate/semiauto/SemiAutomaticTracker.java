@@ -303,17 +303,29 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				 * Check whether candidate is close to an existing spot.
 				 */
 
-				final SpatialIndex< Spot > spatialIndex = spatioTemporalIndex.getSpatialIndex( tp );
-				final NearestNeighborSearch< Spot > nn = spatialIndex.getNearestNeighborSearch();
-				nn.search( sp );
-				if ( nn.getSampler().get() != null && nn.getDistance() < radius )
+				spatioTemporalIndex.readLock().lock();
+				Spot target = null;
+				double distance = 0.;
+				try
+				{
+					final SpatialIndex< Spot > spatialIndex = spatioTemporalIndex.getSpatialIndex( tp );
+					final NearestNeighborSearch< Spot > nn = spatialIndex.getNearestNeighborSearch();
+					nn.search( sp );
+					target = nn.getSampler().get();
+					distance = nn.getDistance();
+				}
+				finally
+				{
+					spatioTemporalIndex.readLock().unlock();
+				}
+
+				if ( target != null && distance < radius )
 				{
 
 					/*
 					 * We have an existing spot close to our candidate.
 					 */
 
-					final Spot target = nn.getSampler().get();
 					log.info( "Found an exising spot close to candidate: " + target.getLabel() + "." );
 					if ( !allowLinkingToExisting )
 					{
@@ -348,7 +360,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 						else
 							edge = graph.addEdge( target, source, eref ).init();
 
-						final double cost = nn.getSquareDistance();
+						final double cost = distance * distance;
 						log.info( "Linking spot " + source.getLabel() + " to spot " + target.getLabel() + " with linking cost " + cost );
 						linkCostFeature.getPropertyMap().set( edge, cost );
 					}
@@ -375,7 +387,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 
 					final Spot vref = graph.vertexRef();
 					final Link eref = graph.edgeRef();
-					final Spot target = graph.addVertex( vref ).init( tp, pos, radius );
+					target = graph.addVertex( vref ).init( tp, pos, radius );
 					final Link edge;
 					if ( forward )
 						edge = graph.addEdge( source, target, eref ).init();
