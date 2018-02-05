@@ -29,7 +29,7 @@ public abstract class AbstractSpotLinkerOp
 	protected Map< String, Object > settings;
 
 	@Parameter( type = ItemIO.INPUT )
-	protected FeatureModel< Spot, Link > featureModel;
+	protected FeatureModel featureModel;
 
 	protected long processingTime;
 
@@ -72,10 +72,10 @@ public abstract class AbstractSpotLinkerOp
 	 * The edge linking cost feature provided by this particle-linker.
 	 */
 	@Parameter( type = ItemIO.OUTPUT )
-	protected Feature< Link, Double, DoublePropertyMap< Link > > linkCostFeature;
+	protected Feature< Link, DoublePropertyMap< Link > > linkCostFeature;
 
 	@Override
-	public Feature< Link, Double, DoublePropertyMap< Link > > getLinkCostFeature()
+	public Feature< Link, DoublePropertyMap< Link > > getLinkCostFeature()
 	{
 		return linkCostFeature;
 	}

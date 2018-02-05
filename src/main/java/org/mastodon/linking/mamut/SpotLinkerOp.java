@@ -24,6 +24,6 @@ public interface SpotLinkerOp extends BinaryInplace1OnlyOp< ModelGraph, SpatioTe
 	 *
 	 * @return the linking cost feature.
 	 */
-	Feature< Link, Double, DoublePropertyMap< Link > > getLinkCostFeature();
+	Feature< Link, DoublePropertyMap< Link > > getLinkCostFeature();
 
 }
