@@ -249,7 +249,7 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 			 * The KF for which we could not find a measurement in the target
 			 * frame. Is updated later.
 			 */
-			final Collection< CVMKalmanFilter > childlessKFs = new HashSet< CVMKalmanFilter >( kalmanFiltersMap.keySet() );
+			final Collection< CVMKalmanFilter > childlessKFs = new HashSet< >( kalmanFiltersMap.keySet() );
 
 			/*
 			 * Find the global (in space) optimum for associating a prediction
@@ -395,7 +395,9 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 
 		graph.releaseRef( vref1 );
 		graph.releaseRef( vref2 );
-		linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost );
+		@SuppressWarnings( "unchecked" )
+		final Class< E > clazz = ( Class< E > ) graph.edgeRef().getClass();
+		linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost, clazz );
 		statusService.clearStatus();
 		ok = true;
 	}
@@ -508,7 +510,7 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 
 	public static Map< String, Object > getDefaultSettingsMap()
 	{
-		final Map< String, Object > sm = new HashMap< String, Object >( 3 );
+		final Map< String, Object > sm = new HashMap< >( 3 );
 		sm.put( KEY_KALMAN_SEARCH_RADIUS, DEFAULT_MAX_SEARCH_RADIUS );
 		sm.put( KEY_LINKING_MAX_DISTANCE, DEFAULT_LINKING_MAX_DISTANCE );
 		sm.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, DEFAULT_GAP_CLOSING_MAX_FRAME_GAP );

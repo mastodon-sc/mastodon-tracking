@@ -25,6 +25,6 @@ public interface ParticleLinkerOp< V extends Vertex< E > & RealLocalizable, E ex
 	 *
 	 * @return the edge linking cost feature.
 	 */
-	Feature< E, Double, DoublePropertyMap< E > > getLinkCostFeature();
+	Feature< E, DoublePropertyMap< E > > getLinkCostFeature();
 
 }

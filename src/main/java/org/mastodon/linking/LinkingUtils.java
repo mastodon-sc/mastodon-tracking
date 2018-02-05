@@ -60,10 +60,8 @@ import javax.swing.table.TableModel;
 import org.mastodon.graph.Vertex;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
-import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.revised.model.feature.FeatureProjection;
 import org.mastodon.revised.model.feature.FeatureProjectors;
-import org.mastodon.revised.model.feature.FeatureTarget;
 
 import net.imglib2.RealLocalizable;
 
@@ -90,12 +88,14 @@ public class LinkingUtils
 	 * @param linkCosts
 	 *            the property map containing the link cost values of all edges
 	 *            in the model.
+	 * @param clazz
+	 *            the class of link objects.
 	 * @return the link cost feature.
 	 */
-	public static final < E > Feature< E, Double, DoublePropertyMap< E > > getLinkCostFeature( final DoublePropertyMap< E > linkCosts )
+	public static final < E > Feature< E, DoublePropertyMap< E > > getLinkCostFeature( final DoublePropertyMap< E > linkCosts, final Class< E > clazz )
 	{
-		return new Feature< E, Double, DoublePropertyMap< E > >(
-				LINK_COST_FEATURE_NAME, FeatureTarget.EDGE, linkCosts,
+		return new Feature< >(
+				LINK_COST_FEATURE_NAME, clazz, linkCosts,
 				Collections.singletonMap( LINK_COST_FEATURE_NAME, FeatureProjectors.project( linkCosts ) ) );
 	}
 
@@ -107,25 +107,25 @@ public class LinkingUtils
 	 */
 	public static final Map< String, Object > getDefaultLAPSettingsMap()
 	{
-		final Map< String, Object > settings = new HashMap< String, Object >();
+		final Map< String, Object > settings = new HashMap< >();
 		settings.put( KEY_MIN_TIMEPOINT, DEFAULT_MIN_TIMEPOINT);
 		settings.put( KEY_MAX_TIMEPOINT, DEFAULT_MAX_TIMEPOINT);
 		// Linking
 		settings.put( KEY_LINKING_MAX_DISTANCE, DEFAULT_LINKING_MAX_DISTANCE );
-		settings.put( KEY_LINKING_FEATURE_PENALTIES, new HashMap< String, Double >( DEFAULT_LINKING_FEATURE_PENALTIES ) );
+		settings.put( KEY_LINKING_FEATURE_PENALTIES, new HashMap< >( DEFAULT_LINKING_FEATURE_PENALTIES ) );
 		// Gap closing
 		settings.put( KEY_ALLOW_GAP_CLOSING, DEFAULT_ALLOW_GAP_CLOSING );
 		settings.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, DEFAULT_GAP_CLOSING_MAX_FRAME_GAP );
 		settings.put( KEY_GAP_CLOSING_MAX_DISTANCE, DEFAULT_GAP_CLOSING_MAX_DISTANCE );
-		settings.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, new HashMap< String, Double >( DEFAULT_GAP_CLOSING_FEATURE_PENALTIES ) );
+		settings.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, new HashMap< >( DEFAULT_GAP_CLOSING_FEATURE_PENALTIES ) );
 		// Track splitting
 		settings.put( KEY_ALLOW_TRACK_SPLITTING, DEFAULT_ALLOW_TRACK_SPLITTING );
 		settings.put( KEY_SPLITTING_MAX_DISTANCE, DEFAULT_SPLITTING_MAX_DISTANCE );
-		settings.put( KEY_SPLITTING_FEATURE_PENALTIES, new HashMap< String, Double >( DEFAULT_SPLITTING_FEATURE_PENALTIES ) );
+		settings.put( KEY_SPLITTING_FEATURE_PENALTIES, new HashMap< >( DEFAULT_SPLITTING_FEATURE_PENALTIES ) );
 		// Track merging
 		settings.put( KEY_ALLOW_TRACK_MERGING, DEFAULT_ALLOW_TRACK_MERGING );
 		settings.put( KEY_MERGING_MAX_DISTANCE, DEFAULT_MERGING_MAX_DISTANCE );
-		settings.put( KEY_MERGING_FEATURE_PENALTIES, new HashMap< String, Double >( DEFAULT_MERGING_FEATURE_PENALTIES ) );
+		settings.put( KEY_MERGING_FEATURE_PENALTIES, new HashMap< >( DEFAULT_MERGING_FEATURE_PENALTIES ) );
 		// Others
 		settings.put( KEY_BLOCKING_VALUE, DEFAULT_BLOCKING_VALUE );
 		settings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, DEFAULT_ALTERNATIVE_LINKING_COST_FACTOR );
@@ -179,11 +179,11 @@ public class LinkingUtils
 	{
 		if ( null == optionalKeys )
 		{
-			optionalKeys = new ArrayList< T >();
+			optionalKeys = new ArrayList< >();
 		}
 		if ( null == mandatoryKeys )
 		{
-			mandatoryKeys = new ArrayList< T >();
+			mandatoryKeys = new ArrayList< >();
 		}
 		boolean ok = true;
 		final Set< T > keySet = map.keySet();
@@ -542,8 +542,8 @@ public class LinkingUtils
 	}
 
 	/**
-	 * Returns the normalized difference of the feature value between two
-	 * vertices. This value is equal to
+	 * Returns the normalized difference of the feature projection value between
+	 * two vertices. This value is equal to
 	 *
 	 * <pre>
 	 * | a - b | / ( ( a + b )/2 )
@@ -559,19 +559,16 @@ public class LinkingUtils
 	 *            the source vertex.
 	 * @param target
 	 *            the target vertex.
-	 * @param feature
-	 *            the feature key.
-	 * @param featureModel
-	 *            the feature model to read feature values from.
+	 * @param projection
+	 *            the projection to draw values from.
 	 * @return the normalized difference.
 	 */
-	public static < V extends Vertex< ? > > double normalizeDiffCost( final V source, final V target, final String feature, final FeatureModel< V, ? > featureModel )
+	public static < V extends Vertex< ? > > double normalizeDiffCost( final V source, final V target, final FeatureProjection< V > projection )
 	{
-		final FeatureProjection< V > vertexProjection = featureModel.getVertexProjection( feature );
-		if ( !vertexProjection.isSet( source ) || !vertexProjection.isSet( target ) )
+		if ( !projection.isSet( source ) || !projection.isSet( target ) )
 			return Double.NaN;
-		final double a = vertexProjection.value( source );
-		final double b = vertexProjection.value( target );
+		final double a = projection.value( source );
+		final double b = projection.value( target );
 		if ( a == -b )
 			return 0d;
 		else

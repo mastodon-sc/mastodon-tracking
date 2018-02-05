@@ -1,6 +1,6 @@
 package org.mastodon.linking;
 
-import org.mastodon.revised.mamut.ProgressListener;
+import org.mastodon.revised.ui.ProgressListener;
 
 public class ProgressListeners
 {

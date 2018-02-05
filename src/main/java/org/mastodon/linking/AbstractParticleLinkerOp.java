@@ -29,7 +29,7 @@ public abstract class AbstractParticleLinkerOp< V extends Vertex< E > & RealLoca
 	protected Map< String, Object > settings;
 
 	@Parameter(type = ItemIO.INPUT )
-	protected FeatureModel< V, E > featureModel;
+	protected FeatureModel featureModel;
 
 	@Parameter(type = ItemIO.INPUT )
 	protected Comparator< V > spotComparator;
@@ -47,10 +47,10 @@ public abstract class AbstractParticleLinkerOp< V extends Vertex< E > & RealLoca
 	 * The edge linking cost feature provided by this particle-linker.
 	 */
 	@Parameter( type = ItemIO.OUTPUT )
-	protected Feature< E, Double, DoublePropertyMap< E > > linkCostFeature;
+	protected Feature< E, DoublePropertyMap< E > > linkCostFeature;
 
 	@Override
-	public Feature< E, Double, DoublePropertyMap< E > > getLinkCostFeature()
+	public Feature< E, DoublePropertyMap< E > > getLinkCostFeature()
 	{
 		return linkCostFeature;
 	}

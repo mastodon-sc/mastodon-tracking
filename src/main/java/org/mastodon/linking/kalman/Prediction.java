@@ -1,10 +1,10 @@
 package org.mastodon.linking.kalman;
 
-import org.mastodon.collection.util.DelegateRealLocalizable;
-import org.mastodon.collection.util.DelegateRealPositionable;
 import org.mastodon.pool.ByteMappedElement;
 import org.mastodon.pool.PoolObject;
 import org.mastodon.pool.attributes.RealPointAttributeValue;
+import org.mastodon.util.DelegateRealLocalizable;
+import org.mastodon.util.DelegateRealPositionable;
 
 class Prediction extends PoolObject< Prediction, PredictionPool, ByteMappedElement >
 implements DelegateRealLocalizable, DelegateRealPositionable, Comparable< Prediction >
