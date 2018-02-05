@@ -94,23 +94,23 @@ public class SemiAutomaticTracker
 		 */
 
 		@SuppressWarnings( "unchecked" )
-		Feature< Spot, Double, DoublePropertyMap< Spot > > qualityFeature =
-				( Feature< Spot, Double, DoublePropertyMap< Spot > > ) model.getGraphFeatureModel().getFeature( DetectionUtil.QUALITY_FEATURE_NAME );
+		Feature< Spot, DoublePropertyMap< Spot > > qualityFeature =
+				( Feature< Spot, DoublePropertyMap< Spot > > ) model.getFeatureModel().getFeature( DetectionUtil.QUALITY_FEATURE_NAME );
 		if ( null == qualityFeature )
 		{
 			final DoublePropertyMap< Spot > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
-			qualityFeature = DetectionUtil.getQualityFeature( quality );
-			model.getGraphFeatureModel().declareFeature( qualityFeature );
+			qualityFeature = DetectionUtil.getQualityFeature( quality, Spot.class );
+			model.getFeatureModel().declareFeature( qualityFeature );
 		}
 
 		@SuppressWarnings( "unchecked" )
-		Feature< Link, Double, DoublePropertyMap< Link > > linkCostFeature =
-				( Feature< Link, Double, DoublePropertyMap< Link > > ) model.getGraphFeatureModel().getFeature( LinkingUtils.LINK_COST_FEATURE_NAME );
+		Feature< Link, DoublePropertyMap< Link > > linkCostFeature =
+				( Feature< Link, DoublePropertyMap< Link > > ) model.getFeatureModel().getFeature( LinkingUtils.LINK_COST_FEATURE_NAME );
 		if ( null == linkCostFeature )
 		{
 			final DoublePropertyMap< Link > linkcost = new DoublePropertyMap<>( graph.edges(), Double.NaN );
-			linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost );
-			model.getGraphFeatureModel().declareFeature( linkCostFeature );
+			linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost, Link.class );
+			model.getFeatureModel().declareFeature( linkCostFeature );
 		}
 
 		/*
@@ -200,7 +200,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				final double zs = Affine3DHelpers.extractScale( transform, 2 );
 
 				final Point center = new Point( 3 );
-				transform.applyInverse( new Round< Point >( center ), source );
+				transform.applyInverse( new Round< >( center ), source );
 				final long x = center.getLongPosition( 0 );
 				final long y = center.getLongPosition( 1 );
 				final long z = center.getLongPosition( 2 );
@@ -243,7 +243,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				else
 					threshold = 0.;
 
-				final DogDetection< FloatType > dog = new DogDetection< FloatType >(
+				final DogDetection< FloatType > dog = new DogDetection< >(
 						ra,
 						roi,
 						pixelSize,
