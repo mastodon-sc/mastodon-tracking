@@ -229,7 +229,9 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
-		qualityFeature = DetectionUtil.getQualityFeature( quality );
+		@SuppressWarnings( "unchecked" )
+		final Class< V > clazz = ( Class< V > ) graph.vertexRef().getClass();
+		qualityFeature = DetectionUtil.getQualityFeature( quality, clazz );
 		statusService.clearStatus();
 		ok = true;
 	}

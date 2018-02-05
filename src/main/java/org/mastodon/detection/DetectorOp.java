@@ -23,5 +23,5 @@ public interface DetectorOp< V extends Vertex< ? > > extends BinaryInplace1OnlyO
 	 *
 	 * @return the spot quality feature.
 	 */
-	public Feature< V, Double, DoublePropertyMap< V > > getQualityFeature();
+	public Feature< V, DoublePropertyMap< V > > getQualityFeature();
 }

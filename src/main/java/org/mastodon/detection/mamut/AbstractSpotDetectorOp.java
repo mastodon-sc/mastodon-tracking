@@ -38,7 +38,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 	protected boolean ok;
 
 	@Parameter( type = ItemIO.OUTPUT )
-	protected Feature< Spot, Double, DoublePropertyMap< Spot > > qualityFeature;
+	protected Feature< Spot, DoublePropertyMap< Spot > > qualityFeature;
 
 	private long processingTime;
 
@@ -76,7 +76,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 	}
 
 	@Override
-	public Feature< Spot, Double, DoublePropertyMap< Spot > > getQualityFeature()
+	public Feature< Spot, DoublePropertyMap< Spot > > getQualityFeature()
 	{
 		return qualityFeature;
 	}

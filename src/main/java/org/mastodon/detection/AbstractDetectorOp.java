@@ -37,10 +37,10 @@ public abstract class AbstractDetectorOp< V extends Vertex< ? > >
 	 * The quality feature provided by this detector.
 	 */
 	@Parameter( type = ItemIO.OUTPUT )
-	protected Feature< V, Double, DoublePropertyMap< V > > qualityFeature;
+	protected Feature< V, DoublePropertyMap< V > > qualityFeature;
 
 	@Override
-	public Feature< V, Double, DoublePropertyMap< V > > getQualityFeature()
+	public Feature< V, DoublePropertyMap< V > > getQualityFeature()
 	{
 		return qualityFeature;
 	}

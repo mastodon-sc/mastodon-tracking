@@ -25,7 +25,6 @@ import java.util.concurrent.ExecutorService;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.feature.FeatureProjectors;
-import org.mastodon.revised.model.feature.FeatureTarget;
 
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
@@ -63,7 +62,7 @@ public class DetectionUtil
 
 	/**
 	 * The key of the quality feature and projection returned by
-	 * {@link #getQualityFeature(DoublePropertyMap)}.
+	 * {@link #getQualityFeature(DoublePropertyMap, Class)}.
 	 */
 	public static final String QUALITY_FEATURE_NAME = "Detection quality";
 
@@ -75,12 +74,13 @@ public class DetectionUtil
 	 * @param quality
 	 *            the property map containing the quality values of all spots in
 	 *            the model.
+	 * @param clazz
 	 * @return the quality feature.
 	 */
-	public static final < V > Feature< V, Double, DoublePropertyMap< V > > getQualityFeature( final DoublePropertyMap< V > quality )
+	public static final < V > Feature< V, DoublePropertyMap< V > > getQualityFeature( final DoublePropertyMap< V > quality, final Class< V > clazz )
 	{
-		return new Feature< V, Double, DoublePropertyMap< V > >(
-				QUALITY_FEATURE_NAME, FeatureTarget.VERTEX, quality,
+		return new Feature<>(
+				QUALITY_FEATURE_NAME, clazz, quality,
 				Collections.singletonMap( QUALITY_FEATURE_NAME, FeatureProjectors.project( quality ) ) );
 	}
 
@@ -339,7 +339,7 @@ public class DetectionUtil
 	{
 		final FloatType val = new FloatType();
 		val.setReal( threshold );
-		final LocalNeighborhoodCheck< Point, FloatType > localNeighborhoodCheck = new LocalExtrema.MaximumCheck< FloatType >( val );
+		final LocalNeighborhoodCheck< Point, FloatType > localNeighborhoodCheck = new LocalExtrema.MaximumCheck< >( val );
 		final IntervalView< FloatType > extended = Views.interval( Views.extendMirrorSingle( source ), Intervals.expand( source, 1 ) );
 		final List< Point > peaks = LocalExtrema.findLocalExtrema( extended, localNeighborhoodCheck, service );
 		return peaks;
@@ -353,7 +353,7 @@ public class DetectionUtil
 	 */
 	public static final Map< String, Object > getDefaultDetectorSettingsMap()
 	{
-		final Map< String, Object > settings = new HashMap< String, Object >();
+		final Map< String, Object > settings = new HashMap< >();
 		settings.put( KEY_MIN_TIMEPOINT, DEFAULT_MIN_TIMEPOINT );
 		settings.put( KEY_MAX_TIMEPOINT, DEFAULT_MAX_TIMEPOINT );
 		settings.put( KEY_SETUP_ID, DEFAULT_SETUP_ID );
@@ -391,13 +391,13 @@ public class DetectionUtil
 		ok = ok & checkParameter( settings, KEY_THRESHOLD, Double.class, errorHolder );
 
 		// Check key presence.
-		final List< String > mandatoryKeys = new ArrayList< String >();
+		final List< String > mandatoryKeys = new ArrayList< >();
 		mandatoryKeys.add( KEY_SETUP_ID );
 		mandatoryKeys.add( KEY_MIN_TIMEPOINT );
 		mandatoryKeys.add( KEY_MAX_TIMEPOINT );
 		mandatoryKeys.add( KEY_RADIUS );
 		mandatoryKeys.add( KEY_THRESHOLD );
-		final List< String > optionalKeys = new ArrayList< String >();
+		final List< String > optionalKeys = new ArrayList< >();
 		optionalKeys.add( KEY_ROI );
 		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, errorHolder );
 

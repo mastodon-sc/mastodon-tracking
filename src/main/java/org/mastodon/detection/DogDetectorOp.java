@@ -199,7 +199,9 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 		}
 
 		final long end = System.currentTimeMillis();
-		qualityFeature = DetectionUtil.getQualityFeature( quality );
+		@SuppressWarnings( "unchecked" )
+		final Class< V > ref = ( Class< V > ) graph.vertexRef().getClass();
+		qualityFeature = DetectionUtil.getQualityFeature( quality, ref );
 		processingTime = end - start;
 		statusService.clearStatus();
 		ok = true;
