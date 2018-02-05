@@ -12,7 +12,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -24,7 +23,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JToggleButton;
 
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
-import org.mastodon.revised.mamut.BdvManager.BdvWindow;
+import org.mastodon.revised.bdv.ViewerFrameMamut;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxEditor;
@@ -48,7 +47,6 @@ import bdv.tools.brightness.SetupAssignments;
 import bdv.tools.brightness.SliderPanel;
 import bdv.util.BoundedValue;
 import bdv.viewer.Source;
-import bdv.viewer.ViewerFrame;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.VisibilityAndGrouping;
 import net.imglib2.FinalInterval;
@@ -91,7 +89,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 
 	private CornerHighlighter cornerHighlighter;
 
-	private ViewerFrame viewerFrame;
+	private ViewerFrameMamut viewFrame;
 
 	private BoundingBoxModel roi;
 
@@ -151,8 +149,8 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 				@Override
 				public void selectionUpdated()
 				{
-					if ( null != viewerFrame )
-						viewerFrame.getViewerPanel().requestRepaint();
+					if ( null != viewFrame )
+						viewFrame.getViewerPanel().requestRepaint();
 				}
 			} );
 
@@ -160,7 +158,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			 * We reset time bounds.
 			 */
 
-			final int nTimepoints = wm.getSharedBigDataViewerData().getNumTimepoints();
+			final int nTimepoints = wm.getAppModel().getMaxTimepoint() - wm.getAppModel().getMinTimepoint();
 
 			panel.minT = new BoundedValue( 0, nTimepoints, 0 );
 			final SliderPanel tMinPanel = new SliderPanel( "t min", panel.minT, 1 );
@@ -254,7 +252,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		Interval interval = ( Interval ) settings.values.getDetectorSettings().get( KEY_ROI );
 		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
 
-		final SharedBigDataViewerData data = wm.getSharedBigDataViewerData();
+		final SharedBigDataViewerData data = wm.getAppModel().getSharedBdvData();
 		final Source< ? > source = data.getSources().get( setupID ).getSpimSource();
 		final int numTimepoints = data.getNumTimepoints();
 		final AffineTransform3D sourceTransform = new AffineTransform3D();
@@ -297,7 +295,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			showViewer();
 			showOverlay();
 		}
-		else if ( viewerFrame != null )
+		else if ( viewFrame != null )
 		{
 			hideOverlay();
 		}
@@ -305,11 +303,11 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 
 	private void hideOverlay()
 	{
-		if ( null == viewerFrame )
+		if ( null == viewFrame )
 			return;
 
-		final ViewerPanel viewer = viewerFrame.getViewerPanel();
-		final SetupAssignments setupAssignments = wm.getSharedBigDataViewerData().getSetupAssignments();
+		final ViewerPanel viewer = viewFrame.getViewerPanel();
+		final SetupAssignments setupAssignments = wm.getAppModel().getSharedBdvData().getSetupAssignments();
 
 		if ( showBoxSource )
 		{
@@ -327,10 +325,10 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 
 	private void showOverlay()
 	{
-		final SetupAssignments setupAssignments = wm.getSharedBigDataViewerData().getSetupAssignments();
-		final ViewerPanel viewer = viewerFrame.getViewerPanel();
+		final SetupAssignments setupAssignments = wm.getAppModel().getSharedBdvData().getSetupAssignments();
+		final ViewerPanel viewer = viewFrame.getViewerPanel();
 		final int setupId = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
-		roi.install( viewerFrame.getViewerPanel(), setupId );
+		roi.install( viewFrame.getViewerPanel(), setupId );
 
 		if ( showBoxSource )
 		{
@@ -359,17 +357,19 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 
 	private void showViewer()
 	{
-		final List< BdvWindow > bdvWindows = wm.getMamutWindowModel().getBdvWindows();
-		if ( bdvWindows == null || bdvWindows.isEmpty() )
-			viewerFrame = wm.createBigDataViewer();
-		else
-			viewerFrame = bdvWindows.get( 0 ).getViewerFrame();
+		// Is there a BDV open?
+		if (viewFrame == null || !viewFrame.isShowing() )
+			wm.forEachBdvView( (view) -> { viewFrame = ( ViewerFrameMamut ) view.getFrame(); } );
 
-		final InputTriggerConfig keyconf = wm.getMamutWindowModel().getInputTriggerConfig();
+		// Create one
+		if (viewFrame == null)
+			viewFrame = ( ViewerFrameMamut ) wm.createBigDataViewer().getFrame();
+
+		final InputTriggerConfig keyconf = wm.getAppModel().getKeymap().getConfig();
 		this.bbEdit = new BoundingBoxEditMode( keyconf );
 		this.bbVisualization = new BoundingBoxVisualizationMode( keyconf );
 		toggleEditModeOff();
-		viewerFrame.toFront();
+		viewFrame.toFront();
 	}
 
 	private boolean editMode = false;
@@ -391,7 +391,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		panel.boxModePanel.modeToggle.setEnabled( true );
 		panel.boxModePanel.modeToggle.setSelected( true );
 
-		final TriggerBehaviourBindings triggerBehaviourBindings = viewerFrame.getTriggerbindings();
+		final TriggerBehaviourBindings triggerBehaviourBindings = viewFrame.getTriggerbindings();
 		triggerBehaviourBindings.removeBehaviourMap( VISUALIZATION_MODE );
 		triggerBehaviourBindings.removeInputTriggerMap( VISUALIZATION_MODE );
 		triggerBehaviourBindings.addInputTriggerMap( EDIT_MODE, bbEdit.getInputTriggerMap(), "all", "navigation" );
@@ -408,12 +408,12 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		panel.boxModePanel.modeToggle.setSelected( false );
 		setPanelEnabled( panel.boxModePanel, true );
 
-		if ( null != viewerFrame )
+		if ( null != viewFrame )
 		{
-			final TriggerBehaviourBindings triggerBehaviourBindings = viewerFrame.getTriggerbindings();
+			final TriggerBehaviourBindings triggerBehaviourBindings = viewFrame.getTriggerbindings();
 			triggerBehaviourBindings.removeInputTriggerMap( EDIT_MODE );
 			triggerBehaviourBindings.removeBehaviourMap( EDIT_MODE );
-			bbVisualization.install( viewerFrame.getTriggerbindings(), VISUALIZATION_MODE );
+			bbVisualization.install( viewFrame.getTriggerbindings(), VISUALIZATION_MODE );
 		}
 	}
 
@@ -446,7 +446,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
 			behaviour( new ToggleEditModeBehaviour(),
 					BOUNDING_BOX_TOGGLE_EDIT_MODE_OFF, BOUNDING_BOX_TOGGLE_EDIT_MODE_KEYS );
-			behaviour( new BoundingBoxEditor( boxOverlay, viewerFrame.getViewerPanel(), panel.boxSelectionPanel, roi.getInterval() ),
+			behaviour( new BoundingBoxEditor( boxOverlay, viewFrame.getViewerPanel(), panel.boxSelectionPanel, roi.getInterval() ),
 					BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
 		}
 
@@ -510,13 +510,13 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 				@Override
 				public void selectionUpdated()
 				{
-					if ( null != viewerFrame )
-						viewerFrame.getViewerPanel().requestRepaint();
+					if ( null != viewFrame )
+						viewFrame.getViewerPanel().requestRepaint();
 				}
 			} );
 
 			// Time panel
-			final int nTimepoints = wm.getSharedBigDataViewerData().getNumTimepoints();
+			final int nTimepoints = wm.getAppModel().getMaxTimepoint() - wm.getAppModel().getMinTimepoint();
 			final int minTimepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT );
 			final int maxTimepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MAX_TIMEPOINT );
 
@@ -576,11 +576,11 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 				@Override
 				public void actionPerformed( final ActionEvent e )
 				{
-					if ( null != boxOverlay && null == viewerFrame )
+					if ( null != boxOverlay && null == viewFrame )
 						return;
 
 					boxOverlay.setDisplayMode( full.isSelected() ? DisplayMode.FULL : DisplayMode.SECTION );
-					viewerFrame.getViewerPanel().requestRepaint();
+					viewFrame.getViewerPanel().requestRepaint();
 				}
 			};
 			full.addActionListener( l );

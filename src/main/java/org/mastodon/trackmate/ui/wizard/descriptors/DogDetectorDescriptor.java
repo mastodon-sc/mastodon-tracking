@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.swing.Icon;
@@ -44,7 +43,7 @@ import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.LoGDetectorMamut;
 import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.mamut.BdvManager.BdvWindow;
+import org.mastodon.revised.bdv.ViewerFrameMamut;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
@@ -60,7 +59,6 @@ import org.scijava.plugin.Plugin;
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.util.Affine3DHelpers;
-import bdv.viewer.ViewerFrame;
 import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import net.imagej.ops.OpService;
@@ -89,7 +87,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 	private WindowManager windowManager;
 
-	private ViewerFrame viewerFrame;
+	private ViewerFrameMamut viewFrame;
 
 	private ChartPanel chartPanel;
 
@@ -167,16 +165,19 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 		final int currentTimepoint;
 		if ( null != windowManager )
 		{
-			if ( viewerFrame == null || !viewerFrame.isShowing() )
+			if ( viewFrame == null || !viewFrame.isShowing() )
 			{
-				final List< BdvWindow > bdvWindows = windowManager.getMamutWindowModel().getBdvWindows();
-				if ( bdvWindows == null || bdvWindows.isEmpty() )
-					viewerFrame = windowManager.createBigDataViewer();
-				else
-					viewerFrame = bdvWindows.get( 0 ).getViewerFrame();
-				viewerFrame.toFront();
+				// Is there a BDV open?
+				if (viewFrame == null || !viewFrame.isShowing() )
+					windowManager.forEachBdvView( (view) -> { viewFrame = ( ViewerFrameMamut ) view.getFrame(); } );
+
+				// Create one
+				if (viewFrame == null)
+					viewFrame = ( ViewerFrameMamut ) windowManager.createBigDataViewer().getFrame();
+
+				viewFrame.toFront();
 			}
-			currentTimepoint = viewerFrame.getViewerPanel().getState().getCurrentTimepoint();
+			currentTimepoint = viewFrame.getViewerPanel().getState().getCurrentTimepoint();
 		}
 		else
 		{
@@ -239,7 +240,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 						return;
 					}
 
-					model.getGraphFeatureModel().declareFeature( detector.getQualityFeature() );
+					model.getFeatureModel().declareFeature( detector.getQualityFeature() );
 					graph.notifyGraphChanged();
 
 					int nSpots = 0;
