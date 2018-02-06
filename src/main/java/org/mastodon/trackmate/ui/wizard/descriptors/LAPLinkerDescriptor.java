@@ -19,6 +19,7 @@ import org.mastodon.linking.mamut.SparseLAPLinkerMamut;
 import org.mastodon.linking.mamut.SpotLinkerOp;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.revised.model.mamut.Model;
+import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.WizardLogService;
@@ -133,7 +134,7 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 					? settings.values.getSpimData().getSequenceDescription()
 							.getViewSetups().get( setupID ).getVoxelSize().unit()
 					: "pixels";
-			this.configPanel = new LAPLinkerConfigPanel( "LAP linker.", units, model.getGraphFeatureModel() );
+			this.configPanel = new LAPLinkerConfigPanel( "LAP linker.", units, model.getFeatureModel(), Spot.class );
 			jScrollPaneMain.setViewportView( configPanel );
 		}
 	}

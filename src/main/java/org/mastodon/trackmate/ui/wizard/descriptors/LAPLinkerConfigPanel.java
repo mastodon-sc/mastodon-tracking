@@ -31,7 +31,6 @@ import java.awt.event.MouseWheelListener;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,10 +50,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
+import org.mastodon.linking.FeatureKey;
+import org.mastodon.linking.LinkingUtils;
+import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.feature.FeatureModel;
-import org.mastodon.revised.model.feature.FeatureTarget;
-import org.mastodon.revised.model.mamut.Link;
-import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.trackmate.ui.wizard.util.EverythingDisablerAndReenabler;
 import org.mastodon.trackmate.ui.wizard.util.ScrollToFocusListener;
 import org.mastodon.trackmate.ui.wizard.util.SelectOnFocusListener;
@@ -124,11 +123,14 @@ public class LAPLinkerConfigPanel extends JPanel
 
 	private final ScrollToFocusListener scrollToFocusListener;
 
-	private final FeatureModel< Spot, Link > featureModel;
+	private final FeatureModel featureModel;
 
-	public LAPLinkerConfigPanel( final String trackerName, final String spaceUnits, final FeatureModel< Spot, Link > featureModel )
+	private final Class< ? > vertexClass;
+
+	public LAPLinkerConfigPanel( final String trackerName, final String spaceUnits, final FeatureModel featureModel, final Class< ? > vertexClass )
 	{
 		this.featureModel = featureModel;
+		this.vertexClass = vertexClass;
 		this.scrollToFocusListener = new ScrollToFocusListener( this );
 
 		/*
@@ -513,6 +515,15 @@ public class LAPLinkerConfigPanel extends JPanel
 		return settings;
 	}
 
+	private static final Map<FeatureKey, Double> toMap( final List< FeaturePenalty > featurePenalties )
+	{
+		final Map<FeatureKey, Double> fp = new HashMap<>();
+		for ( final FeaturePenalty featurePenalty : featurePenalties )
+			fp.put( featurePenalty.key, Double.valueOf( featurePenalty.weight ) );
+
+		return fp;
+	}
+
 	/**
 	 * Displays the content of the specified settings map onto this panel. This
 	 * method will throw an error if some expected keys are missing in the
@@ -521,69 +532,50 @@ public class LAPLinkerConfigPanel extends JPanel
 	 * @param settings
 	 *            the map of settings.
 	 */
-	@SuppressWarnings( "unchecked" )
 	void echoSettings( final Map< String, Object > settings )
 	{
-		final Set< String > projectionKeys = featureModel.getProjectionKeys( FeatureTarget.VERTEX );
-
 		// Frame to frame linking
 		jTextFieldLinkingMaxDistance.setValue( settings.get( KEY_LINKING_MAX_DISTANCE ) );
-		final Map< String, Double > linkingPenalties = ( Map< String, Double > ) settings.get( KEY_LINKING_FEATURE_PENALTIES );
+		@SuppressWarnings( "unchecked" )
+		final Map< FeatureKey, Double > linkingPenalties = ( Map< FeatureKey, Double > ) settings.get( KEY_LINKING_FEATURE_PENALTIES );
 		jPanelLinkingFeatures.removeAllPanels();
-		for ( final String featureKey : linkingPenalties.keySet() )
-		{
-			if ( !projectionKeys.contains( featureKey ) )
-				continue;
-
-			final FeaturePenalty featurePenalty = new FeaturePenalty( featureKey, linkingPenalties.get( featureKey ) );
-			jPanelLinkingFeatures.addPanel( featurePenalty );
-		}
+		for ( final FeatureKey fk : linkingPenalties.keySet() )
+			if (LinkingUtils.isFeatureKeyValid( fk, featureModel, vertexClass ))
+				jPanelLinkingFeatures.addPanel( new FeaturePenalty( fk, linkingPenalties.get( fk ) ) );
 
 		// Gap-closing.
 		jCheckBoxAllowGapClosing.setSelected( ( boolean ) settings.get( KEY_ALLOW_GAP_CLOSING ) );
 		enablerGapClosing.setEnabled( jCheckBoxAllowGapClosing.isSelected() );
 		jTextFieldGapClosingMaxDistance.setValue( settings.get( KEY_GAP_CLOSING_MAX_DISTANCE ) );
 		jTextFieldGapClosingMaxFrameInterval.setValue( settings.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) );
-		final Map< String, Double > gapClosingPenalties = ( Map< String, Double > ) settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES );
+		@SuppressWarnings( "unchecked" )
+		final Map<FeatureKey, Double> gapClosingPenalties = ( Map<FeatureKey, Double> ) settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES );
 		jPanelGapClosing.removeAllPanels();
-		for ( final String featureKey : gapClosingPenalties.keySet() )
-		{
-			if ( !projectionKeys.contains( featureKey ) )
-				continue;
-
-			final FeaturePenalty featurePenalty = new FeaturePenalty( featureKey, gapClosingPenalties.get( featureKey ) );
-			jPanelGapClosing.addPanel( featurePenalty );
-		}
+		for ( final FeatureKey fk : gapClosingPenalties.keySet() )
+			if (LinkingUtils.isFeatureKeyValid( fk, featureModel, vertexClass ))
+				jPanelGapClosing.addPanel( new FeaturePenalty( fk, gapClosingPenalties.get( fk ) ) );
 
 		// Track splitting.
 		jCheckBoxAllowSplitting.setSelected( ( boolean ) settings.get( KEY_ALLOW_TRACK_SPLITTING ) );
 		enablerSplitting.setEnabled( jCheckBoxAllowSplitting.isSelected() );
 		jTextFieldSplittingMaxDistance.setValue( settings.get( KEY_SPLITTING_MAX_DISTANCE ) );
-		final Map< String, Double > splittingPenalties = ( Map< String, Double > ) settings.get( KEY_SPLITTING_FEATURE_PENALTIES );
+		@SuppressWarnings( "unchecked" )
+		final Map<FeatureKey, Double> splittingPenalties = ( Map<FeatureKey, Double> ) settings.get( KEY_SPLITTING_FEATURE_PENALTIES );
 		jPanelSplittingFeatures.removeAllPanels();
-		for ( final String featureKey : splittingPenalties.keySet() )
-		{
-			if ( !projectionKeys.contains( featureKey ) )
-				continue;
-
-			final FeaturePenalty featurePenalty = new FeaturePenalty( featureKey, splittingPenalties.get( featureKey ) );
-			jPanelSplittingFeatures.addPanel( featurePenalty );
-		}
+		for ( final FeatureKey fk : splittingPenalties.keySet() )
+			if (LinkingUtils.isFeatureKeyValid( fk, featureModel, vertexClass ))
+				jPanelSplittingFeatures.addPanel( new FeaturePenalty( fk, splittingPenalties.get( fk ) ) );
 
 		// Track merging.
 		jCheckBoxAllowMerging.setSelected( ( boolean ) settings.get( KEY_ALLOW_TRACK_MERGING ) );
 		enablerMerging.setEnabled( jCheckBoxAllowMerging.isSelected() );
 		jTextFieldMergingMaxDistance.setValue( settings.get( KEY_MERGING_MAX_DISTANCE ) );
-		final Map< String, Double > mergingPenalties = ( Map< String, Double > ) settings.get( KEY_MERGING_FEATURE_PENALTIES );
+		@SuppressWarnings( "unchecked" )
+		final Map<FeatureKey, Double> mergingPenalties = ( Map<FeatureKey, Double> ) settings.get( KEY_MERGING_FEATURE_PENALTIES );
 		jPanelMergingFeatures.removeAllPanels();
-		for ( final String featureKey : mergingPenalties.keySet() )
-		{
-			if ( !projectionKeys.contains( featureKey ) )
-				continue;
-
-			final FeaturePenalty featurePenalty = new FeaturePenalty( featureKey, mergingPenalties.get( featureKey ) );
-			jPanelMergingFeatures.addPanel( featurePenalty );
-		}
+		for ( final FeatureKey fk : mergingPenalties.keySet() )
+			if (LinkingUtils.isFeatureKeyValid( fk, featureModel, vertexClass ))
+				jPanelMergingFeatures.addPanel( new FeaturePenalty( fk, mergingPenalties.get( fk ) ) );
 	}
 
 	/**
@@ -619,11 +611,11 @@ public class LAPLinkerConfigPanel extends JPanel
 
 		private final Stack< JPanelFeaturePenalty > featurePanels = new Stack< JPanelFeaturePenalty >();
 
-		private final FeatureModel< Spot, Link > featureModel;
+		private final FeatureModel featureModel;
 
 		private int index;
 
-		public JPanelFeatureSelectionGui( final FeatureModel< Spot, Link > featureModel )
+		public JPanelFeatureSelectionGui( final FeatureModel featureModel )
 		{
 			this.featureModel = featureModel;
 			setLayout( new BoxLayout( this, BoxLayout.PAGE_AXIS ) );
@@ -655,11 +647,10 @@ public class LAPLinkerConfigPanel extends JPanel
 
 		private void addPanel( final FeaturePenalty featurePenalty )
 		{
-			final List< String > projectionKeys = new ArrayList<>( featureModel.getProjectionKeys( FeatureTarget.VERTEX ) );
-			if ( projectionKeys.isEmpty() || !projectionKeys.contains( featurePenalty.feature ) )
+			if ( !LinkingUtils.isFeatureKeyValid( featurePenalty.key, featureModel, vertexClass ) )
 				return;
 
-			final JPanelFeaturePenalty panel = new JPanelFeaturePenalty( projectionKeys, featurePenalty.feature, featurePenalty.penalty );
+			final JPanelFeaturePenalty panel = new JPanelFeaturePenalty( getAvailableFeatureKeys(), featurePenalty.key, featurePenalty.weight );
 			panel.setMaximumSize( new Dimension( 5000, 30 ) );
 			installFocusListener( scrollToFocusListener, panel );
 
@@ -674,16 +665,16 @@ public class LAPLinkerConfigPanel extends JPanel
 
 		private void addButtonPushed()
 		{
-			final List< String > projectionKeys = new ArrayList<>( featureModel.getProjectionKeys( FeatureTarget.VERTEX ) );
-			if ( projectionKeys.isEmpty() )
+			final List< FeatureKey > featureKeys = getAvailableFeatureKeys();
+			if ( featureKeys.isEmpty() )
 				return;
 
 			index = index + 1;
-			if ( index >= projectionKeys.size() )
+			if ( index >= featureKeys.size() )
 				index = 0;
 
-			final String projectionKey = projectionKeys.get( index );
-			final FeaturePenalty featurePenalty = new FeaturePenalty( projectionKey, 1.0 );
+			final FeatureKey featureKey = featureKeys.get( index );
+			final FeaturePenalty featurePenalty = new FeaturePenalty( featureKey, 1.0 );
 			addPanel( featurePenalty );
 		}
 
@@ -709,33 +700,45 @@ public class LAPLinkerConfigPanel extends JPanel
 		}
 	}
 
+	private List< FeatureKey > getAvailableFeatureKeys()
+	{
+		final List< FeatureKey > featureKeys = new ArrayList<>();
+		final Set< Feature< ?, ? > > featureSet = featureModel.getFeatureSet( vertexClass );
+		for ( final Feature< ?, ? > feature : featureSet )
+			for ( final String projectionKey : feature.getProjections().keySet() )
+				featureKeys.add( new FeatureKey( feature.getKey(), projectionKey ) );
+
+		featureKeys.sort( ( a, b ) -> a.toString().compareTo( b.toString() ) );
+		return featureKeys;
+	}
+
 	private class JPanelFeaturePenalty extends javax.swing.JPanel
 	{
 
 		private static final long serialVersionUID = 1l;
 
-		private final JComboBox< String > jComboBoxFeature;
+		private final JComboBox< FeatureKey > jComboBoxFeatureKeys;
 
 		private final JFormattedTextField jTextFieldFeatureWeight;
 
-		public JPanelFeaturePenalty( final List< String > features, final String selectedFeature, final double selectedPenalty )
+		public JPanelFeaturePenalty( final List< FeatureKey > featureKeys, final FeatureKey selectedFeatureKey, final double selectedWeight )
 		{
 			setLayout( new BoxLayout( this, BoxLayout.LINE_AXIS ) );
 			final Font smallFont = getFont().deriveFont( getFont().getSize2D() - 2f );
 
-			final BinaryOperator< String > longest = ( t, u ) -> t.length() > u.length() ? t : u;
-			final String comboBoxWidth = features.stream().reduce( "", longest ) + "  ";
+			final BinaryOperator< FeatureKey > longest = ( t, u ) -> t.toString().length() > u.toString().length() ? t : u;
+			final FeatureKey prototypeDisplayValue = featureKeys.stream().reduce( new FeatureKey( "", "" ), longest ) ;
 
-			jComboBoxFeature = new JComboBox< String >( features.toArray( new String[] {} ) );
-			jComboBoxFeature.setFont( smallFont );
-			jComboBoxFeature.setSelectedIndex( features.indexOf( selectedFeature ) );
-			jComboBoxFeature.setPrototypeDisplayValue( comboBoxWidth );
-			add( jComboBoxFeature );
+			jComboBoxFeatureKeys = new JComboBox<>( featureKeys.toArray( new FeatureKey[] {} ) );
+			jComboBoxFeatureKeys.setFont( smallFont );
+			jComboBoxFeatureKeys.setSelectedIndex( featureKeys.indexOf( selectedFeatureKey ) );
+			jComboBoxFeatureKeys.setPrototypeDisplayValue( prototypeDisplayValue );
+			add( jComboBoxFeatureKeys );
 
 			add( Box.createHorizontalStrut( 5 ) );
 
 			jTextFieldFeatureWeight = new JFormattedTextField( FORMAT );
-			jTextFieldFeatureWeight.setValue( selectedPenalty );
+			jTextFieldFeatureWeight.setValue( selectedWeight );
 			jTextFieldFeatureWeight.setFont( smallFont );
 			jTextFieldFeatureWeight.setHorizontalAlignment( JFormattedTextField.RIGHT );
 			jTextFieldFeatureWeight.addFocusListener( new SelectOnFocusListener() );
@@ -745,7 +748,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		private FeaturePenalty getFeaturePenalty()
 		{
 			final FeaturePenalty featurePenalty = new FeaturePenalty(
-					( String ) jComboBoxFeature.getSelectedItem(),
+					( FeatureKey ) jComboBoxFeatureKeys.getSelectedItem(),
 					( ( Number ) jTextFieldFeatureWeight.getValue() ).doubleValue() );
 			return featurePenalty;
 		}
@@ -753,24 +756,16 @@ public class LAPLinkerConfigPanel extends JPanel
 
 	private static class FeaturePenalty
 	{
-		public FeaturePenalty( final String feature, final double penalty )
+
+		public final double weight;
+
+		public final FeatureKey key;
+
+		public FeaturePenalty( final FeatureKey key, final double weight )
 		{
-			this.feature = feature;
-			this.penalty = penalty;
+			this.key = key;
+			this.weight = weight;
 		}
-
-		public String feature;
-
-		public double penalty;
-	}
-
-	private static final Map< String, Double > toMap( final Collection< FeaturePenalty > penalties )
-	{
-		final Map< String, Double > map = new HashMap<>();
-		for ( final FeaturePenalty featurePenalty : penalties )
-			map.put( featurePenalty.feature, featurePenalty.penalty );
-
-		return map;
 	}
 
 	@SuppressWarnings( "unchecked" )

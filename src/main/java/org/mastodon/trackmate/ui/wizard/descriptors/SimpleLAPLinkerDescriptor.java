@@ -27,13 +27,16 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
@@ -49,12 +52,12 @@ import org.mastodon.linking.mamut.SimpleSparseLAPLinkerMamut;
 import org.mastodon.linking.mamut.SpotLinkerOp;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.revised.mamut.feature.DefaultMamutFeatureComputerService;
+import org.mastodon.revised.model.feature.FeatureComputer;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.util.SelectOnFocusListener;
-import org.python.icu.text.DecimalFormat;
 import org.scijava.Context;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -319,8 +322,9 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 		context.inject( featureComputerService );
 		featureComputerService.initialize();
 
-		System.out.println( "Found the following computers: " + featureComputerService.getAvailableVertexFeatureComputers() );
-		featureComputerService.compute( model, featureComputerService.getAvailableVertexFeatureComputers(), ProgressListeners.defaultLogger() );
+		final Set< FeatureComputer< Model > > featureComputers = new HashSet<>( featureComputerService.getFeatureComputers() );
+		System.out.println( "Found the following computers: " + featureComputers );
+		featureComputerService.compute( model, model.getFeatureModel(), featureComputers, ProgressListeners.defaultLogger() );
 
 		final JFrame frame = new JFrame( "LAP config panel test" );
 		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
