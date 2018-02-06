@@ -25,10 +25,9 @@ import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
 import org.mastodon.linking.AbstractParticleLinkerOp;
+import org.mastodon.linking.FeatureKey;
 import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.lap.costfunction.CostFunction;
-import org.mastodon.linking.lap.costfunction.FeaturePenaltyCostFunction;
-import org.mastodon.linking.lap.costfunction.SquareDistCostFunction;
 import org.mastodon.linking.lap.costmatrix.JaqamanLinkingCostMatrixCreator;
 import org.mastodon.linking.lap.linker.JaqamanLinker;
 import org.mastodon.linking.lap.linker.SparseCostMatrix;
@@ -132,12 +131,10 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 
 		// Prepare cost function
 		@SuppressWarnings( "unchecked" )
-		final Map< String, Double > featurePenalties = ( Map< String, Double > ) settings.get( KEY_LINKING_FEATURE_PENALTIES );
-		final CostFunction< V, V > costFunction;
-		if ( null == featurePenalties || featurePenalties.isEmpty() )
-			costFunction = new SquareDistCostFunction<>();
-		else
-			costFunction = new FeaturePenaltyCostFunction<>( featurePenalties, featureModel );
+		final Map< FeatureKey, Double > featurePenalties = ( Map< FeatureKey, Double > ) settings.get( KEY_LINKING_FEATURE_PENALTIES );
+		@SuppressWarnings( "unchecked" )
+		final Class< V > vertexClass = ( Class< V > ) graph.vertexRef().getClass();
+		final CostFunction< V, V > costFunction = LinkingUtils.getCostFunctionFor( featurePenalties, featureModel, vertexClass );
 
 		final Double maxDist = ( Double ) settings.get( KEY_LINKING_MAX_DISTANCE );
 		final double costThreshold = maxDist * maxDist;
@@ -242,7 +239,9 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 		}
 		statusService.clearStatus();
 
-		this.linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost );
+		@SuppressWarnings( "unchecked" )
+		final Class< E > linkClass = ( Class< E > ) graph.edgeRef().getClass();
+		this.linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost, linkClass );
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
 

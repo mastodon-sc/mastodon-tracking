@@ -17,9 +17,8 @@ public class LinkerKeys
 
 	/**
 	 * Key for the parameter specifying the feature penalties when linking
-	 * particles. Expected values should be a
-	 * <code>Map&lt;String, Double&gt;</code> where the map keys are spot
-	 * feature names.
+	 * particles. Expected values should be a <code>Map&lt;FeatureKey, Double&gt;</code>
+	 * instance.
 	 */
 	public static final String KEY_LINKING_FEATURE_PENALTIES = "LINKING_FEATURE_PENALTIES";
 
@@ -27,7 +26,7 @@ public class LinkerKeys
 	 * A default value for the {@value #KEY_LINKING_FEATURE_PENALTIES}
 	 * parameter.
 	 */
-	public static final Map< String, Double > DEFAULT_LINKING_FEATURE_PENALTIES = new HashMap< String, Double >();
+	public static final Map<FeatureKey, Double> DEFAULT_LINKING_FEATURE_PENALTIES = new HashMap<>();
 
 	/**
 	 * Key for the parameter specifying whether we allow the detection of
@@ -67,9 +66,8 @@ public class LinkerKeys
 
 	/**
 	 * Key for the parameter specifying the feature penalties when detecting
-	 * gap-closing events. Expected values should be a
-	 * <code>Map&lt;String, Double&gt;</code> where the map keys are spot
-	 * feature names.
+	 * gap-closing events. Expected values should be a <code>Map&lt;FeatureKey, Double&gt;</code>
+	 * instance.
 	 */
 	public static final String KEY_GAP_CLOSING_FEATURE_PENALTIES = "GAP_CLOSING_FEATURE_PENALTIES";
 
@@ -77,7 +75,7 @@ public class LinkerKeys
 	 * A default value for the {@value #KEY_GAP_CLOSING_FEATURE_PENALTIES}
 	 * parameter.
 	 */
-	public static final Map< String, Double > DEFAULT_GAP_CLOSING_FEATURE_PENALTIES = new HashMap< String, Double >();
+	public static final Map<FeatureKey, Double> DEFAULT_GAP_CLOSING_FEATURE_PENALTIES = new HashMap<>();
 
 	/**
 	 * Key for the parameter specifying whether we allow the detection of
@@ -101,9 +99,8 @@ public class LinkerKeys
 
 	/**
 	 * Key for the parameter specifying the feature penalties when dealing with
-	 * merging events. Expected values should be a
-	 * <code>Map&lt;String, Double&gt;</code> where the map keys are spot
-	 * feature names.
+	 * merging events. Expected values should be a <code>Map&lt;FeatureKey, Double&gt;</code>
+	 * instance.
 	 */
 	public static final String KEY_MERGING_FEATURE_PENALTIES = "MERGING_FEATURE_PENALTIES";
 
@@ -111,7 +108,7 @@ public class LinkerKeys
 	 * A default value for the {@value #KEY_MERGING_FEATURE_PENALTIES}
 	 * parameter.
 	 */
-	public static final Map< String, Double > DEFAULT_MERGING_FEATURE_PENALTIES = new HashMap< String, Double >();
+	public static final Map<FeatureKey, Double> DEFAULT_MERGING_FEATURE_PENALTIES = new HashMap<>();
 
 	/**
 	 * Key for the parameter specifying whether we allow the detection of
@@ -140,9 +137,8 @@ public class LinkerKeys
 
 	/**
 	 * Key for the parameter specifying the feature penalties when dealing with
-	 * splitting events. Expected values should be a
-	 * <code>Map&lt;String, Double&gt;</code> where the map keys are spot
-	 * feature names.
+	 * splitting events. Expected values should be a <code>Map&lt;FeatureKey, Double&gt;</code>
+	 * instance.
 	 */
 	public static final String KEY_SPLITTING_FEATURE_PENALTIES = "SPLITTING_FEATURE_PENALTIES";
 
@@ -150,7 +146,7 @@ public class LinkerKeys
 	 * A default value for the {@value #KEY_SPLITTING_FEATURE_PENALTIES}
 	 * parameter.
 	 */
-	public static final Map< String, Double > DEFAULT_SPLITTING_FEATURE_PENALTIES = new HashMap< String, Double >();
+	public static final Map<FeatureKey, Double> DEFAULT_SPLITTING_FEATURE_PENALTIES = new HashMap<>();
 
 	/**
 	 * Key for the parameter specifying the factor used to compute alternative

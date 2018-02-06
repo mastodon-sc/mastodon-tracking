@@ -58,8 +58,12 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
 import org.mastodon.graph.Vertex;
+import org.mastodon.linking.lap.costfunction.CostFunction;
+import org.mastodon.linking.lap.costfunction.FeaturePenaltiesCostFunction;
+import org.mastodon.linking.lap.costfunction.SquareDistCostFunction;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
+import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.revised.model.feature.FeatureProjection;
 import org.mastodon.revised.model.feature.FeatureProjectors;
 
@@ -80,6 +84,16 @@ public class LinkingUtils
 	 * STATIC METHODS - UTILS
 	 */
 
+	public static final < V extends Vertex< ? > & RealLocalizable > CostFunction< V, V > getCostFunctionFor( final Map< FeatureKey, Double > featurePenalties, final FeatureModel featureModel, final Class< V > clazz )
+	{
+		final CostFunction< V, V > costFunction;
+		if ( null == featurePenalties || featurePenalties.isEmpty() )
+			costFunction = new SquareDistCostFunction< V >();
+		else
+			costFunction = new FeaturePenaltiesCostFunction<>( featurePenalties, featureModel, clazz );
+		return costFunction;
+	}
+
 	/**
 	 * Returns a new feature wrapping the specified property map, that serves as
 	 * an Edge linking cost feature for the linkers of Mastodon. This feature is
@@ -94,7 +108,7 @@ public class LinkingUtils
 	 */
 	public static final < E > Feature< E, DoublePropertyMap< E > > getLinkCostFeature( final DoublePropertyMap< E > linkCosts, final Class< E > clazz )
 	{
-		return new Feature< >(
+		return new Feature<>(
 				LINK_COST_FEATURE_NAME, clazz, linkCosts,
 				Collections.singletonMap( LINK_COST_FEATURE_NAME, FeatureProjectors.project( linkCosts ) ) );
 	}
@@ -107,31 +121,63 @@ public class LinkingUtils
 	 */
 	public static final Map< String, Object > getDefaultLAPSettingsMap()
 	{
-		final Map< String, Object > settings = new HashMap< >();
-		settings.put( KEY_MIN_TIMEPOINT, DEFAULT_MIN_TIMEPOINT);
-		settings.put( KEY_MAX_TIMEPOINT, DEFAULT_MAX_TIMEPOINT);
+		final Map< String, Object > settings = new HashMap<>();
+		settings.put( KEY_MIN_TIMEPOINT, DEFAULT_MIN_TIMEPOINT );
+		settings.put( KEY_MAX_TIMEPOINT, DEFAULT_MAX_TIMEPOINT );
 		// Linking
 		settings.put( KEY_LINKING_MAX_DISTANCE, DEFAULT_LINKING_MAX_DISTANCE );
-		settings.put( KEY_LINKING_FEATURE_PENALTIES, new HashMap< >( DEFAULT_LINKING_FEATURE_PENALTIES ) );
+		settings.put( KEY_LINKING_FEATURE_PENALTIES, new HashMap<>( DEFAULT_LINKING_FEATURE_PENALTIES ) );
 		// Gap closing
 		settings.put( KEY_ALLOW_GAP_CLOSING, DEFAULT_ALLOW_GAP_CLOSING );
 		settings.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, DEFAULT_GAP_CLOSING_MAX_FRAME_GAP );
 		settings.put( KEY_GAP_CLOSING_MAX_DISTANCE, DEFAULT_GAP_CLOSING_MAX_DISTANCE );
-		settings.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, new HashMap< >( DEFAULT_GAP_CLOSING_FEATURE_PENALTIES ) );
+		settings.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, new HashMap<>( DEFAULT_GAP_CLOSING_FEATURE_PENALTIES ) );
 		// Track splitting
 		settings.put( KEY_ALLOW_TRACK_SPLITTING, DEFAULT_ALLOW_TRACK_SPLITTING );
 		settings.put( KEY_SPLITTING_MAX_DISTANCE, DEFAULT_SPLITTING_MAX_DISTANCE );
-		settings.put( KEY_SPLITTING_FEATURE_PENALTIES, new HashMap< >( DEFAULT_SPLITTING_FEATURE_PENALTIES ) );
+		settings.put( KEY_SPLITTING_FEATURE_PENALTIES, new HashMap<>( DEFAULT_SPLITTING_FEATURE_PENALTIES ) );
 		// Track merging
 		settings.put( KEY_ALLOW_TRACK_MERGING, DEFAULT_ALLOW_TRACK_MERGING );
 		settings.put( KEY_MERGING_MAX_DISTANCE, DEFAULT_MERGING_MAX_DISTANCE );
-		settings.put( KEY_MERGING_FEATURE_PENALTIES, new HashMap< >( DEFAULT_MERGING_FEATURE_PENALTIES ) );
+		settings.put( KEY_MERGING_FEATURE_PENALTIES, new HashMap<>( DEFAULT_MERGING_FEATURE_PENALTIES ) );
 		// Others
 		settings.put( KEY_BLOCKING_VALUE, DEFAULT_BLOCKING_VALUE );
 		settings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, DEFAULT_ALTERNATIVE_LINKING_COST_FACTOR );
 		settings.put( KEY_CUTOFF_PERCENTILE, DEFAULT_CUTOFF_PERCENTILE );
 		// return
 		return settings;
+	}
+
+	public static final boolean isFeatureKeyValid( final FeatureKey featureKey, final FeatureModel featureModel, final Class< ? > clazz )
+	{
+		final Feature< ?, ? > feature = featureModel.getFeature( featureKey.featureKey );
+		if ( null == featureModel.getFeatureSet( clazz ) || !featureModel.getFeatureSet( clazz ).contains( feature ) )
+			return false;
+
+		if ( null == feature.getProjections().get( featureKey.projectionKey ) )
+			return false;
+
+		return true;
+	}
+
+	public static < V > Map< FeatureProjection< V >, Double > penaltyToProjectionMap( final Map< FeatureKey, Double > penalties, final FeatureModel featureModel, final Class< V > clazz )
+	{
+		final Map< FeatureProjection< V >, Double > projections = new HashMap<>();
+
+		for ( final FeatureKey key : penalties.keySet() )
+		{
+			final Feature< ?, ? > feature = featureModel.getFeature( key.featureKey );
+			if ( null == featureModel.getFeatureSet( clazz ) || !featureModel.getFeatureSet( clazz ).contains( feature ) )
+				continue;
+
+			@SuppressWarnings( "unchecked" )
+			final FeatureProjection< V > projection = ( FeatureProjection< V > ) feature.getProjections().get( key.projectionKey );
+			if ( null == projection )
+				continue;
+
+			projections.put( projection, penalties.get( key ) );
+		}
+		return projections;
 	}
 
 	/**
@@ -179,11 +225,11 @@ public class LinkingUtils
 	{
 		if ( null == optionalKeys )
 		{
-			optionalKeys = new ArrayList< >();
+			optionalKeys = new ArrayList<>();
 		}
 		if ( null == mandatoryKeys )
 		{
-			mandatoryKeys = new ArrayList< >();
+			mandatoryKeys = new ArrayList<>();
 		}
 		boolean ok = true;
 		final Set< T > keySet = map.keySet();
@@ -546,7 +592,7 @@ public class LinkingUtils
 	 * two vertices. This value is equal to
 	 *
 	 * <pre>
-	 * | a - b | / ( ( a + b )/2 )
+	 * 1/2 &times; | a - b | / | a + b |
 	 * </pre>
 	 *
 	 * where <code>a</code> and <code>b</code> are the feature value for the
@@ -572,7 +618,7 @@ public class LinkingUtils
 		if ( a == -b )
 			return 0d;
 		else
-			return Math.abs( a - b ) / ( ( a + b ) / 2 );
+			return Math.abs( a - b ) / ( Math.abs( a + b ) / 2 );
 	}
 
 	private LinkingUtils()

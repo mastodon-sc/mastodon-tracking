@@ -192,7 +192,9 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 		currentOp = null;
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
-		this.linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost );
+		@SuppressWarnings( "unchecked" )
+		final Class< E > linkClass = ( Class< E > ) graph.edgeRef().getClass();
+		this.linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost, linkClass );
 		statusService.clearStatus();
 		ok = true;
 	}

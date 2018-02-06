@@ -151,7 +151,9 @@ public class SparseLAPSegmentLinker< V extends Vertex< E > & HasTimepoint & Real
 		statusService.clearStatus();
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
-		this.linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost );
+		@SuppressWarnings( "unchecked" )
+		final Class< E > linkClass = ( Class< E > ) graph.edgeRef().getClass();
+		this.linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost, linkClass );
 		ok = true;
 	}
 

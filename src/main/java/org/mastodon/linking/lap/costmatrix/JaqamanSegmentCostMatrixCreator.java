@@ -27,9 +27,9 @@ import org.mastodon.collection.RefList;
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.ReadOnlyGraph;
 import org.mastodon.graph.Vertex;
+import org.mastodon.linking.FeatureKey;
+import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.lap.costfunction.CostFunction;
-import org.mastodon.linking.lap.costfunction.FeaturePenaltyCostFunction;
-import org.mastodon.linking.lap.costfunction.SquareDistCostFunction;
 import org.mastodon.linking.lap.linker.SparseCostMatrix;
 import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.spatial.HasTimepoint;
@@ -77,7 +77,7 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 	private ReadOnlyGraph< V, E > graph;
 
 	@Parameter( type = ItemIO.INPUT )
-	private FeatureModel< V, E > featureModel;
+	private FeatureModel featureModel;
 
 	@Parameter( type = ItemIO.INPUT )
 	private Map< String, Object > settings;
@@ -114,10 +114,12 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 		 * Extract parameters
 		 */
 
+		@SuppressWarnings( "unchecked" )
+		final Class< V > vertexClass = ( Class< V > ) graph.vertexRef().getClass();
 		// Gap closing.
 		@SuppressWarnings( "unchecked" )
-		final Map< String, Double > gcFeaturePenalties = ( Map< String, Double > ) settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES );
-		final CostFunction< V, V > gcCostFunction = getCostFunctionFor( gcFeaturePenalties );
+		final Map< FeatureKey, Double > gcFeaturePenalties = ( Map< FeatureKey, Double > ) settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES );
+		final CostFunction< V, V > gcCostFunction = LinkingUtils.getCostFunctionFor( gcFeaturePenalties, featureModel, vertexClass );
 		final int maxFrameInterval = ( Integer ) settings.get( KEY_GAP_CLOSING_MAX_FRAME_GAP );
 		final double gcMaxDistance = ( Double ) settings.get( KEY_GAP_CLOSING_MAX_DISTANCE );
 		final double gcCostThreshold = gcMaxDistance * gcMaxDistance;
@@ -125,16 +127,16 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 
 		// Merging
 		@SuppressWarnings( "unchecked" )
-		final Map< String, Double > mFeaturePenalties = ( Map< String, Double > ) settings.get( KEY_MERGING_FEATURE_PENALTIES );
-		final CostFunction< V, V > mCostFunction = getCostFunctionFor( mFeaturePenalties );
+		final Map< FeatureKey, Double > mFeaturePenalties = ( Map< FeatureKey, Double > ) settings.get( KEY_MERGING_FEATURE_PENALTIES );
+		final CostFunction< V, V > mCostFunction = LinkingUtils.getCostFunctionFor( mFeaturePenalties, featureModel, vertexClass );
 		final double mMaxDistance = ( Double ) settings.get( KEY_MERGING_MAX_DISTANCE );
 		final double mCostThreshold = mMaxDistance * mMaxDistance;
 		final boolean allowMerging = ( Boolean ) settings.get( KEY_ALLOW_TRACK_MERGING );
 
 		// Splitting
 		@SuppressWarnings( "unchecked" )
-		final Map< String, Double > sFeaturePenalties = ( Map< String, Double > ) settings.get( KEY_SPLITTING_FEATURE_PENALTIES );
-		final CostFunction< V, V > sCostFunction = getCostFunctionFor( sFeaturePenalties );
+		final Map< FeatureKey, Double > sFeaturePenalties = ( Map< FeatureKey, Double > ) settings.get( KEY_SPLITTING_FEATURE_PENALTIES );
+		final CostFunction< V, V > sCostFunction = LinkingUtils.getCostFunctionFor( sFeaturePenalties, featureModel, vertexClass );
 		final boolean allowSplitting = ( Boolean ) settings.get( KEY_ALLOW_TRACK_SPLITTING );
 		final double sMaxDistance = ( Double ) settings.get( KEY_SPLITTING_MAX_DISTANCE );
 		final double sCostThreshold = sMaxDistance * sMaxDistance;
@@ -325,16 +327,6 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
 		return scm;
-	}
-
-	protected CostFunction< V, V > getCostFunctionFor( final Map< String, Double > featurePenalties )
-	{
-		final CostFunction< V, V > costFunction;
-		if ( null == featurePenalties || featurePenalties.isEmpty() )
-			costFunction = new SquareDistCostFunction< V >();
-		else
-			costFunction = new FeaturePenaltyCostFunction< V >( featurePenalties, featureModel );
-		return costFunction;
 	}
 
 	@Override

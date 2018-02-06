@@ -3,20 +3,26 @@ package org.mastodon.linking.lap.costfunction;
 import java.util.Map;
 
 import org.mastodon.graph.Vertex;
+import org.mastodon.linking.FeatureKey;
 import org.mastodon.linking.LinkingUtils;
 import org.mastodon.revised.model.feature.FeatureModel;
+import org.mastodon.revised.model.feature.FeatureProjection;
 
 import net.imglib2.RealLocalizable;
 
 /**
  * A cost function that tempers a square distance cost by difference in feature
- * values.
+ * values. Feature penalties are used to penalize link costs when the difference
+ * in feature value from the candidate source vertex and the candidate target
+ * vertex are very different. A penalty is expressed as a user-specified weight
+ * times a measure of the normalized difference of the feature values. The
+ * resulting value is then used to alter the initial value of the link cost.
  * <p>
  * This cost is calculated as follow:
  * <ul>
  * <li>The distance between the two vertices <code>D</code> is calculated
  * <li>For each feature in the map, a penalty <code>p</code> is calculated as
- * <code>p = 3 × α × |f1-f2| / (f1+f2)</code>, where <code>α</code> is the
+ * <code>p = 3 × α × |f1-f2| / |f1+f2|</code>, where <code>α</code> is the
  * factor associated to the feature in the map. This expression is such that:
  * <ul>
  * <li>there is no penalty if the 2 feature values <code>f1</code> and
@@ -32,41 +38,32 @@ import net.imglib2.RealLocalizable;
  * in the penalty map with a factor of 1, they will <i>look</i> as if they were
  * twice as far.
  *
- * @author Jean-Yves Tinevez - 2014
+ * @author Jean-Yves Tinevez
  * @param <V>
  *            the type of the vertices to compute cost for.
- *
  */
-public class FeaturePenaltyCostFunction< V extends Vertex< ? > & RealLocalizable > implements CostFunction< V, V >
+public class FeaturePenaltiesCostFunction< V extends Vertex< ? > & RealLocalizable > implements CostFunction< V, V >
 {
+	private final Map< FeatureProjection< V >, Double > projections;
 
-	private final Map< String, Double > featurePenalties;
-
-	private final FeatureModel< V, ? > featureModel;
-
-	public FeaturePenaltyCostFunction( final Map< String, Double > featurePenalties, final FeatureModel< V, ? > featureModel )
+	public FeaturePenaltiesCostFunction( final Map< FeatureKey, Double > featurePenalties, final FeatureModel featureModel, final Class< V > clazz )
 	{
-		this.featurePenalties = featurePenalties;
-		this.featureModel = featureModel;
+		this.projections = LinkingUtils.penaltyToProjectionMap( featurePenalties, featureModel, clazz );
 	}
 
 	@Override
 	public double linkingCost( final V source, final V target )
 	{
 		final double d2 = LinkingUtils.squareDistance( source, target );
-
-		double penalty = 1;
-		for ( final String feature : featurePenalties.keySet() )
+		double penalty = 1.;
+		for ( final FeatureProjection< V > projection : projections.keySet() )
 		{
-			final double ndiff = LinkingUtils.normalizeDiffCost( source, target, feature, featureModel );
+			final double ndiff = LinkingUtils.normalizeDiffCost( source, target, projection );
 			if ( Double.isNaN( ndiff ) )
-			{
 				continue;
-			}
-			final double factor = featurePenalties.get( feature );
-			penalty += factor * 1.5 * ndiff;
+			final double weight = projections.get( projection ).doubleValue();
+			penalty += weight * 1.5 * ndiff;
 		}
-
 		return d2 * penalty * penalty;
 	}
 }
