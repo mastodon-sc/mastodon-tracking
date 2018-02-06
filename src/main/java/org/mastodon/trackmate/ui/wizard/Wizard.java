@@ -1,6 +1,7 @@
 package org.mastodon.trackmate.ui.wizard;
 
-
+import java.io.File;
+import java.io.IOException;
 import java.util.Locale;
 
 import javax.swing.JFrame;
@@ -8,8 +9,8 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.revised.mamut.MainWindow;
+import org.mastodon.revised.mamut.MamutProject;
 import org.mastodon.revised.mamut.WindowManager;
-import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.descriptors.BoundingBoxDescriptor;
@@ -23,12 +24,12 @@ import org.mastodon.trackmate.ui.wizard.descriptors.ExecuteLinkingDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.LogDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.SetupIdDecriptor;
 import org.scijava.AbstractContextual;
+import org.scijava.Context;
 import org.scijava.plugin.Parameter;
 
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import mpicbg.spim.data.SpimDataException;
-import net.imagej.ImageJ;
 
 public class Wizard extends AbstractContextual
 {
@@ -97,13 +98,12 @@ public class Wizard extends AbstractContextual
 		frame.setVisible( true );
 	}
 
-	public static void main( final String[] args ) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException
+	public static void main( final String[] args ) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException, IOException, SpimDataException
 	{
 		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
 		Locale.setDefault( Locale.ROOT );
 		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-		final ImageJ ij = new ImageJ();
-		ij.launch( args );
+		final Context context = new Context();
 
 		/*
 		 * Load SpimData
@@ -126,14 +126,18 @@ public class Wizard extends AbstractContextual
 		final Settings settings = new Settings()
 				.spimData( spimData );
 
-		final Model model = new Model();
-		final TrackMate trackmate = new TrackMate( settings, model );
-		ij.context().inject( trackmate );
+		final WindowManager windowManager = new WindowManager();
+		final MainWindow mw = new MainWindow( windowManager );
 
-		final MainWindow mw = new MainWindow( model, spimData, bdvFile, MainWindow.getInputTriggerConfig() );
+		final MamutProject project = new MamutProject( null, new File( bdvFile ) );
+		windowManager.getProjectManager().open( project );
+
+		final TrackMate trackmate = new TrackMate( settings, windowManager.getAppModel().getModel() );
+		context.inject( trackmate );
+
 		mw.setVisible( true );
-		final Wizard wizard = new Wizard( trackmate, mw.getWindowManager() );
-		ij.context().inject( wizard );
+		final Wizard wizard = new Wizard( trackmate, windowManager );
+		context.inject( wizard );
 		wizard.show();
 	}
 

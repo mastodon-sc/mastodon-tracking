@@ -38,7 +38,7 @@ import javax.swing.event.ChangeListener;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.plot.IntervalMarker;
 import org.jfree.chart.plot.XYPlot;
-import org.jfree.ui.Layer;
+import org.jfree.chart.ui.Layer;
 
 public class FilterPanel extends javax.swing.JPanel
 {

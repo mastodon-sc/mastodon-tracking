@@ -12,6 +12,7 @@ import org.mastodon.trackmate.ui.wizard.descriptors.LogPanel;
 import org.scijava.app.StatusService;
 import org.scijava.app.event.StatusEvent;
 import org.scijava.log.AbstractLogService;
+import org.scijava.log.LogMessage;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Plugin;
 
@@ -32,7 +33,7 @@ public class WizardLogService extends AbstractLogService implements LogService, 
 	}
 
 	@Override
-	protected void log( final int level, final Object msg )
+	public void log( final int level, final Object msg )
 	{
 		final Color color;
 		switch ( level )
@@ -57,13 +58,11 @@ public class WizardLogService extends AbstractLogService implements LogService, 
 		panel.append( msg.toString(), color );
 	}
 
-	@Override
 	protected void log( final String msg )
 	{
 		log( INFO, msg );
 	}
 
-	@Override
 	protected void log( final Throwable t )
 	{
 		log( INFO, t.getStackTrace() );
@@ -116,6 +115,13 @@ public class WizardLogService extends AbstractLogService implements LogService, 
 	public String getStatusMessage( final String appName, final StatusEvent statusEvent )
 	{
 		return null;
+	}
+
+	@Override
+	protected void messageLogged( final LogMessage message )
+	{
+		// TODO Auto-generated method stub
+
 	}
 
 }

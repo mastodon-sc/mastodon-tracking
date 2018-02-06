@@ -19,32 +19,31 @@ import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.mamut.SparseLAPLinkerMamut;
 import org.mastodon.revised.mamut.MainWindow;
+import org.mastodon.revised.mamut.MamutProject;
+import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.revised.model.mamut.Model;
-import org.scijava.ui.behaviour.io.InputTriggerConfig;
-import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
+import org.scijava.Context;
 
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import mpicbg.spim.data.SpimDataException;
-import net.imagej.ImageJ;
 
 public class Sandbox
 {
 
-	public static void main( final String[] args ) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException, InterruptedException
+	public static void main( final String[] args ) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException, InterruptedException, IOException, SpimDataException
 	{
 		Locale.setDefault( Locale.US );
 		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
 		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-		final ImageJ ij = new ImageJ();
-		ij.launch( args );
+		final Context context = new Context();
 
 		/*
 		 * Load SpimData
 		 */
 //		final String bdvFile = "samples/datasethdf5.xml";
-//		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+//		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 		SpimDataMinimal sd = null;
 		try
 		{
@@ -59,8 +58,8 @@ public class Sandbox
 
 		final int maxTimepoint = spimData.getSequenceDescription().getTimePoints().size() - 1;
 		final int minTimepoint = 0;
-		final double radius = 50.;
-		final double threshold = 500.;
+		final double radius = 20.;
+		final double threshold = 100.;
 		final int setup = 0;
 
 		final Class< DoGDetectorMamut > detectorClass = DoGDetectorMamut.class;
@@ -87,9 +86,13 @@ public class Sandbox
 				.detectorSettings( detectorSettings )
 				.linker( linkerClass )
 				.linkerSettings( linkerSettings );
-		final Model model = new Model();
+
+		final WindowManager wm = new WindowManager();
+		final MamutProject project = new MamutProject( null, new File(bdvFile) );
+		wm.getProjectManager().open( project );
+		final Model model = wm.getAppModel().getModel();
 		final TrackMate trackmate = new TrackMate( settings, model );
-		trackmate.setContext( ij.context() );
+		trackmate.setContext( context );
 
 		new Thread( trackmate ).start();
 		System.out.println( "Started TrackMate thread." );
@@ -100,44 +103,6 @@ public class Sandbox
 		if ( trackmate.isCanceled() )
 			System.out.println( "Calculation was canceled. Reason: " + trackmate.getCancelReason() );
 
-		new MainWindow( model, spimData, bdvFile, getInputTriggerConfig() ).setVisible( true );
-	}
-
-	public static final InputTriggerConfig getInputTriggerConfig()
-	{
-		InputTriggerConfig conf = null;
-
-		// try "keyconfig.yaml" in current directory
-		if ( new File( "keyconfig.yaml" ).isFile() )
-		{
-			try
-			{
-				conf = new InputTriggerConfig( YamlConfigIO.read( "keyconfig.yaml" ) );
-			}
-			catch ( final IOException e )
-			{}
-		}
-
-		// try "~/.mastodon/keyconfig.yaml"
-		if ( conf == null )
-		{
-			final String fn = System.getProperty( "user.home" ) + "/.mastodon/keyconfig.yaml";
-			if ( new File( fn ).isFile() )
-			{
-				try
-				{
-					conf = new InputTriggerConfig( YamlConfigIO.read( fn ) );
-				}
-				catch ( final IOException e )
-				{}
-			}
-		}
-
-		if ( conf == null )
-		{
-			conf = new InputTriggerConfig();
-		}
-
-		return conf;
+		new MainWindow( wm).setVisible( true );
 	}
 }
