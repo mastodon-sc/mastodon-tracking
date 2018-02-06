@@ -119,7 +119,7 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		}
 		currentOp = null;
 
-		model.getGraphFeatureModel().declareFeature( detector.getQualityFeature() );
+		model.getFeatureModel().declareFeature( detector.getQualityFeature() );
 		final long end = System.currentTimeMillis();
 		log.info( String.format( "Detection completed in %.1f s.\n", ( end - start ) / 1000. ) );
 		log.info( "Found " + graph.vertices().size() + " spots.\n" );
@@ -152,7 +152,7 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 
 		final SpotLinkerOp linker =
 				( SpotLinkerOp ) Inplaces.binary1( ops, linkerCl, model.getGraph(), model.getSpatioTemporalIndex(),
-						linkerSettings, model.getGraphFeatureModel() );
+						linkerSettings, model.getFeatureModel() );
 
 		log.info( "Particle-linking with " + linkerCl.getSimpleName() + '\n' );
 		this.currentOp = linker;
@@ -166,7 +166,7 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		}
 
 		currentOp = null;
-		model.getGraphFeatureModel().declareFeature( linker.getLinkCostFeature() );
+		model.getFeatureModel().declareFeature( linker.getLinkCostFeature() );
 		final long end = System.currentTimeMillis();
 		log.info( String.format( "Particle-linking completed in %.1f s.\n", ( end - start ) / 1000. ) );
 		final int nTracks = RootFinder.getRoots( model.getGraph() ).size();
