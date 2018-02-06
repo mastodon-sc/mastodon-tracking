@@ -3,14 +3,13 @@ package org.mastodon.trackmate.ui.wizard;
 import java.awt.event.ActionEvent;
 
 import javax.swing.Action;
+import javax.swing.JLabel;
 
 import org.mastodon.trackmate.ui.wizard.TransitionAnimator.Direction;
 import org.mastodon.trackmate.ui.wizard.descriptors.LogDescriptor;
 import org.mastodon.trackmate.ui.wizard.util.EverythingDisablerAndReenabler;
 import org.scijava.Cancelable;
 import org.scijava.ui.behaviour.util.AbstractNamedAction;
-
-import com.sun.codemodel.JLabel;
 
 public class WizardController
 {

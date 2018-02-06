@@ -10,8 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.primitives.Booleans;
-
 public class SemiAutomaticTrackerKeys
 {
 
