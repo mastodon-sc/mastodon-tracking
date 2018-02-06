@@ -3,20 +3,13 @@ package org.mastodon.trackmate.ui.boundingbox;
 import java.awt.event.WindowAdapter;
 
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
-import org.mastodon.revised.mamut.BdvManager.BdvWindow;
-import org.mastodon.revised.mamut.WindowManager;
-import org.mastodon.revised.model.mamut.Model;
-import org.mastodon.trackmate.Sandbox;
 import org.scijava.ui.behaviour.ClickBehaviour;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Behaviours;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
-import bdv.spimdata.SpimDataMinimal;
-import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerFrame;
-import mpicbg.spim.data.SpimDataException;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -234,25 +227,4 @@ public class BoundingBoxMamut
 			}
 		}
 	}
-
-	public static void main( final String[] args ) throws SpimDataException
-	{
-		final InputTriggerConfig keyconf = Sandbox.getInputTriggerConfig();
-		final String bdvFile = "samples/datasethdf5.xml";
-		final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( bdvFile );
-
-		final WindowManager wm = new WindowManager( null, bdvFile, spimData, new Model(), keyconf );
-		wm.getCreateBdvAction().actionPerformed( null );
-		final BdvWindow bdvWindow = wm.getMamutWindowModel().getBdvWindows().get( 0 );
-		final ViewerFrame viewerFrame = bdvWindow.getViewerFrame();
-
-		new BoundingBoxMamut(
-				keyconf,
-				viewerFrame,
-				wm.getSharedBigDataViewerData(),
-				0,
-				"Test Bounding-box" );
-
-	}
-
 }
