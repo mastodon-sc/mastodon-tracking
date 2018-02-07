@@ -2,8 +2,9 @@ package org.mastodon.detection.mamut;
 
 import java.util.Map;
 
+import org.mastodon.detection.DetectionCreator;
+import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorOp;
-import org.mastodon.detection.VertexCreator;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.ModelGraph;
@@ -41,21 +42,25 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 
 	private long processingTime;
 
-	protected DetectorOp< Spot > detector;
+	protected DetectorOp< DetectionCreator > detector;
 
 	@SuppressWarnings( { "unchecked", "rawtypes" } )
 	protected void exec( final SpimDataMinimal spimData, final ModelGraph graph, final Class< ? extends DetectorOp > cl )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
-		final VertexCreator vertexCreator = createVertexCreator( graph );
+
+		final DoublePropertyMap< Spot > pm = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
+		qualityFeature = DetectionUtil.getQualityFeature( pm, Spot.class );
+
+		final DetectionCreator detectionCreator = detectionCreator( graph, pm );
+
 		this.detector = ( DetectorOp ) Inplaces.binary1( ops(), cl,
-				graph, spimData,
-				settings, vertexCreator );
-		detector.mutate1( graph, spimData );
+				detectionCreator, spimData, settings );
+		detector.mutate1( detectionCreator, spimData );
+
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
-		qualityFeature = detector.getQualityFeature();
 		ok = detector.isSuccessful();
 		if ( !ok )
 			errorMessage = detector.getErrorMessage();
@@ -63,33 +68,55 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 		this.detector = null;
 	}
 
-	protected VertexCreator< Spot > createVertexCreator( final ModelGraph graph )
+	protected DetectionCreator detectionCreator( final ModelGraph graph, final DoublePropertyMap< Spot > pm )
 	{
-		return new VertexCreator< Spot >()
+		return new MyDetectionCreator( graph, pm );
+	}
+
+	/**
+	 * Default detection creator suitable to create {@link Spot} vertices in a
+	 * {@link ModelGraph} from the detection returned by the detector. Takes
+	 * care of acquiring the writing lock before adding all the detections of a
+	 * time-point and returning it after. Also resets and feeds the quality
+	 * value to a quality feature.
+	 * 
+	 * @author Jean-Yves Tinevez
+	 *
+	 */
+	private static class MyDetectionCreator implements DetectionCreator
+	{
+
+		private final Spot ref;
+
+		private final DoublePropertyMap< Spot > pm;
+
+		private final ModelGraph graph;
+
+		public MyDetectionCreator( final ModelGraph graph, final DoublePropertyMap< Spot > pm )
 		{
+			this.graph = graph;
+			this.pm = pm;
+			this.ref = graph.vertexRef();
+		}
 
-			private Spot ref;
+		@Override
+		public void preAddition()
+		{
+			graph.getLock().writeLock().lock();
+		}
 
-			@Override
-			public void preAddition()
-			{
-				ref = graph.vertexRef();
-				graph.getLock().writeLock().lock();
-			}
+		@Override
+		public void postAddition()
+		{
+			graph.getLock().writeLock().unlock();
+		}
 
-			@Override
-			public void postAddition()
-			{
-				graph.getLock().writeLock().unlock();
-				graph.releaseRef( ref );
-			}
-
-			@Override
-			public Spot createVertex( final double[] pos, final double radius, final int timepoint, final double quality )
-			{
-				return graph.addVertex( ref ).init( timepoint, pos, radius );
-			}
-		};
+		@Override
+		public void createDetection( final double[] pos, final double radius, final int timepoint, final double quality )
+		{
+			final Spot spot = graph.addVertex( ref ).init( timepoint, pos, radius );
+			pm.set( spot, quality );
+		}
 	}
 
 	@Override

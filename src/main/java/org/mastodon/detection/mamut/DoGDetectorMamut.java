@@ -14,7 +14,7 @@ import net.imglib2.algorithm.Benchmark;
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
  */
-@Plugin( type = SpotDetectorOp.class, priority = Priority.HIGH_PRIORITY, name = "DoG detector",
+@Plugin( type = SpotDetectorOp.class, priority = Priority.HIGH, name = "DoG detector",
 		description = "<html>"
 				+ "This detector relies on an approximation of the LoG operator  "
 				+ "by differences of gaussian (DoG). Computations are made in direct space."

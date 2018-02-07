@@ -10,9 +10,6 @@ import static org.mastodon.detection.DogDetectorOp.MIN_SPOT_PIXEL_SIZE;
 
 import java.util.List;
 
-import org.mastodon.graph.Graph;
-import org.mastodon.graph.Vertex;
-import org.mastodon.properties.DoublePropertyMap;
 import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -26,7 +23,6 @@ import net.imglib2.Interval;
 import net.imglib2.Point;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.algorithm.Benchmark;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
@@ -40,13 +36,14 @@ import net.imglib2.view.Views;
  * Laplacian of Gaussian detector.
  *
  * @author Jean-Yves Tinevez
- * @param <V>
- *            the type of the vertices in the graph.
+ * @param <O>
+ *            the type of the detection creator, that is in charge of creating
+ *            the detection objects from coordinates returned by this algorithm.
  */
 @Plugin( type = DetectorOp.class )
-public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
-		extends AbstractDetectorOp< V >
-		implements DetectorOp< V >, Benchmark
+public class LoGDetectorOp< O extends DetectionCreator >
+		extends AbstractDetectorOp< O >
+		implements DetectorOp< O >, Benchmark
 {
 
 	@Parameter
@@ -60,7 +57,7 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 	private final boolean doSubpixelLocalization = true;
 
 	@Override
-	public void mutate1( final Graph< V, ? > graph, final SpimDataMinimal spimData )
+	public void mutate1( final O detectionCreator, final SpimDataMinimal spimData )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
@@ -80,7 +77,6 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 		final double threshold = ( double ) settings.get( KEY_THRESHOLD );
 		final Interval roi = ( Interval ) settings.get( KEY_ROI );
 
-		final DoublePropertyMap< V > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
 		statusService.showStatus( "LoG detection" );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
 		{
@@ -196,7 +192,7 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 				final RealPoint point = RealPoint.wrap( pos );
 				final RealPoint p3d = new RealPoint( 3 );
 
-				vertexCreator.preAddition();
+				detectionCreator.preAddition();
 				try
 				{
 					for ( final RefinedPeak< Point > refinedPeak : refined )
@@ -206,13 +202,12 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 
 						p3d.setPosition( refinedPeak );
 						transform.apply( p3d, point );
-						final V spot = vertexCreator.createVertex( pos, radius, tp, q );
-						quality.set( spot, q );
+						detectionCreator.createDetection( pos, radius, tp, q );
 					}
 				}
 				finally
 				{
-					vertexCreator.postAddition();
+					detectionCreator.postAddition();
 				}
 			}
 			else
@@ -221,7 +216,7 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 				final double[] pos = new double[ 3 ];
 				final RealPoint point = RealPoint.wrap( pos );
 
-				vertexCreator.preAddition();
+				detectionCreator.preAddition();
 				try
 				{
 					for ( final Point peak : peaks )
@@ -230,22 +225,18 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 						final double q = ra.get().getRealDouble();
 
 						transform.apply( peak, point );
-						final V spot = vertexCreator.createVertex( pos, radius, tp, q );
-						quality.set( spot, q );
+						detectionCreator.createDetection( pos, radius, tp, q );
 					}
 				}
 				finally
 				{
-					vertexCreator.postAddition();
+					detectionCreator.postAddition();
 				}
 			}
 		}
 
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
-		@SuppressWarnings( "unchecked" )
-		final Class< V > clazz = ( Class< V > ) graph.vertexRef().getClass();
-		qualityFeature = DetectionUtil.getQualityFeature( quality, clazz );
 		statusService.clearStatus();
 		ok = true;
 	}

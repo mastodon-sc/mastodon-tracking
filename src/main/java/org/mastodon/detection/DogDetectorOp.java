@@ -9,9 +9,6 @@ import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 
 import java.util.ArrayList;
 
-import org.mastodon.graph.Graph;
-import org.mastodon.graph.Vertex;
-import org.mastodon.properties.DoublePropertyMap;
 import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -24,7 +21,6 @@ import net.imglib2.Interval;
 import net.imglib2.Point;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.algorithm.Benchmark;
 import net.imglib2.algorithm.dog.DogDetection;
@@ -40,13 +36,14 @@ import net.imglib2.view.Views;
  *
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
- * @param <V>
- *            the type of the vertices in the graph.
+ * @param <O>
+ *            the type of the detection creator, that is in charge of creating
+ *            the detection objects from coordinates returned by this algorithm.
  */
 @Plugin( type = DetectorOp.class )
-public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
-		extends AbstractDetectorOp< V >
-		implements DetectorOp< V >, Benchmark
+public class DogDetectorOp< O extends DetectionCreator >
+		extends AbstractDetectorOp< O >
+		implements DetectorOp< O >, Benchmark
 {
 
 	@Parameter
@@ -63,7 +60,7 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 	private long processingTime;
 
 	@Override
-	public void mutate1( final Graph< V, ? > graph, final SpimDataMinimal spimData )
+	public void mutate1( final O detectionCreator, final SpimDataMinimal spimData )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
@@ -83,8 +80,6 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 		final double radius = ( double ) settings.get( KEY_RADIUS );
 		final double threshold = ( double ) settings.get( KEY_THRESHOLD );
 		final Interval roi = ( Interval ) settings.get( KEY_ROI );
-
-		final DoublePropertyMap< V > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
 
 		statusService.showStatus( "DoG detection." );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
@@ -184,7 +179,7 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 			final RealPoint sp = RealPoint.wrap( pos );
 			final RealPoint p3d = new RealPoint( 3 );
 
-			vertexCreator.preAddition();
+			detectionCreator.preAddition();
 			try
 			{
 				for ( final RefinedPeak< Point > p : refinedPeaks )
@@ -196,20 +191,16 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 					// nicely with the 3D transform.
 					p3d.setPosition( p );
 					transform.apply( p3d, sp );
-					final V spot = vertexCreator.createVertex( pos, radius, tp, normalizedValue );
-					quality.set( spot, normalizedValue );
+					detectionCreator.createDetection( pos, radius, tp, normalizedValue );
 				}
 			}
 			finally
 			{
-				vertexCreator.postAddition();
+				detectionCreator.postAddition();
 			}
 		}
 
 		final long end = System.currentTimeMillis();
-		@SuppressWarnings( "unchecked" )
-		final Class< V > ref = ( Class< V > ) graph.vertexRef().getClass();
-		qualityFeature = DetectionUtil.getQualityFeature( quality, ref );
 		processingTime = end - start;
 		statusService.clearStatus();
 		ok = true;
@@ -220,4 +211,5 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 	{
 		return processingTime;
 	}
+
 }
