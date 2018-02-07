@@ -33,32 +33,21 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 import javax.swing.JFormattedTextField;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.detection.DetectorKeys;
 import org.mastodon.linking.LinkingUtils;
-import org.mastodon.linking.ProgressListeners;
 import org.mastodon.linking.mamut.SimpleSparseLAPLinkerMamut;
 import org.mastodon.linking.mamut.SpotLinkerOp;
 import org.mastodon.revised.mamut.WindowManager;
-import org.mastodon.revised.mamut.feature.DefaultMamutFeatureComputerService;
-import org.mastodon.revised.model.feature.FeatureComputer;
-import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.util.SelectOnFocusListener;
-import org.scijava.Context;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.plugin.PluginInfo;
@@ -299,42 +288,5 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 			maxFrameGap.setValue( linkerSettings.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) );
 			maxGapClosingDistance.setValue( linkerSettings.get( KEY_GAP_CLOSING_MAX_DISTANCE ) );
 		}
-	}
-
-	public static void main( final String[] args ) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException
-	{
-		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
-		Locale.setDefault( Locale.ROOT );
-		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-
-		final Context context = new org.scijava.Context();
-
-		final Model model = new Model();
-		final Settings settings = new Settings();
-		@SuppressWarnings( "unchecked" )
-		final Map< String, Double > linkingPenalties = ( Map< String, Double > ) settings.values.getLinkerSettings().get( KEY_LINKING_FEATURE_PENALTIES );
-		linkingPenalties.put( "Spot N links", 36.9 );
-
-		final TrackMate trackmate = new TrackMate( settings, model );
-		context.inject( trackmate );
-
-		final DefaultMamutFeatureComputerService featureComputerService = new DefaultMamutFeatureComputerService();
-		context.inject( featureComputerService );
-		featureComputerService.initialize();
-
-		final Set< FeatureComputer< Model > > featureComputers = new HashSet<>( featureComputerService.getFeatureComputers() );
-		System.out.println( "Found the following computers: " + featureComputers );
-		featureComputerService.compute( model, model.getFeatureModel(), featureComputers, ProgressListeners.defaultLogger() );
-
-		final JFrame frame = new JFrame( "LAP config panel test" );
-		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-		frame.setSize( 300, 600 );
-		final SimpleLAPLinkerDescriptor descriptor = new SimpleLAPLinkerDescriptor();
-		context.inject( descriptor );
-		descriptor.setTrackMate( trackmate );
-		frame.getContentPane().add( descriptor.targetPanel );
-		descriptor.aboutToDisplayPanel();
-		frame.setVisible( true );
-		descriptor.displayingPanel();
 	}
 }
