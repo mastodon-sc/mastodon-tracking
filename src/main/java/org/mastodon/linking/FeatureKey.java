@@ -17,6 +17,11 @@ public class FeatureKey
 		this.projectionKey = projectionKey;
 	}
 
+	public FeatureKey( final String featureKey )
+	{
+		this( featureKey, featureKey );
+	}
+
 	@Override
 	public String toString()
 	{
