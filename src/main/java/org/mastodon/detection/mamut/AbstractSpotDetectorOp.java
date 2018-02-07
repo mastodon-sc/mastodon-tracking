@@ -4,7 +4,6 @@ import java.util.Map;
 
 import org.mastodon.detection.DetectorOp;
 import org.mastodon.detection.VertexCreator;
-import org.mastodon.graph.Graph;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.ModelGraph;
@@ -49,9 +48,10 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
+		final VertexCreator vertexCreator = createVertexCreator( graph );
 		this.detector = ( DetectorOp ) Inplaces.binary1( ops(), cl,
 				graph, spimData,
-				settings, vertexCreator() );
+				settings, vertexCreator );
 		detector.mutate1( graph, spimData );
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
@@ -61,6 +61,35 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 			errorMessage = detector.getErrorMessage();
 
 		this.detector = null;
+	}
+
+	protected VertexCreator< Spot > createVertexCreator( final ModelGraph graph )
+	{
+		return new VertexCreator< Spot >()
+		{
+
+			private Spot ref;
+
+			@Override
+			public void preAddition()
+			{
+				ref = graph.vertexRef();
+				graph.getLock().writeLock().lock();
+			}
+
+			@Override
+			public void postAddition()
+			{
+				graph.getLock().writeLock().unlock();
+				graph.releaseRef( ref );
+			}
+
+			@Override
+			public Spot createVertex( final double[] pos, final double radius, final int timepoint, final double quality )
+			{
+				return graph.addVertex( ref ).init( timepoint, pos, radius );
+			}
+		};
 	}
 
 	@Override
@@ -91,22 +120,6 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 	public boolean isSuccessful()
 	{
 		return ok;
-	}
-
-	private static final VertexCreator< Spot > VERTEX_CREATOR_INSTANCE = new VertexCreator< Spot >()
-	{
-
-		@Override
-		public Spot createVertex( final Graph< Spot, ? > graph, final Spot ref, final double[] pos, final double radius, final int timepoint, final double quality )
-		{
-			return graph.addVertex( ref ).init( timepoint, pos, radius );
-		}
-
-	};
-
-	protected VertexCreator< Spot > vertexCreator()
-	{
-		return VERTEX_CREATOR_INSTANCE;
 	}
 
 	// -- Cancelable methods --

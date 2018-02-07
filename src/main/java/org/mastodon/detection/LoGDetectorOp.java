@@ -192,38 +192,52 @@ public class LoGDetectorOp< V extends Vertex< ? > & RealLocalizable >
 				final List< RefinedPeak< Point > > refined = subpixel.calculate( output, peaks );
 
 				final RandomAccess< FloatType > ra = output.randomAccess();
-				final V ref = graph.vertexRef();
 				final double[] pos = new double[ 3 ];
 				final RealPoint point = RealPoint.wrap( pos );
 				final RealPoint p3d = new RealPoint( 3 );
-				for ( final RefinedPeak< Point > refinedPeak : refined )
-				{
-					ra.setPosition( refinedPeak.getOriginalPeak() );
-					final double q = ra.get().getRealDouble();
 
-					p3d.setPosition( refinedPeak );
-					transform.apply( p3d, point );
-					final V spot = vertexCreator.createVertex( graph, ref, pos, radius, tp, q );
-					quality.set( spot, q );
+				vertexCreator.preAddition();
+				try
+				{
+					for ( final RefinedPeak< Point > refinedPeak : refined )
+					{
+						ra.setPosition( refinedPeak.getOriginalPeak() );
+						final double q = ra.get().getRealDouble();
+
+						p3d.setPosition( refinedPeak );
+						transform.apply( p3d, point );
+						final V spot = vertexCreator.createVertex( pos, radius, tp, q );
+						quality.set( spot, q );
+					}
 				}
-				graph.releaseRef( ref );
+				finally
+				{
+					vertexCreator.postAddition();
+				}
 			}
 			else
 			{
 				final RandomAccess< FloatType > ra = output.randomAccess();
 				final double[] pos = new double[ 3 ];
 				final RealPoint point = RealPoint.wrap( pos );
-				final V ref = graph.vertexRef();
-				for ( final Point peak : peaks )
-				{
-					ra.setPosition( peak );
-					final double q = ra.get().getRealDouble();
 
-					transform.apply( peak, point );
-					final V spot = vertexCreator.createVertex( graph, ref, pos, radius, tp, q );
-					quality.set( spot, q );
+				vertexCreator.preAddition();
+				try
+				{
+					for ( final Point peak : peaks )
+					{
+						ra.setPosition( peak );
+						final double q = ra.get().getRealDouble();
+
+						transform.apply( peak, point );
+						final V spot = vertexCreator.createVertex( pos, radius, tp, q );
+						quality.set( spot, q );
+					}
 				}
-				graph.releaseRef( ref );
+				finally
+				{
+					vertexCreator.postAddition();
+				}
 			}
 		}
 

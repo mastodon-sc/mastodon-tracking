@@ -180,22 +180,30 @@ public class DogDetectorOp< V extends Vertex< ? > & RealLocalizable >
 			dog.setExecutorService( threadService.getExecutorService() );
 			final ArrayList< RefinedPeak< Point > > refinedPeaks = dog.getSubpixelPeaks();
 
-			final V ref = graph.vertexRef();
 			final double[] pos = new double[ 3 ];
 			final RealPoint sp = RealPoint.wrap( pos );
 			final RealPoint p3d = new RealPoint( 3 );
-			for ( final RefinedPeak< Point > p : refinedPeaks )
-			{
-				final double value = p.getValue();
-				final double normalizedValue = -value * normalization;
 
-				// In case p is 2D we pass it to a 3D RealPoint to work nicely with the 3D transform.
-				p3d.setPosition( p );
-				transform.apply( p3d, sp );
-				final V spot = vertexCreator.createVertex( graph, ref, pos, radius, tp, normalizedValue );
-				quality.set( spot, normalizedValue );
+			vertexCreator.preAddition();
+			try
+			{
+				for ( final RefinedPeak< Point > p : refinedPeaks )
+				{
+					final double value = p.getValue();
+					final double normalizedValue = -value * normalization;
+
+					// In case p is 2D we pass it to a 3D RealPoint to work
+					// nicely with the 3D transform.
+					p3d.setPosition( p );
+					transform.apply( p3d, sp );
+					final V spot = vertexCreator.createVertex( pos, radius, tp, normalizedValue );
+					quality.set( spot, normalizedValue );
+				}
 			}
-			graph.releaseRef( ref );
+			finally
+			{
+				vertexCreator.postAddition();
+			}
 		}
 
 		final long end = System.currentTimeMillis();
