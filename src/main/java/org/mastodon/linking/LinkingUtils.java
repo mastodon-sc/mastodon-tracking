@@ -315,11 +315,11 @@ public class LinkingUtils
 		final Set fpKeys = fpMap.keySet();
 		for ( final Object fpKey : fpKeys )
 		{
-			if ( !( fpKey instanceof String ) )
+			if ( !( fpKey instanceof FeatureKey ) )
 			{
 				ok = false;
 				errorHolder.append( "One key (" + fpKey.toString() + ") in the map is not of the right class.\n" +
-						"Expected String, got " + fpKey.getClass().getName() + ".\n" );
+						"Expected FeatureKey, got " + fpKey.getClass().getName() + ".\n" );
 			}
 			final Object fpVal = fpMap.get( fpKey );
 			if ( !( fpVal instanceof Double ) )

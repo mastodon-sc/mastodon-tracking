@@ -775,14 +775,14 @@ public class LAPLinkerConfigPanel extends JPanel
 
 		str.append( "  - linking conditions:\n" );
 		str.append( String.format( "      - max distance: %.1f %s\n", ( double ) sm.get( KEY_LINKING_MAX_DISTANCE ), units ) );
-		str.append( echoFeaturePenalties( ( Map< String, Double > ) sm.get( KEY_LINKING_FEATURE_PENALTIES ) ) );
+		str.append( echoFeaturePenalties( ( Map< FeatureKey, Double > ) sm.get( KEY_LINKING_FEATURE_PENALTIES ) ) );
 
 		if ( ( Boolean ) sm.get( KEY_ALLOW_GAP_CLOSING ) )
 		{
 			str.append( "  - gap-closing conditions:\n" );
 			str.append( String.format( "      - max distance: %.1f %s\n", ( double ) sm.get( KEY_GAP_CLOSING_MAX_DISTANCE ), units ) );
 			str.append( String.format( "      - max frame gap: %d\n", ( int ) sm.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) ) );
-			str.append( echoFeaturePenalties( ( Map< String, Double > ) sm.get( KEY_GAP_CLOSING_FEATURE_PENALTIES ) ) );
+			str.append( echoFeaturePenalties( ( Map< FeatureKey, Double > ) sm.get( KEY_GAP_CLOSING_FEATURE_PENALTIES ) ) );
 		}
 		else
 		{
@@ -793,7 +793,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		{
 			str.append( "  - track division conditions:\n" );
 			str.append( String.format( "      - max distance: %.1f %s\n", ( double ) sm.get( KEY_SPLITTING_MAX_DISTANCE ), units ) );
-			str.append( echoFeaturePenalties( ( Map< String, Double > ) sm.get( KEY_SPLITTING_FEATURE_PENALTIES ) ) );
+			str.append( echoFeaturePenalties( ( Map< FeatureKey, Double > ) sm.get( KEY_SPLITTING_FEATURE_PENALTIES ) ) );
 		}
 		else
 		{
@@ -804,7 +804,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		{
 			str.append( "  - track fusion conditions:\n" );
 			str.append( String.format( "      - max distance: %.1f  %s\n", ( double ) sm.get( KEY_MERGING_MAX_DISTANCE ), units ) );
-			str.append( echoFeaturePenalties( ( Map< String, Double > ) sm.get( KEY_MERGING_FEATURE_PENALTIES ) ) );
+			str.append( echoFeaturePenalties( ( Map< FeatureKey, Double > ) sm.get( KEY_MERGING_FEATURE_PENALTIES ) ) );
 		}
 		else
 		{
@@ -814,7 +814,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		return str.toString();
 	}
 
-	private static final String echoFeaturePenalties( final Map< String, Double > featurePenalties )
+	private static final String echoFeaturePenalties( final Map< FeatureKey, Double > featurePenalties )
 	{
 		String str = "";
 		if ( featurePenalties.isEmpty() )
@@ -822,7 +822,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		else
 		{
 			str += "      - with feature penalties:\n";
-			for ( final String feature : featurePenalties.keySet() )
+			for ( final FeatureKey feature : featurePenalties.keySet() )
 			{
 				str += "          - " + feature.toString() + ": weight = " + String.format( "%.1f", featurePenalties.get( feature ) ) + '\n';
 			}
