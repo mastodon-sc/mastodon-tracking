@@ -95,8 +95,8 @@ public class DetectionToTextExample
 		 * Load SpimData
 		 */
 //		final String bdvFile = "samples/datasethdf5.xml";
-		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-//		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+//		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 
 		SpimDataMinimal sd = null;
 		try
@@ -121,8 +121,7 @@ public class DetectionToTextExample
 		detectorSettings.put( KEY_MIN_TIMEPOINT, tps.get( 0 ).getId() );
 		detectorSettings.put( KEY_MAX_TIMEPOINT, tps.get( tps.size() - 1 ).getId() );
 
-		@SuppressWarnings( "unchecked" )
-		final DetectorOp< DetectionCreator > detector = ( DetectorOp< DetectionCreator > ) Inplaces.binary1( ops, DogDetectorOp.class,
+		final DetectorOp detector = ( DetectorOp ) Inplaces.binary1( ops, DogDetectorOp.class,
 				detectionCreator, spimData, detectorSettings );
 		detector.mutate1( detectionCreator, spimData );
 

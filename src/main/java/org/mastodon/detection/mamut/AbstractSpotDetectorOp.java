@@ -42,9 +42,8 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 
 	private long processingTime;
 
-	protected DetectorOp< DetectionCreator > detector;
+	protected DetectorOp detector;
 
-	@SuppressWarnings( { "unchecked", "rawtypes" } )
 	protected void exec( final SpimDataMinimal spimData, final ModelGraph graph, final Class< ? extends DetectorOp > cl )
 	{
 		ok = false;
@@ -79,7 +78,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 	 * care of acquiring the writing lock before adding all the detections of a
 	 * time-point and returning it after. Also resets and feeds the quality
 	 * value to a quality feature.
-	 * 
+	 *
 	 * @author Jean-Yves Tinevez
 	 *
 	 */

@@ -41,9 +41,9 @@ import net.imglib2.view.Views;
  *            the detection objects from coordinates returned by this algorithm.
  */
 @Plugin( type = DetectorOp.class )
-public class DogDetectorOp< O extends DetectionCreator >
-		extends AbstractDetectorOp< O >
-		implements DetectorOp< O >, Benchmark
+public class DogDetectorOp
+		extends AbstractDetectorOp
+		implements DetectorOp, Benchmark
 {
 
 	@Parameter
@@ -60,7 +60,7 @@ public class DogDetectorOp< O extends DetectionCreator >
 	private long processingTime;
 
 	@Override
-	public void mutate1( final O detectionCreator, final SpimDataMinimal spimData )
+	public void mutate1( final DetectionCreator detectionCreator, final SpimDataMinimal spimData )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();

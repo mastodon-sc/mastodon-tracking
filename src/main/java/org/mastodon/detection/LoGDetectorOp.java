@@ -41,9 +41,9 @@ import net.imglib2.view.Views;
  *            the detection objects from coordinates returned by this algorithm.
  */
 @Plugin( type = DetectorOp.class )
-public class LoGDetectorOp< O extends DetectionCreator >
-		extends AbstractDetectorOp< O >
-		implements DetectorOp< O >, Benchmark
+public class LoGDetectorOp
+		extends AbstractDetectorOp
+		implements DetectorOp, Benchmark
 {
 
 	@Parameter
@@ -57,7 +57,7 @@ public class LoGDetectorOp< O extends DetectionCreator >
 	private final boolean doSubpixelLocalization = true;
 
 	@Override
-	public void mutate1( final O detectionCreator, final SpimDataMinimal spimData )
+	public void mutate1( final DetectionCreator detectionCreator, final SpimDataMinimal spimData )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();

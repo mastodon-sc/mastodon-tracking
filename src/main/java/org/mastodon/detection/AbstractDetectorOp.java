@@ -8,9 +8,9 @@ import org.scijava.plugin.Parameter;
 import bdv.spimdata.SpimDataMinimal;
 import net.imagej.ops.special.inplace.AbstractBinaryInplace1Op;
 
-public abstract class AbstractDetectorOp< O extends DetectionCreator >
-		extends AbstractBinaryInplace1Op< O, SpimDataMinimal >
-		implements DetectorOp< O >
+public abstract class AbstractDetectorOp
+		extends AbstractBinaryInplace1Op< DetectionCreator, SpimDataMinimal >
+		implements DetectorOp
 {
 
 	@Parameter( type = ItemIO.INPUT )
