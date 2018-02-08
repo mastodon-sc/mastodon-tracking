@@ -2,7 +2,7 @@ package org.mastodon.detection.mamut;
 
 import java.util.Map;
 
-import org.mastodon.detection.DetectionCreator;
+import org.mastodon.detection.DetectionCreatorFactory;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorOp;
 import org.mastodon.properties.DoublePropertyMap;
@@ -52,7 +52,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 		final DoublePropertyMap< Spot > pm = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
 		qualityFeature = DetectionUtil.getQualityFeature( pm, Spot.class );
 
-		final DetectionCreator detectionCreator = detectionCreator( graph, pm );
+		final DetectionCreatorFactory detectionCreator = detectionCreator( graph, pm );
 
 		this.detector = ( DetectorOp ) Inplaces.binary1( ops(), cl,
 				detectionCreator, spimData, settings );
@@ -67,9 +67,9 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 		this.detector = null;
 	}
 
-	protected DetectionCreator detectionCreator( final ModelGraph graph, final DoublePropertyMap< Spot > pm )
+	protected DetectionCreatorFactory detectionCreator( final ModelGraph graph, final DoublePropertyMap< Spot > pm )
 	{
-		return new MyDetectionCreator( graph, pm );
+		return new MyDetectionCreatorFactory( graph, pm );
 	}
 
 	/**
@@ -82,40 +82,58 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 	 * @author Jean-Yves Tinevez
 	 *
 	 */
-	private static class MyDetectionCreator implements DetectionCreator
+	private static class MyDetectionCreatorFactory implements DetectionCreatorFactory
 	{
-
-		private final Spot ref;
 
 		private final DoublePropertyMap< Spot > pm;
 
 		private final ModelGraph graph;
 
-		public MyDetectionCreator( final ModelGraph graph, final DoublePropertyMap< Spot > pm )
+		public MyDetectionCreatorFactory( final ModelGraph graph, final DoublePropertyMap< Spot > pm )
 		{
 			this.graph = graph;
 			this.pm = pm;
-			this.ref = graph.vertexRef();
 		}
 
 		@Override
-		public void preAddition()
+		public DetectionCreator create( final int timepoint )
 		{
-			graph.getLock().writeLock().lock();
+			return new MyDetectionCreator( timepoint );
 		}
 
-		@Override
-		public void postAddition()
+		private class MyDetectionCreator implements DetectionCreator
 		{
-			graph.getLock().writeLock().unlock();
+
+			private final Spot ref;
+			private final int timepoint;
+
+			public MyDetectionCreator(final int timepoint)
+			{
+				this.timepoint = timepoint;
+				this.ref = graph.vertexRef();
+			}
+
+			@Override
+			public void preAddition()
+			{
+				graph.getLock().writeLock().lock();
+			}
+
+			@Override
+			public void postAddition()
+			{
+				graph.getLock().writeLock().unlock();
+			}
+
+			@Override
+			public void createDetection( final double[] pos, final double radius, final double quality )
+			{
+				final Spot spot = graph.addVertex( ref ).init( timepoint, pos, radius );
+				pm.set( spot, quality );
+			}
+
 		}
 
-		@Override
-		public void createDetection( final double[] pos, final double radius, final int timepoint, final double quality )
-		{
-			final Spot spot = graph.addVertex( ref ).init( timepoint, pos, radius );
-			pm.set( spot, quality );
-		}
 	}
 
 	@Override
@@ -163,7 +181,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 	@Override
 	public void cancel( final String reason )
 	{
-		if (reason!=null)
+		if ( reason != null )
 		{
 			cancelReason = reason;
 			detector.cancel( reason );

@@ -9,7 +9,7 @@ import bdv.spimdata.SpimDataMinimal;
 import net.imagej.ops.special.inplace.AbstractBinaryInplace1Op;
 
 public abstract class AbstractDetectorOp
-		extends AbstractBinaryInplace1Op< DetectionCreator, SpimDataMinimal >
+		extends AbstractBinaryInplace1Op< DetectionCreatorFactory, SpimDataMinimal >
 		implements DetectorOp
 {
 

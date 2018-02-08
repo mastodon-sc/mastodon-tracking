@@ -13,8 +13,9 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
-import org.mastodon.detection.DetectionCreator;
+import org.mastodon.detection.DetectionCreatorFactory;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorOp;
 import org.mastodon.detection.DogDetectorOp;
@@ -29,12 +30,10 @@ import net.imagej.ops.special.inplace.Inplaces;
 
 public class DetectionToTextExample
 {
-	private static class MyTextDetectionOutputter implements DetectionCreator
+	private static class MyTextDetectionOutputter implements DetectionCreatorFactory
 	{
 
-		private int tp;
-
-		private long id;
+		private AtomicLong id;
 
 		private PrintWriter out;
 
@@ -47,40 +46,56 @@ public class DetectionToTextExample
 			if ( !directory.exists() )
 				directory.mkdirs();
 
-			this.tp = 0;
-			this.id = 0;
+			this.id = new AtomicLong( 0l );
 		}
 
 		@Override
-		public void createDetection( final double[] pos, final double radius, final int timepoint, final double quality )
+		public DetectionCreator create( final int timepoint )
 		{
-			out.println( String.format( "id = %15d, t = %3d, pos = ( %8.1f, %8.1f, %8.1f), R = %5.1f, Q = %7.1f",
-					id++, timepoint, pos[ 0 ], pos[ 1 ], pos[ 2 ], radius, quality ) );
+			return new TimepointDetectionOutputter(timepoint);
 		}
 
-		@Override
-		public void preAddition()
+		private class TimepointDetectionOutputter implements DetectionCreator
 		{
-			final String fileName = String.format( "detections_%03d.txt", tp++ );
-			final File targetFile = new File( outputFolder, fileName );
-			System.out.println( "Adding to file " + targetFile );
-			FileWriter fw = null;
-			try
+
+			private final int timepoint;
+
+			public TimepointDetectionOutputter( final int timepoint )
 			{
-				fw = new FileWriter( targetFile, true );
+				this.timepoint = timepoint;
 			}
-			catch ( final IOException e )
-			{
-				e.printStackTrace();
-			}
-		    final BufferedWriter bw = new BufferedWriter(fw);
-			out = new PrintWriter( bw );
-		}
 
-		@Override
-		public void postAddition()
-		{
-			out.close();
+			@Override
+			public void createDetection( final double[] pos, final double radius, final double quality )
+			{
+				out.println( String.format( "id = %15d, t = %3d, pos = ( %8.1f, %8.1f, %8.1f), R = %5.1f, Q = %7.1f",
+						id.getAndIncrement(), timepoint, pos[ 0 ], pos[ 1 ], pos[ 2 ], radius, quality ) );
+			}
+
+			@Override
+			public void preAddition()
+			{
+				final String fileName = String.format( "detections_%03d.txt", timepoint );
+				final File targetFile = new File( outputFolder, fileName );
+				System.out.println( "Adding to file " + targetFile );
+				FileWriter fw = null;
+				try
+				{
+					fw = new FileWriter( targetFile, true );
+				}
+				catch ( final IOException e )
+				{
+					e.printStackTrace();
+				}
+				final BufferedWriter bw = new BufferedWriter( fw );
+				out = new PrintWriter( bw );
+			}
+
+			@Override
+			public void postAddition()
+			{
+				out.close();
+			}
 		}
 
 	}
@@ -112,7 +127,7 @@ public class DetectionToTextExample
 
 		final long start = System.currentTimeMillis();
 
-		final DetectionCreator detectionCreator = new MyTextDetectionOutputter( "samples/detections" );
+		final DetectionCreatorFactory detectionCreator = new MyTextDetectionOutputter( "samples/detections" );
 
 		final Map< String, Object > detectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
 		detectorSettings.put( KEY_RADIUS, Double.valueOf( 20. ) );

@@ -9,6 +9,7 @@ import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 
 import java.util.ArrayList;
 
+import org.mastodon.detection.DetectionCreatorFactory.DetectionCreator;
 import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -60,7 +61,7 @@ public class DogDetectorOp
 	private long processingTime;
 
 	@Override
-	public void mutate1( final DetectionCreator detectionCreator, final SpimDataMinimal spimData )
+	public void mutate1( final DetectionCreatorFactory detectionCreatorFactory, final SpimDataMinimal spimData )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
@@ -179,6 +180,7 @@ public class DogDetectorOp
 			final RealPoint sp = RealPoint.wrap( pos );
 			final RealPoint p3d = new RealPoint( 3 );
 
+			final DetectionCreator detectionCreator = detectionCreatorFactory.create( tp );
 			detectionCreator.preAddition();
 			try
 			{
@@ -191,7 +193,7 @@ public class DogDetectorOp
 					// nicely with the 3D transform.
 					p3d.setPosition( p );
 					transform.apply( p3d, sp );
-					detectionCreator.createDetection( pos, radius, tp, normalizedValue );
+					detectionCreator.createDetection( pos, radius, normalizedValue );
 				}
 			}
 			finally

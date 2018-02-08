@@ -10,6 +10,7 @@ import static org.mastodon.detection.DogDetectorOp.MIN_SPOT_PIXEL_SIZE;
 
 import java.util.List;
 
+import org.mastodon.detection.DetectionCreatorFactory.DetectionCreator;
 import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -57,7 +58,7 @@ public class LoGDetectorOp
 	private final boolean doSubpixelLocalization = true;
 
 	@Override
-	public void mutate1( final DetectionCreator detectionCreator, final SpimDataMinimal spimData )
+	public void mutate1( final DetectionCreatorFactory detectionCreatorFactory, final SpimDataMinimal spimData )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
@@ -174,6 +175,7 @@ public class LoGDetectorOp
 			 * Detect local maxima.
 			 */
 
+			final DetectionCreator detectionCreator = detectionCreatorFactory.create( tp );
 			final List< Point > peaks = DetectionUtil.findLocalMaxima( output, threshold, threadService.getExecutorService() );
 			if ( doSubpixelLocalization )
 			{
@@ -202,7 +204,7 @@ public class LoGDetectorOp
 
 						p3d.setPosition( refinedPeak );
 						transform.apply( p3d, point );
-						detectionCreator.createDetection( pos, radius, tp, q );
+						detectionCreator.createDetection( pos, radius, q );
 					}
 				}
 				finally
@@ -225,7 +227,7 @@ public class LoGDetectorOp
 						final double q = ra.get().getRealDouble();
 
 						transform.apply( peak, point );
-						detectionCreator.createDetection( pos, radius, tp, q );
+						detectionCreator.createDetection( pos, radius, q );
 					}
 				}
 				finally
