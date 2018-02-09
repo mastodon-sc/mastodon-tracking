@@ -1,17 +1,16 @@
 package org.mastodon.linking.mamut;
 
-import org.mastodon.HasErrorMessage;
+import org.mastodon.linking.ParticleLinker;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
-import org.scijava.Cancelable;
 
 import net.imagej.ops.special.inplace.BinaryInplace1OnlyOp;
 
-public interface SpotLinkerOp extends BinaryInplace1OnlyOp< ModelGraph, SpatioTemporalIndex< Spot > >, Cancelable, HasErrorMessage
+public interface SpotLinkerOp extends BinaryInplace1OnlyOp< ModelGraph, SpatioTemporalIndex< Spot > >, ParticleLinker
 {
 
 	/**

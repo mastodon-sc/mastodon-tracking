@@ -1,4 +1,4 @@
-package org.mastodon.linking.lap.costfunction;
+package org.mastodon.linking.sequential.lap.costfunction;
 
 import org.mastodon.linking.LinkingUtils;
 

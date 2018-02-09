@@ -1,7 +1,7 @@
-package org.mastodon.linking.lap.costmatrix;
+package org.mastodon.linking.sequential.lap.costmatrix;
 
 import org.mastodon.collection.RefList;
-import org.mastodon.linking.lap.linker.SparseCostMatrix;
+import org.mastodon.linking.sequential.lap.linker.SparseCostMatrix;
 
 import net.imagej.ops.special.function.NullaryFunctionOp;
 

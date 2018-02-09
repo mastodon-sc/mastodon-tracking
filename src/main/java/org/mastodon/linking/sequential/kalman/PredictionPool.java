@@ -1,4 +1,4 @@
-package org.mastodon.linking.kalman;
+package org.mastodon.linking.sequential.kalman;
 
 import org.mastodon.pool.ByteMappedElement;
 import org.mastodon.pool.ByteMappedElementArray;

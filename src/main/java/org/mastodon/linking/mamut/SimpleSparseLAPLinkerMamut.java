@@ -1,6 +1,6 @@
 package org.mastodon.linking.mamut;
 
-import org.mastodon.linking.lap.SparseLAPLinker;
+import org.mastodon.linking.graph.lap.SparseLAPLinker;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
@@ -9,7 +9,7 @@ import org.scijava.plugin.Plugin;
 
 @Plugin( type = SpotLinkerOp.class,
 		name = "Simple LAP linker",
-		priority  = Priority.HIGH_PRIORITY,
+		priority  = Priority.HIGH,
 		description = "<html>"
 				+ "This tracker is a simplified version of the LAP tracker, based on the "
 				+ "following paper: "

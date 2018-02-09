@@ -16,8 +16,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
-import org.mastodon.linking.LinkingUtils;
-import org.mastodon.linking.mamut.SparseLAPLinkerMamut;
+import org.mastodon.linking.mamut.KalmanLinkerMamut;
 import org.mastodon.revised.mamut.MainWindow;
 import org.mastodon.revised.mamut.MamutProject;
 import org.mastodon.revised.mamut.WindowManager;
@@ -72,13 +71,14 @@ public class Sandbox
 		detectorSettings.put( KEY_RADIUS, radius );
 		detectorSettings.put( KEY_THRESHOLD, threshold );
 
-		final Class< SparseLAPLinkerMamut > linkerClass = SparseLAPLinkerMamut.class;
-		final Map< String, Object > linkerSettings = LinkingUtils.getDefaultLAPSettingsMap();
+//		final Class< SparseLAPLinkerMamut > linkerClass = SparseLAPLinkerMamut.class;
+//		final Map< String, Object > linkerSettings = LinkingUtils.getDefaultLAPSettingsMap();
+
+		final Map< String, Object > linkerSettings = KalmanLinkerMamut.getDefaultSettingsMap();
+		final Class< KalmanLinkerMamut > linkerClass = KalmanLinkerMamut.class;
+
 		linkerSettings.put( KEY_MIN_TIMEPOINT, minTimepoint );
 		linkerSettings.put( KEY_MAX_TIMEPOINT, maxTimepoint );
-
-//		final Map< String, Object > linkerSettings = KalmanLinkerMamut.getDefaultSettingsMap();
-//		final Class< KalmanLinkerMamut > linkerClass = KalmanLinkerMamut.class;
 
 		final Settings settings = new Settings()
 				.spimData( spimData )
@@ -94,14 +94,20 @@ public class Sandbox
 		final TrackMate trackmate = new TrackMate( settings, model );
 		trackmate.setContext( context );
 
-		new Thread( trackmate ).start();
-		System.out.println( "Started TrackMate thread." );
-		Thread.sleep( 5000 );
-		System.out.println( "Cancelling after 5s." );
-		trackmate.cancel( "I was bored." );
+//		new Thread( trackmate ).start();
+//		System.out.println( "Started TrackMate thread." );
+//		Thread.sleep( 5000 );
+//		System.out.println( "Cancelling after 5s." );
+//		trackmate.cancel( "I was bored." );
 
+		trackmate.run();
 		if ( trackmate.isCanceled() )
 			System.out.println( "Calculation was canceled. Reason: " + trackmate.getCancelReason() );
+		else if (!trackmate.isSuccessful())
+			System.err.println( "Calculation failed with error message:\n" + trackmate.getErrorMessage() );
+		else
+			System.out.println( "Calculation complete." );
+
 
 		new MainWindow( wm).setVisible( true );
 	}

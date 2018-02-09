@@ -1,4 +1,4 @@
-package org.mastodon.linking.kalman;
+package org.mastodon.linking.sequential.kalman;
 
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 import org.mastodon.collection.ObjectRefMap;
+import org.mastodon.collection.RefCollection;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefDoubleMap;
 import org.mastodon.collection.RefList;
@@ -26,18 +27,14 @@ import org.mastodon.collection.RefMaps;
 import org.mastodon.collection.RefRefMap;
 import org.mastodon.collection.ref.RefArrayList;
 import org.mastodon.collection.ref.RefObjectHashMap;
-import org.mastodon.graph.Edge;
-import org.mastodon.graph.Graph;
-import org.mastodon.graph.Vertex;
-import org.mastodon.linking.AbstractParticleLinkerOp;
-import org.mastodon.linking.LinkingUtils;
-import org.mastodon.linking.ParticleLinkerOp;
-import org.mastodon.linking.lap.costfunction.CostFunction;
-import org.mastodon.linking.lap.costfunction.SquareDistCostFunction;
-import org.mastodon.linking.lap.costmatrix.JaqamanLinkingCostMatrixCreator;
-import org.mastodon.linking.lap.linker.JaqamanLinker;
-import org.mastodon.linking.lap.linker.SparseCostMatrix;
-import org.mastodon.properties.DoublePropertyMap;
+import org.mastodon.linking.EdgeCreator;
+import org.mastodon.linking.sequential.AbstractSequentialParticleLinkerOp;
+import org.mastodon.linking.sequential.SequentialParticleLinkerOp;
+import org.mastodon.linking.sequential.lap.costfunction.CostFunction;
+import org.mastodon.linking.sequential.lap.costfunction.SquareDistCostFunction;
+import org.mastodon.linking.sequential.lap.costmatrix.JaqamanLinkingCostMatrixCreator;
+import org.mastodon.linking.sequential.lap.linker.JaqamanLinker;
+import org.mastodon.linking.sequential.lap.linker.SparseCostMatrix;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.spatial.SpatioTemporalIndex;
 import org.scijava.plugin.Plugin;
@@ -54,9 +51,9 @@ import net.imglib2.algorithm.Benchmark;
  * @param <E>
  *            the type of edges in the graph.
  */
-@Plugin( type = ParticleLinkerOp.class )
-public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Edge< V > >
-		extends AbstractParticleLinkerOp< V, E >
+@Plugin( type = SequentialParticleLinkerOp.class )
+public class KalmanLinker< V extends RealLocalizable >
+		extends AbstractSequentialParticleLinkerOp< V >
 		implements Benchmark
 {
 
@@ -69,11 +66,10 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 	private long processingTime;
 
 	@Override
-	public void mutate1( final Graph< V, E > graph, final SpatioTemporalIndex< V > spots )
+	public void mutate1( final EdgeCreator< V > edgeCreator, final SpatioTemporalIndex< V > spots )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
-		final DoublePropertyMap< E > linkcost = new DoublePropertyMap<>( graph.edges(), Double.NaN );
 
 		// Check parameters
 		final StringBuilder errorHolder = new StringBuilder();
@@ -151,7 +147,7 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 		{
 			if ( !spots.getSpatialIndex( tp ).isEmpty() )
 			{
-				previousOrphanSpots = generateSpotList( tp, spots, graph );
+				previousOrphanSpots = generateSpotList( tp, spots, refcol );
 				firstFrame = tp;
 				break;
 			}
@@ -172,7 +168,7 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 		{
 			if ( !spots.getSpatialIndex( tp ).isEmpty() )
 			{
-				orphanSpots = generateSpotList( secondFrame, spots, graph );
+				orphanSpots = generateSpotList( secondFrame, spots, refcol );
 				secondFrame = tp;
 				break;
 			}
@@ -211,14 +207,14 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 
 		// The master map that contains the currently active KFs.
 		final ObjectRefMap< CVMKalmanFilter, V > kalmanFiltersMap =
-				RefMaps.createObjectRefMap( graph.vertices(), orphanSpots.size() );
+				RefMaps.createObjectRefMap( refcol, orphanSpots.size() );
 
 		/*
 		 * Then loop over time, starting from second frame.
 		 */
 
-		final V vref1 = graph.vertexRef();
-		final V vref2 = graph.vertexRef();
+		final V vref1 = refcol.createRef();
+		final V vref2 = refcol.createRef();
 
 		for ( int tp = secondFrame; tp <= maxTimepoint; tp++ )
 		{
@@ -257,7 +253,7 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 			 */
 
 			// Use the spot in the next frame has measurements.
-			final RefList< V > measurements = generateSpotList( tp, spots, graph );
+			final RefList< V > measurements = generateSpotList( tp, spots, refcol );
 			if ( !predictions.isEmpty() && !measurements.isEmpty() )
 			{
 				// Only link measurements to predictions if we have predictions.
@@ -271,7 +267,7 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 								ALTERNATIVE_COST_FACTOR,
 								PERCENTILE,
 								predictionPool.asRefCollection(),
-								graph.vertices(),
+								refcol,
 								predictionComparator,
 								spotComparator );
 				final JaqamanLinker< Prediction, V > linker = new JaqamanLinker<>( crm, predictions, measurements );
@@ -298,8 +294,7 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 						final V source = kalmanFiltersMap.get( kf, vref1 );
 						final V target = agnts.get( cm, vref2 );
 						final double cost = assignmentCosts.get( cm );
-						final E edge = edgeCreator.createEdge( source, target, cost );
-						linkcost.set( edge, cost );
+						edgeCreator.createEdge( source, target, cost );
 
 						// Update Kalman filter
 						kf.update( toMeasurement( target ) );
@@ -348,8 +343,8 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 								maxInitialCost,
 								ALTERNATIVE_COST_FACTOR,
 								PERCENTILE,
-								graph.vertices(),
-								graph.vertices(),
+								refcol,
+								refcol,
 								spotComparator,
 								spotComparator );
 				final JaqamanLinker< V, V > newLinker = new JaqamanLinker<>( ic, previousOrphanSpots, orphanSpots );
@@ -382,8 +377,7 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 
 						// Add edge to the graph.
 						final double cost = assignmentCosts.get( source );
-						final E edge = edgeCreator.createEdge( source, target, cost );
-						linkcost.set( edge, cost );
+						edgeCreator.createEdge( source, target, cost );
 					}
 				}
 				catch ( final Exception e )
@@ -412,12 +406,6 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
-
-		graph.releaseRef( vref1 );
-		graph.releaseRef( vref2 );
-		@SuppressWarnings( "unchecked" )
-		final Class< E > clazz = ( Class< E > ) graph.edgeRef().getClass();
-		linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost, clazz );
 		statusService.clearStatus();
 		ok = true;
 	}
@@ -457,16 +445,17 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 	 *
 	 * @param timepoint
 	 *            the timepoint to grab.
+	 * @param refcol
 	 * @return a new list.
 	 */
-	private static final < V extends Vertex< ? > > RefList< V > generateSpotList( final int timepoint, final SpatioTemporalIndex< V > spots, final Graph< V, ? > graph )
+	private static final < V  > RefList< V > generateSpotList( final int timepoint, final SpatioTemporalIndex< V > spots, final RefCollection< V > refcol )
 	{
 		final RefList< V > list;
 		spots.readLock().lock();
 		try
 		{
 			final SpatialIndex< V > si = spots.getSpatialIndex( timepoint );
-			list = RefCollections.createRefList( graph.vertices(), si.size() );
+			list = RefCollections.createRefList( refcol, si.size() );
 			for ( final V v : si )
 				list.add( v );
 		}

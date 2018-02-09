@@ -1,8 +1,7 @@
-package org.mastodon.linking.lap.costfunction;
+package org.mastodon.linking.sequential.lap.costfunction;
 
 import java.util.Map;
 
-import org.mastodon.graph.Vertex;
 import org.mastodon.linking.FeatureKey;
 import org.mastodon.linking.LinkingUtils;
 import org.mastodon.revised.model.feature.FeatureModel;
@@ -42,7 +41,7 @@ import net.imglib2.RealLocalizable;
  * @param <V>
  *            the type of the vertices to compute cost for.
  */
-public class FeaturePenaltiesCostFunction< V extends Vertex< ? > & RealLocalizable > implements CostFunction< V, V >
+public class FeaturePenaltiesCostFunction< V extends RealLocalizable > implements CostFunction< V, V >
 {
 	private final Map< FeatureProjection< V >, Double > projections;
 

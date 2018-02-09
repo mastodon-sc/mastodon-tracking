@@ -1,4 +1,4 @@
-package org.mastodon.linking.lap.linker;
+package org.mastodon.linking.sequential.lap.linker;
 
 import java.util.Arrays;
 
@@ -10,7 +10,7 @@ import org.mastodon.collection.RefList;
 import org.mastodon.collection.RefMaps;
 import org.mastodon.collection.RefRefMap;
 import org.mastodon.collection.RefSet;
-import org.mastodon.linking.lap.costmatrix.CostMatrixCreatorOp;
+import org.mastodon.linking.sequential.lap.costmatrix.CostMatrixCreatorOp;
 
 import net.imglib2.algorithm.BenchmarkAlgorithm;
 import net.imglib2.algorithm.OutputAlgorithm;

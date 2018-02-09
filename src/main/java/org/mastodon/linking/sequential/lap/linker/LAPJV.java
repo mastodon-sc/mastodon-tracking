@@ -1,4 +1,4 @@
-package org.mastodon.linking.lap.linker;
+package org.mastodon.linking.sequential.lap.linker;
 
 import java.util.Arrays;
 import java.util.Collections;

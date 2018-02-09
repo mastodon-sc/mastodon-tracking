@@ -1,4 +1,4 @@
-package org.mastodon.linking.lap.costmatrix;
+package org.mastodon.linking.sequential.lap.costmatrix;
 
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_GAP_CLOSING;
 import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_MERGING;
@@ -29,8 +29,8 @@ import org.mastodon.graph.ReadOnlyGraph;
 import org.mastodon.graph.Vertex;
 import org.mastodon.linking.FeatureKey;
 import org.mastodon.linking.LinkingUtils;
-import org.mastodon.linking.lap.costfunction.CostFunction;
-import org.mastodon.linking.lap.linker.SparseCostMatrix;
+import org.mastodon.linking.sequential.lap.costfunction.CostFunction;
+import org.mastodon.linking.sequential.lap.linker.SparseCostMatrix;
 import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.spatial.HasTimepoint;
 import org.scijava.ItemIO;

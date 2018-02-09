@@ -4,7 +4,10 @@ import java.util.Comparator;
 import java.util.Map;
 
 import org.mastodon.linking.EdgeCreator;
-import org.mastodon.linking.ParticleLinkerOp;
+import org.mastodon.linking.LinkingUtils;
+import org.mastodon.linking.ParticleLinker;
+import org.mastodon.linking.graph.GraphParticleLinkerOp;
+import org.mastodon.linking.sequential.SequentialParticleLinkerOp;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.feature.FeatureModel;
@@ -12,6 +15,7 @@ import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
+import org.scijava.Cancelable;
 import org.scijava.ItemIO;
 import org.scijava.plugin.Parameter;
 
@@ -36,30 +40,61 @@ public abstract class AbstractSpotLinkerOp
 
 	protected String errorMessage;
 
-	protected ParticleLinkerOp< Spot, Link > linker;
+	protected Cancelable cancelable;
 
-	@SuppressWarnings( { "unchecked", "rawtypes" } )
-	protected void exec( final ModelGraph graph, final SpatioTemporalIndex< Spot > spots, final Class< ? extends ParticleLinkerOp > cl )
+	protected void exec( final ModelGraph graph, final SpatioTemporalIndex< Spot > spots, final Class< ? extends ParticleLinker > cl )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
-		this.linker = ( ParticleLinkerOp ) Inplaces.binary1( ops(), cl,
-				graph, spots,
-				settings, featureModel,
-				spotComparator(), edgeCreator( graph ) );
-		linker.mutate1( graph, spots );
-		final long end = System.currentTimeMillis();
 
+		final DoublePropertyMap< Link > pm = new DoublePropertyMap<>( graph.edges(), Double.NaN );
+		linkCostFeature = LinkingUtils.getLinkCostFeature( pm, Link.class );
+		final EdgeCreator< Spot > edgeCreator = edgeCreator( graph, pm );
+
+		if ( GraphParticleLinkerOp.class.isAssignableFrom( cl ) )
+		{
+			@SuppressWarnings( "rawtypes" )
+			final Class< ? extends GraphParticleLinkerOp > gploCl = cl.asSubclass( GraphParticleLinkerOp.class );
+			@SuppressWarnings( { "rawtypes", "unchecked" } )
+			final GraphParticleLinkerOp< Spot, Link > linker = ( GraphParticleLinkerOp ) Inplaces.binary1( ops(), gploCl,
+					graph, spots,
+					settings, featureModel,
+					spotComparator(), edgeCreator );
+			this.cancelable = linker;
+			linker.mutate1( graph, spots );
+
+			ok = linker.isSuccessful();
+			errorMessage = linker.getErrorMessage();
+		}
+		else if ( SequentialParticleLinkerOp.class.isAssignableFrom( cl ) )
+		{
+			@SuppressWarnings( "rawtypes" )
+			final Class< ? extends SequentialParticleLinkerOp > sploCl = cl.asSubclass( SequentialParticleLinkerOp.class );
+			@SuppressWarnings( { "rawtypes", "unchecked" } )
+			final SequentialParticleLinkerOp< Spot > linker = ( SequentialParticleLinkerOp ) Inplaces.binary1( ops(), sploCl,
+					edgeCreator, spots,
+					settings, featureModel,
+					spotComparator(), graph.vertices() );
+			this.cancelable = linker;
+			linker.mutate1( edgeCreator, spots );
+
+			ok = linker.isSuccessful();
+			errorMessage = linker.getErrorMessage();
+		}
+		else
+		{
+			errorMessage = "[AbstractSpotLinkerOp] Could not find a suitable parent class for linker " + cl;
+			return;
+		}
+
+		final long end = System.currentTimeMillis();
 		processingTime = end - start;
-		linkCostFeature = linker.getLinkCostFeature();
-		ok = linker.isSuccessful();
-		errorMessage = linker.getErrorMessage();
-		linker = null;
+		cancelable = null;
 	}
 
-	protected EdgeCreator< Spot, Link > edgeCreator(final ModelGraph graph)
+	protected EdgeCreator< Spot > edgeCreator( final ModelGraph graph, final DoublePropertyMap< Link > pm )
 	{
-		return new MyEdgeCreator( graph );
+		return new MyEdgeCreator( graph, pm );
 	}
 
 	protected Comparator< Spot > spotComparator()
@@ -112,10 +147,10 @@ public abstract class AbstractSpotLinkerOp
 	@Override
 	public void cancel( final String reason )
 	{
-		if ( reason != null && linker != null )
+		if ( reason != null && cancelable != null )
 		{
 			cancelReason = reason;
-			linker.cancel( reason );
+			cancelable.cancel( reason );
 		}
 		else
 		{
@@ -139,23 +174,27 @@ public abstract class AbstractSpotLinkerOp
 		}
 	};
 
-	private static class MyEdgeCreator implements EdgeCreator< Spot, Link >
+	private static class MyEdgeCreator implements EdgeCreator< Spot >
 	{
 
 		private final ModelGraph graph;
 
 		private final Link ref;
 
-		public MyEdgeCreator(final ModelGraph graph)
+		private final DoublePropertyMap< Link > pm;
+
+		public MyEdgeCreator( final ModelGraph graph, final DoublePropertyMap< Link > pm )
 		{
 			this.graph = graph;
+			this.pm = pm;
 			this.ref = graph.edgeRef();
 		}
 
 		@Override
-		public Link createEdge( final Spot source, final Spot target, final double edgeCost )
+		public void createEdge( final Spot source, final Spot target, final double edgeCost )
 		{
-			return graph.addEdge( source, target, ref ).init();
+			final Link link = graph.addEdge( source, target, ref ).init();
+			pm.set( link, edgeCost );
 		}
 
 		@Override

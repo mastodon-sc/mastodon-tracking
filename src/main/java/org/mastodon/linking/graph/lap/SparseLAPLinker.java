@@ -1,4 +1,4 @@
-package org.mastodon.linking.lap;
+package org.mastodon.linking.graph.lap;
 
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
@@ -27,12 +27,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.mastodon.graph.Edge;
-import org.mastodon.graph.Graph;
+import org.mastodon.graph.ReadOnlyGraph;
 import org.mastodon.graph.Vertex;
-import org.mastodon.linking.AbstractParticleLinkerOp;
-import org.mastodon.linking.LinkingUtils;
-import org.mastodon.linking.ParticleLinkerOp;
-import org.mastodon.properties.DoublePropertyMap;
+import org.mastodon.linking.graph.AbstractGraphParticleLinkerOp;
+import org.mastodon.linking.graph.GraphParticleLinkerOp;
+import org.mastodon.linking.sequential.lap.SparseLAPFrameToFrameLinker;
 import org.mastodon.spatial.HasTimepoint;
 import org.mastodon.spatial.SpatioTemporalIndex;
 import org.scijava.Cancelable;
@@ -44,9 +43,9 @@ import net.imagej.ops.special.inplace.Inplaces;
 import net.imglib2.RealLocalizable;
 import net.imglib2.algorithm.Benchmark;
 
-@Plugin( type = ParticleLinkerOp.class )
+@Plugin( type = GraphParticleLinkerOp.class )
 public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > >
-		extends AbstractParticleLinkerOp< V, E >
+		extends AbstractGraphParticleLinkerOp< V, E >
 		implements Benchmark
 {
 	private final static String BASE_ERROR_MESSAGE = "[SparseLAPTracker] ";
@@ -54,17 +53,16 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 	@Parameter( type = ItemIO.OUTPUT )
 	private long processingTime;
 
-	private AbstractParticleLinkerOp< V, E > currentOp;
+	private Cancelable currentCancelable;
 
 	/*
 	 * METHODS
 	 */
 
 	@Override
-	public void mutate1( final Graph< V, E > graph, final SpatioTemporalIndex< V > spots )
+	public void mutate1( final ReadOnlyGraph< V, E > graph, final SpatioTemporalIndex< V > spots )
 	{
 		ok = false;
-		final DoublePropertyMap< E > linkcost = new DoublePropertyMap<>( graph.edges(), Double.NaN );
 
 		// Check parameters
 		final StringBuilder errorHolder = new StringBuilder();
@@ -127,22 +125,18 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 		ftfSettings.put( KEY_LINKING_FEATURE_PENALTIES, settings.get( KEY_LINKING_FEATURE_PENALTIES ) );
 
 		@SuppressWarnings( "unchecked" )
-		final SparseLAPFrameToFrameLinker< V, E > frameToFrameLinker = ( SparseLAPFrameToFrameLinker< V, E > ) Inplaces.binary1( ops(),
+		final SparseLAPFrameToFrameLinker< V > frameToFrameLinker = ( SparseLAPFrameToFrameLinker< V > ) Inplaces.binary1( ops(),
 				SparseLAPFrameToFrameLinker.class,
-				graph, spots,
-				ftfSettings, featureModel, spotComparator, edgeCreator );
-		this.currentOp = frameToFrameLinker;
+				edgeCreator, spots,
+				ftfSettings, featureModel, spotComparator, graph.vertices() );
+		this.currentCancelable = frameToFrameLinker;
 
-		frameToFrameLinker.mutate1( graph, spots );
+		frameToFrameLinker.mutate1( edgeCreator, spots );
 		if ( !frameToFrameLinker.isSuccessful() )
 		{
 			errorMessage = frameToFrameLinker.getErrorMessage();
 			return;
 		}
-		// Copy link costs.
-		final DoublePropertyMap< E > ftfCosts = frameToFrameLinker.getLinkCostFeature().getPropertyMap();
-		for ( final E e : ftfCosts.getMap().keySet() )
-			linkcost.set( e, ftfCosts.get( e ) );
 
 		/*
 		 * 2. Gap-closing, merging and splitting.
@@ -175,7 +169,7 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 			final SparseLAPSegmentLinker< V, E > segmentLinker = ( SparseLAPSegmentLinker ) Inplaces.binary1( ops(), SparseLAPSegmentLinker.class,
 					graph, spots,
 					slSettings, featureModel, spotComparator, edgeCreator );
-			this.currentOp = segmentLinker;
+			this.currentCancelable = segmentLinker;
 			segmentLinker.mutate1( graph, spots );
 			if ( !segmentLinker.isSuccessful() )
 			{
@@ -183,18 +177,11 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 				return;
 			}
 
-			// Copy link costs.
-			final DoublePropertyMap< E > slCosts = segmentLinker.getLinkCostFeature().getPropertyMap();
-			for ( final E e : slCosts.getMap().keySet() )
-				linkcost.set( e, slCosts.get( e ) );
 		}
 
-		currentOp = null;
+		currentCancelable = null;
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
-		@SuppressWarnings( "unchecked" )
-		final Class< E > linkClass = ( Class< E > ) graph.edgeRef().getClass();
-		this.linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost, linkClass );
 		statusService.clearStatus();
 		ok = true;
 	}
@@ -290,9 +277,9 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 	public void cancel( final String reason )
 	{
 		super.cancel( reason );
-		if ( null != currentOp && ( currentOp instanceof Cancelable ) )
+		if ( null != currentCancelable && ( currentCancelable instanceof Cancelable ) )
 		{
-			final Cancelable cancelable = currentOp;
+			final Cancelable cancelable = currentCancelable;
 			cancelable.cancel( reason );
 		}
 	}

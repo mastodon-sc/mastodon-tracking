@@ -1,6 +1,6 @@
 package org.mastodon.linking.mamut;
 
-import org.mastodon.linking.lap.SparseLAPLinker;
+import org.mastodon.linking.graph.lap.SparseLAPLinker;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;

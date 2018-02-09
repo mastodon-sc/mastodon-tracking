@@ -1,4 +1,4 @@
-package org.mastodon.linking.kalman;
+package org.mastodon.linking.sequential.kalman;
 
 import Jama.Matrix;
 

@@ -1,4 +1,4 @@
-package org.mastodon.linking.lap;
+package org.mastodon.linking.sequential.lap;
 
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
@@ -21,17 +21,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.mastodon.collection.RefDoubleMap;
 import org.mastodon.collection.RefRefMap;
-import org.mastodon.graph.Edge;
-import org.mastodon.graph.Graph;
-import org.mastodon.graph.Vertex;
-import org.mastodon.linking.AbstractParticleLinkerOp;
+import org.mastodon.linking.EdgeCreator;
 import org.mastodon.linking.FeatureKey;
 import org.mastodon.linking.LinkingUtils;
-import org.mastodon.linking.lap.costfunction.CostFunction;
-import org.mastodon.linking.lap.costmatrix.JaqamanLinkingCostMatrixCreator;
-import org.mastodon.linking.lap.linker.JaqamanLinker;
-import org.mastodon.linking.lap.linker.SparseCostMatrix;
-import org.mastodon.properties.DoublePropertyMap;
+import org.mastodon.linking.sequential.AbstractSequentialParticleLinkerOp;
+import org.mastodon.linking.sequential.lap.costfunction.CostFunction;
+import org.mastodon.linking.sequential.lap.costmatrix.JaqamanLinkingCostMatrixCreator;
+import org.mastodon.linking.sequential.lap.linker.JaqamanLinker;
+import org.mastodon.linking.sequential.lap.linker.SparseCostMatrix;
 import org.mastodon.spatial.HasTimepoint;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.spatial.SpatioTemporalIndex;
@@ -44,8 +41,8 @@ import net.imglib2.RealLocalizable;
 import net.imglib2.algorithm.Benchmark;
 
 @Plugin( type = SparseLAPFrameToFrameLinker.class )
-public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint & RealLocalizable, E extends Edge< V > >
-		extends AbstractParticleLinkerOp< V, E >
+public class SparseLAPFrameToFrameLinker< V extends HasTimepoint & RealLocalizable  >
+		extends AbstractSequentialParticleLinkerOp< V >
 		implements Benchmark
 {
 	private final static String BASE_ERROR_MESSAGE = "[SparseLAPFrameToFrameLinker] ";
@@ -60,10 +57,9 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 	 */
 
 	@Override
-	public void mutate1( final Graph< V, E > graph, final SpatioTemporalIndex< V > spots )
+	public void mutate1( final EdgeCreator< V > edgeCreator, final SpatioTemporalIndex< V > spots )
 	{
 		ok = false;
-		final DoublePropertyMap< E > linkcost = new DoublePropertyMap<>( graph.edges(), Double.NaN );
 
 		/*
 		 * Check input now.
@@ -133,7 +129,7 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 		@SuppressWarnings( "unchecked" )
 		final Map< FeatureKey, Double > featurePenalties = ( Map< FeatureKey, Double > ) settings.get( KEY_LINKING_FEATURE_PENALTIES );
 		@SuppressWarnings( "unchecked" )
-		final Class< V > vertexClass = ( Class< V > ) graph.vertexRef().getClass();
+		final Class< V > vertexClass = ( Class< V > ) refcol.createRef().getClass();
 		final CostFunction< V, V > costFunction = LinkingUtils.getCostFunctionFor( featurePenalties, featureModel, vertexClass );
 
 		final Double maxDist = ( Double ) settings.get( KEY_LINKING_MAX_DISTANCE );
@@ -178,9 +174,9 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 						@SuppressWarnings( "unchecked" )
 						final JaqamanLinkingCostMatrixCreator< V, V > creator = ( JaqamanLinkingCostMatrixCreator< V, V > ) Functions.nullary( ops(), JaqamanLinkingCostMatrixCreator.class, SparseCostMatrix.class,
 								sources, targets, costFunction, costThreshold, alternativeCostFactor, 1d,
-								graph.vertices(), graph.vertices(),
+								refcol, refcol,
 								spotComparator, spotComparator );
-						linker = new JaqamanLinker< V, V >( creator, graph.vertices(), graph.vertices() );
+						linker = new JaqamanLinker< V, V >( creator, refcol, refcol );
 						if ( !linker.checkInput() || !linker.process() )
 						{
 							errorMessage = "Linking frame " + frame0 + " to " + frame1 + ": " + linker.getErrorMessage();
@@ -206,17 +202,14 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 					{
 						final RefRefMap< V, V > assignment = linker.getResult();
 						final RefDoubleMap< V > assignmentCosts = linker.getAssignmentCosts();
-						final V vref = graph.vertexRef();
-						final E eref = graph.edgeRef();
+						final V vref = refcol.createRef();
 						for ( final V source : assignment.keySet() )
 						{
 							final V target = assignment.get( source, vref );
 							final double cost = assignmentCosts.get( source );
-							final E edge = edgeCreator.createEdge( source, target, cost );
-							linkcost.set( edge, cost );
+							edgeCreator.createEdge( source, target, cost );
 						}
-						graph.releaseRef( vref );
-						graph.releaseRef( eref );
+						refcol.releaseRef( vref );
 					}
 					catch ( final Exception e )
 					{
@@ -250,9 +243,6 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 		}
 		statusService.clearStatus();
 
-		@SuppressWarnings( "unchecked" )
-		final Class< E > linkClass = ( Class< E > ) graph.edgeRef().getClass();
-		this.linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost, linkClass );
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
 

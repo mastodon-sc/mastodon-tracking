@@ -57,10 +57,10 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
-import org.mastodon.graph.Vertex;
-import org.mastodon.linking.lap.costfunction.CostFunction;
-import org.mastodon.linking.lap.costfunction.FeaturePenaltiesCostFunction;
-import org.mastodon.linking.lap.costfunction.SquareDistCostFunction;
+import org.mastodon.linking.sequential.SequentialParticleLinkerOp;
+import org.mastodon.linking.sequential.lap.costfunction.CostFunction;
+import org.mastodon.linking.sequential.lap.costfunction.FeaturePenaltiesCostFunction;
+import org.mastodon.linking.sequential.lap.costfunction.SquareDistCostFunction;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.feature.FeatureModel;
@@ -76,7 +76,7 @@ public class LinkingUtils
 
 	/**
 	 * The key of the edge linking cost feature and projection returned by
-	 * {@link ParticleLinkerOp#getLinkCostFeature()}.
+	 * {@link SequentialParticleLinkerOp#getLinkCostFeature()}.
 	 */
 	public static final String LINK_COST_FEATURE_NAME = "Link cost";
 
@@ -84,13 +84,13 @@ public class LinkingUtils
 	 * STATIC METHODS - UTILS
 	 */
 
-	public static final < V extends Vertex< ? > & RealLocalizable > CostFunction< V, V > getCostFunctionFor( final Map< FeatureKey, Double > featurePenalties, final FeatureModel featureModel, final Class< V > clazz )
+	public static final < V extends RealLocalizable > CostFunction< V, V > getCostFunctionFor( final Map< FeatureKey, Double > featurePenalties, final FeatureModel featureModel, final Class< V > vertexClass )
 	{
 		final CostFunction< V, V > costFunction;
 		if ( null == featurePenalties || featurePenalties.isEmpty() )
 			costFunction = new SquareDistCostFunction< V >();
 		else
-			costFunction = new FeaturePenaltiesCostFunction<>( featurePenalties, featureModel, clazz );
+			costFunction = new FeaturePenaltiesCostFunction<>( featurePenalties, featureModel, vertexClass );
 		return costFunction;
 	}
 
@@ -609,7 +609,7 @@ public class LinkingUtils
 	 *            the projection to draw values from.
 	 * @return the normalized difference.
 	 */
-	public static < V extends Vertex< ? > > double normalizeDiffCost( final V source, final V target, final FeatureProjection< V > projection )
+	public static < V > double normalizeDiffCost( final V source, final V target, final FeatureProjection< V > projection )
 	{
 		if ( !projection.isSet( source ) || !projection.isSet( target ) )
 			return Double.NaN;
