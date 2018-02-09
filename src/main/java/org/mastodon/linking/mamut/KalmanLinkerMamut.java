@@ -97,7 +97,7 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 		this.linker = ( ParticleLinkerOp ) Inplaces.binary1( ops(), KalmanLinker.class,
 				graph, spots,
 				kalmanSettings, featureModel,
-				spotComparator(), edgeCreator() );
+				spotComparator(), edgeCreator( graph ) );
 		linker.mutate1( graph, spots );
 		final long end = System.currentTimeMillis();
 

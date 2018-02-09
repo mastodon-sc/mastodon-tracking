@@ -4,7 +4,20 @@ import org.mastodon.graph.Edge;
 import org.mastodon.graph.Graph;
 import org.mastodon.graph.Vertex;
 
-public interface EdgeCreator< V extends Vertex< E >, E extends Edge< V > >
+public interface EdgeCreator< V, E >
 {
-	public E createEdge( Graph< V, E >graph, E ref, V source, V target, double edgeCost );
+
+	/**
+	 * Method called before a batch of edges is added to the output via the
+	 * {@link #createEdge(Graph, Edge, Vertex, Vertex, double) } method.
+	 */
+	public void preAddition();
+
+	/**
+	 * Method called after a batch of edges is added to the output via the
+	 * {@link #createEdge(Graph, Edge, Vertex, Vertex, double) } method.
+	 */
+	public void postAddition();
+
+	public E createEdge( V source, V target, double edgeCost );
 }

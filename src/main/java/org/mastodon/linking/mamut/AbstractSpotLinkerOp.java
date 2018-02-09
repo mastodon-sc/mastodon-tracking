@@ -3,7 +3,6 @@ package org.mastodon.linking.mamut;
 import java.util.Comparator;
 import java.util.Map;
 
-import org.mastodon.graph.Graph;
 import org.mastodon.linking.EdgeCreator;
 import org.mastodon.linking.ParticleLinkerOp;
 import org.mastodon.properties.DoublePropertyMap;
@@ -47,7 +46,7 @@ public abstract class AbstractSpotLinkerOp
 		this.linker = ( ParticleLinkerOp ) Inplaces.binary1( ops(), cl,
 				graph, spots,
 				settings, featureModel,
-				spotComparator(), edgeCreator() );
+				spotComparator(), edgeCreator( graph ) );
 		linker.mutate1( graph, spots );
 		final long end = System.currentTimeMillis();
 
@@ -58,9 +57,9 @@ public abstract class AbstractSpotLinkerOp
 		linker = null;
 	}
 
-	protected EdgeCreator< Spot, Link > edgeCreator()
+	protected EdgeCreator< Spot, Link > edgeCreator(final ModelGraph graph)
 	{
-		return EDGE_CREATOR;
+		return new MyEdgeCreator( graph );
 	}
 
 	protected Comparator< Spot > spotComparator()
@@ -140,13 +139,35 @@ public abstract class AbstractSpotLinkerOp
 		}
 	};
 
-	private static final EdgeCreator< Spot, Link > EDGE_CREATOR = new EdgeCreator< Spot, Link >()
+	private static class MyEdgeCreator implements EdgeCreator< Spot, Link >
 	{
 
+		private final ModelGraph graph;
+
+		private final Link ref;
+
+		public MyEdgeCreator(final ModelGraph graph)
+		{
+			this.graph = graph;
+			this.ref = graph.edgeRef();
+		}
+
 		@Override
-		public Link createEdge( final Graph< Spot, Link > graph, final Link ref, final Spot source, final Spot target, final double edgeCost )
+		public Link createEdge( final Spot source, final Spot target, final double edgeCost )
 		{
 			return graph.addEdge( source, target, ref ).init();
+		}
+
+		@Override
+		public void preAddition()
+		{
+			graph.getLock().writeLock().lock();
+		}
+
+		@Override
+		public void postAddition()
+		{
+			graph.getLock().writeLock().unlock();
 		}
 	};
 }

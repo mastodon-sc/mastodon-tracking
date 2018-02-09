@@ -188,17 +188,21 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 							return null;
 						}
 					}
+					catch (final Exception e)
+					{
+						e.printStackTrace();
+					}
 					finally
 					{
 						spots.readLock().unlock();
 					}
 
 					/*
-					 * Update graph. We have to do it in a single thread at a
-					 * time.
+					 * Update graph.
 					 */
 
-					synchronized ( graph )
+					edgeCreator.preAddition();
+					try
 					{
 						final RefRefMap< V, V > assignment = linker.getResult();
 						final RefDoubleMap< V > assignmentCosts = linker.getAssignmentCosts();
@@ -208,13 +212,20 @@ public class SparseLAPFrameToFrameLinker< V extends Vertex< E > & HasTimepoint &
 						{
 							final V target = assignment.get( source, vref );
 							final double cost = assignmentCosts.get( source );
-							final E edge = edgeCreator.createEdge( graph, eref, source, target, cost );
+							final E edge = edgeCreator.createEdge( source, target, cost );
 							linkcost.set( edge, cost );
 						}
 						graph.releaseRef( vref );
 						graph.releaseRef( eref );
 					}
-
+					catch ( final Exception e )
+					{
+						e.printStackTrace();
+					}
+					finally
+					{
+						edgeCreator.postAddition();
+					}
 					statusService.showProgress( progress.incrementAndGet(), framePairs.size() );
 					return null;
 				}

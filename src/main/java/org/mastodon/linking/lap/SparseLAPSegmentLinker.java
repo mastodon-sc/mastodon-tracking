@@ -132,7 +132,9 @@ public class SparseLAPSegmentLinker< V extends Vertex< E > & HasTimepoint & Real
 		statusService.showStatus( "Creating links..." );
 		final RefRefMap< V, V > assignment = linker.getResult();
 		final RefDoubleMap< V > assignmentCosts = linker.getAssignmentCosts();
-		synchronized ( graph )
+
+		edgeCreator.preAddition();
+		try
 		{
 
 			final E eref = graph.edgeRef();
@@ -141,11 +143,19 @@ public class SparseLAPSegmentLinker< V extends Vertex< E > & HasTimepoint & Real
 			{
 				final V target = assignment.get( source, vref );
 				final double cost = assignmentCosts.get( source );
-				final E edge = edgeCreator.createEdge( graph, eref, source, target, cost );
+				final E edge = edgeCreator.createEdge( source, target, cost );
 				linkcost.set( edge, cost );
 			}
 			graph.releaseRef( eref );
 			graph.releaseRef( vref );
+		}
+		catch ( final Exception e )
+		{
+			e.printStackTrace();
+		}
+		finally
+		{
+			edgeCreator.postAddition();
 		}
 
 		statusService.clearStatus();

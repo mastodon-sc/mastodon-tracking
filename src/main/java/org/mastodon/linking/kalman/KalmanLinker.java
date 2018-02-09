@@ -287,31 +287,41 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 				orphanSpots = RefCollections.createRefList( orphanSpots, measurements.size() );
 				orphanSpots.addAll( measurements );
 
-				final E ref = graph.edgeRef();
-				for ( final Prediction cm : agnts.keySet() )
+				edgeCreator.preAddition();
+				try
 				{
-					final CVMKalmanFilter kf = predictionMap.get( cm );
+					for ( final Prediction cm : agnts.keySet() )
+					{
+						final CVMKalmanFilter kf = predictionMap.get( cm );
 
-					// Create links for found match.
-					final V source = kalmanFiltersMap.get( kf, vref1 );
-					final V target = agnts.get( cm, vref2 );
-					final double cost = assignmentCosts.get( cm );
-					final E edge = edgeCreator.createEdge( graph, ref, source, target, cost );
-					linkcost.set( edge, cost );
+						// Create links for found match.
+						final V source = kalmanFiltersMap.get( kf, vref1 );
+						final V target = agnts.get( cm, vref2 );
+						final double cost = assignmentCosts.get( cm );
+						final E edge = edgeCreator.createEdge( source, target, cost );
+						linkcost.set( edge, cost );
 
-					// Update Kalman filter
-					kf.update( toMeasurement( target ) );
+						// Update Kalman filter
+						kf.update( toMeasurement( target ) );
 
-					// Update Kalman track spot
-					kalmanFiltersMap.put( kf, target, vref1 );
+						// Update Kalman track spot
+						kalmanFiltersMap.put( kf, target, vref1 );
 
-					// Remove from orphan set
-					orphanSpots.remove( target );
+						// Remove from orphan set
+						orphanSpots.remove( target );
 
-					// Remove from childless KF set
-					childlessKFs.remove( kf );
+						// Remove from childless KF set
+						childlessKFs.remove( kf );
+					}
 				}
-				graph.releaseRef( ref );
+				catch ( final Exception e )
+				{
+					e.printStackTrace();
+				}
+				finally
+				{
+					edgeCreator.postAddition();
+				}
 			}
 
 			/*
@@ -352,28 +362,38 @@ public class KalmanLinker< V extends Vertex< E > & RealLocalizable, E extends Ed
 				final RefDoubleMap< V > assignmentCosts = newLinker.getAssignmentCosts();
 
 				// Build links and new KFs from these links.
-				final E ref = graph.edgeRef();
-				for ( final V source : newAssignments.keySet() )
+				edgeCreator.preAddition();
+				try
 				{
-					final V target = newAssignments.get( source, vref1 );
+					for ( final V source : newAssignments.keySet() )
+					{
+						final V target = newAssignments.get( source, vref1 );
 
-					// Remove from orphan collection.
-					orphanSpots.remove( target );
+						// Remove from orphan collection.
+						orphanSpots.remove( target );
 
-					// Derive initial state and create Kalman filter.
-					final double[] XP = estimateInitialState( source, target );
-					final CVMKalmanFilter kt = new CVMKalmanFilter( XP, Double.MIN_NORMAL, positionProcessStd, velocityProcessStd, positionMeasurementStd );
-					// We trust the initial state a lot.
+						// Derive initial state and create Kalman filter.
+						final double[] XP = estimateInitialState( source, target );
+						final CVMKalmanFilter kt = new CVMKalmanFilter( XP, Double.MIN_NORMAL, positionProcessStd, velocityProcessStd, positionMeasurementStd );
+						// We trust the initial state a lot.
 
-					// Store filter and source
-					kalmanFiltersMap.put( kt, target, vref2 );
+						// Store filter and source
+						kalmanFiltersMap.put( kt, target, vref2 );
 
-					// Add edge to the graph.
-					final double cost = assignmentCosts.get( source );
-					final E edge = edgeCreator.createEdge( graph, ref, source, target, cost );
-					linkcost.set( edge, cost );
+						// Add edge to the graph.
+						final double cost = assignmentCosts.get( source );
+						final E edge = edgeCreator.createEdge( source, target, cost );
+						linkcost.set( edge, cost );
+					}
 				}
-				graph.releaseRef( ref );
+				catch ( final Exception e )
+				{
+					e.printStackTrace();
+				}
+				finally
+				{
+					edgeCreator.postAddition();
+				}
 			}
 			previousOrphanSpots = orphanSpots;
 
