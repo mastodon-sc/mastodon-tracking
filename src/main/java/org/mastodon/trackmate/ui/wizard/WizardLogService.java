@@ -12,6 +12,7 @@ import org.mastodon.trackmate.ui.wizard.descriptors.LogPanel;
 import org.scijava.app.StatusService;
 import org.scijava.app.event.StatusEvent;
 import org.scijava.log.AbstractLogService;
+import org.scijava.log.LogLevel;
 import org.scijava.log.LogMessage;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Plugin;
@@ -38,20 +39,20 @@ public class WizardLogService extends AbstractLogService implements LogService, 
 		final Color color;
 		switch ( level )
 		{
-		case ERROR:
+		case LogLevel.ERROR:
 			color = ERROR_COLOR;
 			break;
-		case WARN:
+		case LogLevel.WARN:
 			color = WARN_COLOR;
 			break;
-		case INFO:
+		case LogLevel.INFO:
 		default:
 			color = NORMAL_COLOR;
 			break;
-		case DEBUG:
+		case LogLevel.DEBUG:
 			color = GREEN_COLOR;
 			break;
-		case TRACE:
+		case LogLevel.TRACE:
 			color = BLUE_COLOR;
 			break;
 		}
@@ -60,12 +61,12 @@ public class WizardLogService extends AbstractLogService implements LogService, 
 
 	protected void log( final String msg )
 	{
-		log( INFO, msg );
+		log( LogLevel.INFO, msg );
 	}
 
 	protected void log( final Throwable t )
 	{
-		log( INFO, t.getStackTrace() );
+		log( LogLevel.INFO, t.getStackTrace() );
 	}
 
 	@Override
