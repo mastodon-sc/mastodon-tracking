@@ -126,7 +126,7 @@ public class Wizard extends AbstractContextual
 		final Settings settings = new Settings()
 				.spimData( spimData );
 
-		final WindowManager windowManager = new WindowManager();
+		final WindowManager windowManager = new WindowManager( context );
 		final MainWindow mw = new MainWindow( windowManager );
 
 		final MamutProject project = new MamutProject( null, new File( bdvFile ) );

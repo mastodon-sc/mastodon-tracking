@@ -87,7 +87,7 @@ public class Sandbox
 				.linker( linkerClass )
 				.linkerSettings( linkerSettings );
 
-		final WindowManager wm = new WindowManager();
+		final WindowManager wm = new WindowManager( context );
 		final MamutProject project = new MamutProject( null, new File(bdvFile) );
 		wm.getProjectManager().open( project );
 		final Model model = wm.getAppModel().getModel();
