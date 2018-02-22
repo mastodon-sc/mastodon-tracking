@@ -7,7 +7,6 @@ import bdv.util.ModifiableInterval;
 import bdv.viewer.ViewerPanel;
 import net.imglib2.FinalInterval;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.util.Util;
 
 public class BoundingBoxEditor implements DragBehaviour
 {
@@ -67,16 +66,21 @@ public class BoundingBoxEditor implements DragBehaviour
 		final long[] max = new long[ 3 ];
 		for ( int d = 0; d < 3; ++d )
 		{
-			min[ d ] = initMin[ d ];
-			max[ d ] = initMax[ d ];
-		}
-
-		for ( int d = 0; d < 3; ++d )
-		{
+			final long p = Math.round( gPos[ d ] );
 			if ( ( boxOverlay.cornerId & ( 1 << d ) ) == 0 )
-				min[ d ] = Math.round( gPos[ d ] );
+			{
+				min[ d ] = p;
+				if ( p > initMax[ d ] )
+					initMax[ d ] = p;
+				max[ d ] = initMax[ d ];
+			}
 			else
-				max[ d ] = Math.round( gPos[ d ] );
+			{
+				max[ d ] = p;
+				if ( p < initMin[ d ] )
+					initMin[ d ] = p;
+				min[ d ] = initMin[ d ];
+			}
 		}
 
 		interval.set( new FinalInterval( min, max ) );
