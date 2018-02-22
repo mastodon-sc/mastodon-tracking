@@ -1,9 +1,14 @@
 package org.mastodon.trackmate.ui.boundingbox;
 
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -16,10 +21,15 @@ import org.mastodon.revised.mamut.MamutProjectIO;
 import org.mastodon.revised.mamut.MamutViewBdv;
 import org.mastodon.revised.mamut.ProjectManager;
 import org.mastodon.revised.mamut.WindowManager;
+import org.mastodon.revised.util.ToggleDialogAction;
 import org.scijava.Context;
-import org.scijava.ui.behaviour.ClickBehaviour;
+import org.scijava.ui.behaviour.Behaviour;
+import org.scijava.ui.behaviour.BehaviourMap;
+import org.scijava.ui.behaviour.InputTrigger;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
+import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.behaviour.util.Behaviours;
+import org.scijava.ui.behaviour.util.InputActionBindings;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
 import bdv.util.ModifiableInterval;
@@ -45,24 +55,17 @@ import net.imglib2.util.Intervals;
  */
 public class BoundingBoxMamut
 {
-
 	private static final String TOGGLE_BOUNDING_BOX = "toggle bounding-box";
 
-	private static final String BOUNDING_BOX_TOGGLE_EDIT_MODE_ON = "togggle bounding-box edit-mode on";
-
-	private static final String EDIT_MODE = "edit bounding-box";
-
-	private static final String BOUNDING_BOX_TOGGLE_EDIT_MODE_OFF = "togggle bounding-box edit-mode off";
-
-	static final String TOGGLE_BOUNDING_BOX_KEYS = "V";
-
-	private static final String[] BOUNDING_BOX_TOGGLE_EDIT_MODE_KEYS = new String[] { "ESCAPE" };
-
-	private static final String VISUALIZATION_MODE = "bounding-box";
+	static final String[] TOGGLE_BOUNDING_BOX_KEYS = new String[] { "V" };
 
 	private static final String BOUNDING_BOX_TOGGLE_EDITOR = "edit bounding-box";
 
-	private static final String BOUNDING_BOX_TOGGLE_EDITOR_KEYS = "button1";
+	private static final String[] BOUNDING_BOX_TOGGLE_EDITOR_KEYS = new String[] { "button1" };
+
+	private static final String BOUNDING_BOX_MAP = "bounding-box";
+
+	private static final String BLOCKING_MAP = "bounding-box-blocking";
 
 	private final BoundingBoxDialog dialog;
 
@@ -70,13 +73,19 @@ public class BoundingBoxMamut
 
 	private final ViewerFrameMamut viewerFrame;
 
-	private final BoundingBoxVisualizationMode bbVisualization;
-
-	private final BoundingBoxEditMode bbEdit;
-
 	private boolean editMode = false;
 
 	private final ModifiableInterval mInterval;
+
+	private final TriggerBehaviourBindings triggerbindings;
+
+	private final InputActionBindings keybindings;
+
+	private final Behaviours behaviours;
+
+	private final BehaviourMap blockMap;
+
+	private final InputTriggerConfig keyconf;
 
 	public BoundingBoxMamut(
 			final InputTriggerConfig keyconf,
@@ -85,7 +94,10 @@ public class BoundingBoxMamut
 			final int setupID,
 			final String title )
 	{
+		this.keyconf = keyconf;
 		this.viewerFrame = viewerFrame;
+		triggerbindings = viewerFrame.getTriggerbindings();
+		keybindings = viewerFrame.getKeybindings();
 
 		/*
 		 * Compute an initial interval from the specified setup id.
@@ -131,23 +143,87 @@ public class BoundingBoxMamut
 				toggleEditModeOff();
 			};
 		} );
+		dialog.addComponentListener( new ComponentAdapter()
+		{
+			@Override
+			public void componentShown( final ComponentEvent e )
+			{
+				behaviours.install( triggerbindings, BOUNDING_BOX_MAP );
+			}
+
+			@Override
+			public void componentHidden( final ComponentEvent e )
+			{
+				triggerbindings.removeInputTriggerMap( BOUNDING_BOX_MAP );
+				triggerbindings.removeBehaviourMap( BOUNDING_BOX_MAP );
+			}
+		} );
 
 		/*
 		 * The actions in charge of toggling its visibility and its edit mode.
 		 */
 
-		this.bbEdit = new BoundingBoxEditMode( keyconf );
-		this.bbVisualization = new BoundingBoxVisualizationMode( keyconf );
+		final Actions actions = new Actions( keyconf, "bdv " );
+		actions.install( keybindings, BOUNDING_BOX_MAP );
+		actions.namedAction( new ToggleDialogAction( TOGGLE_BOUNDING_BOX, dialog ), TOGGLE_BOUNDING_BOX_KEYS );
+
+		behaviours = new Behaviours( keyconf, "bdv" );
+		behaviours.behaviour( new BoundingBoxEditor( dialog.boxOverlay, viewerFrame.getViewerPanel(), dialog.boxSelectionPanel, mInterval ),
+				BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
+
+		blockMap = new BehaviourMap();
+		refreshBlockMap();
+
+		dialog.boxOverlay.setHighlightedCornerListener( this::highlightedCornerChanged );
 		toggleEditModeOff();
+	}
+
+	private void highlightedCornerChanged()
+	{
+		final int index = dialog.boxOverlay.getHighlightedCornerIndex();
+		if ( index < 0 )
+			unblock();
+		else
+			block();
+	}
+
+	private void block()
+	{
+		triggerbindings.addBehaviourMap( BLOCKING_MAP, blockMap );
+	}
+
+	private void unblock()
+	{
+		triggerbindings.removeBehaviourMap( BLOCKING_MAP );
+	}
+
+	private void refreshBlockMap()
+	{
+		triggerbindings.removeBehaviourMap( BLOCKING_MAP );
+
+		final Set< InputTrigger > moveCornerTriggers = new HashSet<>();
+		for ( final String s : BOUNDING_BOX_TOGGLE_EDITOR_KEYS )
+			moveCornerTriggers.add( InputTrigger.getFromString( s ) );
+
+		final Map< InputTrigger, Set< String > > bindings = triggerbindings.getConcatenatedInputTriggerMap().getAllBindings();
+		final Set< String > behavioursToBlock = new HashSet<>();
+		for ( final InputTrigger t : moveCornerTriggers )
+			behavioursToBlock.addAll( bindings.get( t ) );
+
+		blockMap.clear();
+		final Behaviour block = new Behaviour() {};
+		for ( final String key : behavioursToBlock )
+			blockMap.put( key, block );
 	}
 
 	public void uninstall()
 	{
-		final TriggerBehaviourBindings triggerBehaviourBindings = viewerFrame.getTriggerbindings();
-		triggerBehaviourBindings.removeInputTriggerMap( EDIT_MODE );
-		triggerBehaviourBindings.removeBehaviourMap( EDIT_MODE );
-		triggerBehaviourBindings.removeBehaviourMap( VISUALIZATION_MODE );
-		triggerBehaviourBindings.removeInputTriggerMap( VISUALIZATION_MODE );
+		triggerbindings.removeInputTriggerMap( BOUNDING_BOX_MAP );
+		triggerbindings.removeBehaviourMap( BOUNDING_BOX_MAP );
+
+		keybindings.removeInputMap( BOUNDING_BOX_MAP );
+		keybindings.removeActionMap( BOUNDING_BOX_MAP );
+
 		dialog.setVisible( false );
 	}
 
@@ -163,88 +239,18 @@ public class BoundingBoxMamut
 
 		editMode = true;
 
-		dialog.boxOverlay.showCornerHandles( true );
-		dialog.boxModePanel.modeLabel.setText( "Edit mode" );
+		// TODO: this should influence whether editing is possible
 		if ( !dialog.boxModePanel.full.isSelected() )
 			dialog.boxModePanel.full.doClick();
 		dialog.boxModePanel.setEnabled( false );
 
-		final TriggerBehaviourBindings triggerBehaviourBindings = viewerFrame.getTriggerbindings();
-
-		triggerBehaviourBindings.removeBehaviourMap( VISUALIZATION_MODE );
-		triggerBehaviourBindings.removeInputTriggerMap( VISUALIZATION_MODE );
-
-		triggerBehaviourBindings.addInputTriggerMap( EDIT_MODE, bbEdit.getInputTriggerMap(), "all", "navigation" );
-		triggerBehaviourBindings.addBehaviourMap( EDIT_MODE, bbEdit.getBehaviourMap() );
+		viewerFrame.getViewerPanel().requestRepaint();
 	}
 
 	private void toggleEditModeOff()
 	{
 		editMode = false;
-		dialog.boxModePanel.modeLabel.setText( "Navigation mode" );
-		dialog.boxOverlay.showCornerHandles( false );
 		dialog.boxModePanel.setEnabled( true );
-
-		final TriggerBehaviourBindings triggerBehaviourBindings = viewerFrame.getTriggerbindings();
-
-		triggerBehaviourBindings.removeInputTriggerMap( EDIT_MODE );
-		triggerBehaviourBindings.removeBehaviourMap( EDIT_MODE );
-
-		bbVisualization.install( viewerFrame.getTriggerbindings(), VISUALIZATION_MODE );
-	}
-
-	private class BoundingBoxVisualizationMode extends Behaviours
-	{
-
-		public BoundingBoxVisualizationMode( final InputTriggerConfig keyConfig )
-		{
-			super( keyConfig, "bdv" );
-
-			behaviour( new ToggleDialogBehaviour(), TOGGLE_BOUNDING_BOX, TOGGLE_BOUNDING_BOX_KEYS );
-			behaviour( new ToggleEditMode(), BOUNDING_BOX_TOGGLE_EDIT_MODE_ON, BOUNDING_BOX_TOGGLE_EDIT_MODE_KEYS );
-		}
-
-		private class ToggleEditMode implements ClickBehaviour
-		{
-
-			@Override
-			public void click( final int x, final int y )
-			{
-				toggleEditModeOn();
-			}
-		}
-
-		private class ToggleDialogBehaviour implements ClickBehaviour
-		{
-			@Override
-			public void click( final int x, final int y )
-			{
-				dialog.setVisible( !dialog.isVisible() );
-			}
-		}
-	}
-
-	private class BoundingBoxEditMode extends Behaviours
-	{
-
-		private BoundingBoxEditMode( final InputTriggerConfig keyConfig )
-		{
-			super( keyConfig, "bdv" );
-			behaviour( new ToggleEditModeBehaviour(),
-					BOUNDING_BOX_TOGGLE_EDIT_MODE_OFF, BOUNDING_BOX_TOGGLE_EDIT_MODE_KEYS );
-			behaviour( new BoundingBoxEditor( dialog.boxOverlay, viewerFrame.getViewerPanel(), dialog.boxSelectionPanel, mInterval ),
-					BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
-		}
-
-		private class ToggleEditModeBehaviour implements ClickBehaviour
-		{
-
-			@Override
-			public void click( final int x, final int y )
-			{
-				toggleEditModeOff();
-			}
-		}
 	}
 
 	public static void main( final String[] args )
@@ -272,6 +278,4 @@ public class BoundingBoxMamut
 				0,
 				"Test Bounding-box" );
 	}
-
-
 }

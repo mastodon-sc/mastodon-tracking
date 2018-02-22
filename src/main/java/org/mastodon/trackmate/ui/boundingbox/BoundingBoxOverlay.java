@@ -26,16 +26,21 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private static final double HANDLE_RADIUS = DISTANCE_TOLERANCE / 2.;
 
-	public static enum DisplayMode
+	public enum DisplayMode
 	{
 		FULL, SECTION;
 	}
 
-	public static interface BoundingBoxOverlaySource
+	public interface BoundingBoxOverlaySource
 	{
 		public RealInterval getInterval();
 
 		public void getIntervalTransform( final AffineTransform3D transform );
+	}
+
+	public interface HighlightedCornerListener
+	{
+		public void highlightedCornerChanged();
 	}
 
 	private final BoundingBoxOverlaySource bbSource;
@@ -70,6 +75,8 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private int cornerId;
 
+	private HighlightedCornerListener highlightedCornerListener;
+
 	public BoundingBoxOverlay( final Interval interval )
 	{
 		this( new BoundingBoxOverlaySource()
@@ -91,10 +98,11 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	public BoundingBoxOverlay( final BoundingBoxOverlaySource bbSource )
 	{
 		this.bbSource = bbSource;
-		this.viewerTransform = new AffineTransform3D();
-		this.transform = new AffineTransform3D();
-		this.renderBoxHelper = new RenderBoxHelper();
-		this.cornerHighlighter = new CornerHighlighter( DISTANCE_TOLERANCE );
+
+		viewerTransform = new AffineTransform3D();
+		transform = new AffineTransform3D();
+		renderBoxHelper = new RenderBoxHelper();
+		cornerHighlighter = new CornerHighlighter( DISTANCE_TOLERANCE );
 	}
 
 	/**
@@ -225,6 +233,11 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		return cornerHighlighter;
 	}
 
+	public void setHighlightedCornerListener( final HighlightedCornerListener highlightedCornerListener )
+	{
+		this.highlightedCornerListener = highlightedCornerListener;
+	}
+
 	/**
 	 * Set the index of the highlighted corner.
 	 *
@@ -233,7 +246,10 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	 */
 	private void setHighlightedCorner( final int id )
 	{
+		final int oldId = cornerId;
 		cornerId = ( id >= 0 && id < RenderBoxHelper.numCorners ) ? id : -1;
+		if ( cornerId != oldId && highlightedCornerListener != null )
+			highlightedCornerListener.highlightedCornerChanged();
 	}
 
 	private class CornerHighlighter extends MouseMotionAdapter

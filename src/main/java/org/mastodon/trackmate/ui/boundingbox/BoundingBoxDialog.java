@@ -144,7 +144,8 @@ class BoundingBoxDialog extends JDialog
 				setVisible( false );
 			}
 		};
-		im.put( KeyStroke.getKeyStroke( BoundingBoxMamut.TOGGLE_BOUNDING_BOX_KEYS ), hideKey );
+		for ( final String s : BoundingBoxMamut.TOGGLE_BOUNDING_BOX_KEYS )
+			im.put( KeyStroke.getKeyStroke( s ), hideKey );
 		am.put( hideKey, hideAction );
 
 		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
