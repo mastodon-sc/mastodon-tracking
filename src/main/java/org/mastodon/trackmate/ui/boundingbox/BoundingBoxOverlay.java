@@ -491,6 +491,8 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 		private static final double HANDLE_RADIUS = DISTANCE_TOLERANCE / 2.;
 
+		private static final double SQU_DISTANCE_TOLERANCE = DISTANCE_TOLERANCE * DISTANCE_TOLERANCE;
+
 		@Override
 		public void mouseMoved( final MouseEvent e )
 		{
@@ -504,7 +506,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 				final double dx = x - corner[ 0 ];
 				final double dy = y - corner[ 1 ];
 				final double dr2 = dx * dx + dy * dy;
-				if ( dr2 < DISTANCE_TOLERANCE )
+				if ( dr2 < SQU_DISTANCE_TOLERANCE )
 				{
 					cornerId = i;
 					cornerColor = ( corner[ 2 ] > 0 ) ? backColor : frontColor;
