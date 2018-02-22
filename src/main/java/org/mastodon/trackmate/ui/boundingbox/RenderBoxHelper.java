@@ -1,7 +1,6 @@
 package org.mastodon.trackmate.ui.boundingbox;
 
 import java.awt.geom.GeneralPath;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -33,8 +32,9 @@ public final class RenderBoxHelper
 
 	private boolean perspective = false;
 
-	private final List< Point2D > intersectionPoints = new ArrayList<>();
+	private final List< double[] > intersectionPoints = new ArrayList<>();
 
+	// TODO: remove
 	private final double[] q000 = new double[ 3 ];
 	private final double[] q100 = new double[ 3 ];
 	private final double[] q010 = new double[ 3 ];
@@ -44,6 +44,7 @@ public final class RenderBoxHelper
 	private final double[] q011 = new double[ 3 ];
 	private final double[] q111 = new double[ 3 ];
 
+	// TODO: remove
 	// Order matters. We will use the order to know what we edit.
 	final double[][] corners = new double[][] { q000, q100, q010, q110, q001, q101, q011, q111 };
 
@@ -70,127 +71,74 @@ public final class RenderBoxHelper
 	}
 
 	/**
+	 * Project a point.
 	 *
-	 * @param p
+	 * @param point
 	 *            point to project
-	 * @return X coordinate of projected point
+	 * @param projection
+	 *            projected point is stored here
 	 */
-	private double perspectiveX( final double[] p )
+	public void project( final double[] point, final double[] projection )
 	{
-		return scale * ( p[ 0 ] - origin[ 0 ] ) / ( p[ 2 ] - origin[ 2 ] ) * depth;
+		final double f = perspective
+				? scale * depth / ( point[ 2 ] - origin[ 2 ] )
+				: scale;
+		projection[ 0 ] = ( point[ 0 ] - origin[ 0 ] ) * f;
+		projection[ 1 ] = ( point[ 1 ] - origin[ 1 ] ) * f;
 	}
 
 	/**
+	 * Project a point.
 	 *
-	 * @param p
+	 * @param point
 	 *            point to project
-	 * @return Y coordinate of projected point
+	 * @return projected point
 	 */
-	private double perspectiveY( final double[] p )
+	public double[] project( final double[] point )
 	{
-		return scale * ( p[ 1 ] - origin[ 1 ] ) / ( p[ 2 ] - origin[ 2 ] ) * depth;
-	}
-
-	/**
-	 *
-	 * @param p
-	 *            point to project
-	 * @return X coordinate of projected point
-	 */
-	private double parallelX( final double[] p )
-	{
-		return scale * ( p[ 0 ] - origin[ 0 ] );
-	}
-
-	/**
-	 *
-	 * @param p
-	 *            point to project
-	 * @return Y coordinate of projected point
-	 */
-	private double parallelY( final double[] p )
-	{
-		return scale * ( p[ 1 ] - origin[ 1 ] );
+		final double[] projection = new double[ 2 ];
+		project( point, projection );
+		return projection;
 	}
 
 	private void splitEdge( final double[] a, final double[] b, final GeneralPath before, final GeneralPath behind )
 	{
-		if ( perspective )
-			splitEdgePerspective( a, b, before, behind );
-		else
-			splitEdgeParallel( a, b, before, behind );
-	}
-
-	private void splitEdgePerspective( final double[] a, final double[] b, final GeneralPath before, final GeneralPath behind )
-	{
-		final double[] t = new double[ 3 ];
+		final double[] pa = project( a );
+		final double[] pb = project( b );
 		if ( a[ 2 ] <= 0 )
 		{
-			before.moveTo( perspectiveX( a ), perspectiveY( a ) );
+			before.moveTo( pa[ 0 ], pa[ 1 ] );
 			if ( b[ 2 ] <= 0 )
-				before.lineTo( perspectiveX( b ), perspectiveY( b ) );
+				before.lineTo( pb[ 0 ], pb[ 1 ] );
 			else
 			{
+				final double[] t = new double[ 3 ];
 				final double d = a[ 2 ] / ( a[ 2 ] - b[ 2 ] );
 				t[ 0 ] = ( b[ 0 ] - a[ 0 ] ) * d + a[ 0 ];
 				t[ 1 ] = ( b[ 1 ] - a[ 1 ] ) * d + a[ 1 ];
-				before.lineTo( perspectiveX( t ), perspectiveY( t ) );
-				behind.moveTo( perspectiveX( t ), perspectiveY( t ) );
-				behind.lineTo( perspectiveX( b ), perspectiveY( b ) );
-				intersectionPoints.add( new Point2D.Double( parallelX( t ), parallelY( t ) ) );
+				final double[] pt = project( t );
+				before.lineTo( pt[ 0 ], pt[ 1 ] );
+				behind.moveTo( pt[ 0 ], pt[ 1 ] );
+				behind.lineTo( pb[ 0 ], pb[ 1 ] );
+				intersectionPoints.add( new double[] { pt[ 0 ], pt[ 1 ] } );
 			}
 		}
 		else
 		{
-			behind.moveTo( perspectiveX( a ), perspectiveY( a ) );
+			behind.moveTo( pa[ 0 ], pa[ 1 ] );
 			if ( b[ 2 ] > 0 )
-				behind.lineTo( perspectiveX( b ), perspectiveY( b ) );
+				behind.lineTo( pb[ 0 ], pb[ 1 ] );
 			else
 			{
+				final double[] t = new double[ 3 ];
 				final double d = a[ 2 ] / ( a[ 2 ] - b[ 2 ] );
 				t[ 0 ] = ( b[ 0 ] - a[ 0 ] ) * d + a[ 0 ];
 				t[ 1 ] = ( b[ 1 ] - a[ 1 ] ) * d + a[ 1 ];
-				behind.lineTo( perspectiveX( t ), perspectiveY( t ) );
-				before.moveTo( perspectiveX( t ), perspectiveY( t ) );
-				before.lineTo( perspectiveX( b ), perspectiveY( b ) );
-				intersectionPoints.add( new Point2D.Double( parallelX( t ), parallelY( t ) ) );
-			}
-		}
-	}
-
-	private void splitEdgeParallel( final double[] a, final double[] b, final GeneralPath before, final GeneralPath behind )
-	{
-		final double[] t = new double[ 3 ];
-		if ( a[ 2 ] <= 0 )
-		{
-			before.moveTo( parallelX( a ), parallelY( a ) );
-			if ( b[ 2 ] <= 0 )
-				before.lineTo( parallelX( b ), parallelY( b ) );
-			else
-			{
-				final double d = a[ 2 ] / ( a[ 2 ] - b[ 2 ] );
-				t[ 0 ] = ( b[ 0 ] - a[ 0 ] ) * d + a[ 0 ];
-				t[ 1 ] = ( b[ 1 ] - a[ 1 ] ) * d + a[ 1 ];
-				before.lineTo( parallelX( t ), parallelY( t ) );
-				behind.moveTo( parallelX( t ), parallelY( t ) );
-				behind.lineTo( parallelX( b ), parallelY( b ) );
-				intersectionPoints.add( new Point2D.Double( parallelX( t ), parallelY( t ) ) );
-			}
-		}
-		else
-		{
-			behind.moveTo( parallelX( a ), parallelY( a ) );
-			if ( b[ 2 ] > 0 )
-				behind.lineTo( parallelX( b ), parallelY( b ) );
-			else
-			{
-				final double d = a[ 2 ] / ( a[ 2 ] - b[ 2 ] );
-				t[ 0 ] = ( b[ 0 ] - a[ 0 ] ) * d + a[ 0 ];
-				t[ 1 ] = ( b[ 1 ] - a[ 1 ] ) * d + a[ 1 ];
-				behind.lineTo( parallelX( t ), parallelY( t ) );
-				before.moveTo( parallelX( t ), parallelY( t ) );
-				before.lineTo( parallelX( b ), parallelY( b ) );
-				intersectionPoints.add( new Point2D.Double( parallelX( t ), parallelY( t ) ) );
+				final double[] pt = project( t );
+				behind.lineTo( pt[ 0 ], pt[ 1 ] );
+				before.moveTo( pt[ 0 ], pt[ 1 ] );
+				before.lineTo( pb[ 0 ], pb[ 1 ] );
+				intersectionPoints.add( new double[] { pt[ 0 ], pt[ 1 ] } );
 			}
 		}
 	}
@@ -241,47 +189,46 @@ public final class RenderBoxHelper
 		if ( intersectionPoints.size() > 2 )
 		{
 			final double x0 = intersectionPoints.stream()
-					.mapToDouble( e -> e.getX() )
+					.mapToDouble( e -> e[ 0 ] )
 					.average()
 					.getAsDouble();
 			final double y0 = intersectionPoints.stream()
-					.mapToDouble( e -> e.getY() )
+					.mapToDouble( e -> e[ 1 ] )
 					.average()
 					.getAsDouble();
-			final Point2D P = new Point2D.Double( x0, y0 );
-			intersectionPoints.sort( new PolarOrder( P ) );
-			final Iterator< Point2D > hull = intersectionPoints.iterator();
+			intersectionPoints.sort( new PolarOrder( new double[] { x0, y0 } ) );
+			final Iterator< double[] > hull = intersectionPoints.iterator();
 			if ( hull.hasNext() )
 			{
-				final Point2D first = hull.next();
-				intersection.moveTo( first.getX(), first.getY() );
+				final double[] first = hull.next();
+				intersection.moveTo( first[ 0 ], first[ 1 ] );
 				while ( hull.hasNext() )
 				{
-					final Point2D next = hull.next();
-					intersection.lineTo( next.getX(), next.getY() );
+					final double[] next = hull.next();
+					intersection.lineTo( next[ 0 ], next[ 1 ] );
 				}
 				intersection.closePath();
 			}
 		}
 	}
 
-	private static final class PolarOrder implements Comparator< Point2D >
+	private static final class PolarOrder implements Comparator< double[] >
 	{
 
-		private final Point2D p;
+		private final double[] p;
 
-		public PolarOrder( final Point2D p )
+		public PolarOrder( final double[] p )
 		{
 			this.p = p;
 		}
 
 		@Override
-		public int compare( final Point2D q1, final Point2D q2 )
+		public int compare( final double[] q1, final double[] q2 )
 		{
-			final double dx1 = q1.getX() - p.getX();
-			final double dy1 = q1.getY() - p.getY();
-			final double dx2 = q2.getX() - p.getX();
-			final double dy2 = q2.getY() - p.getY();
+			final double dx1 = q1[ 0 ] - p[ 0 ];
+			final double dy1 = q1[ 1 ] - p[ 1 ];
+			final double dx2 = q2[ 0 ] - p[ 0 ];
+			final double dy2 = q2[ 1 ] - p[ 1 ];
 
 			if ( dy1 >= 0 && dy2 < 0 )
 				return -1; // q1 above; q2 below
@@ -312,9 +259,9 @@ public final class RenderBoxHelper
 		 * @return { -1, 0, +1 } if a→b→c is a { clockwise, collinear;
 		 *         counterclocwise } turn.
 		 */
-		private static int ccw( final Point2D a, final Point2D b, final Point2D c )
+		private static int ccw( final double[] a, final double[] b, final double[] c )
 		{
-			final double area2 = ( b.getX() - a.getX() ) * ( c.getY() - a.getY() ) - ( b.getY() - a.getY() ) * ( c.getX() - a.getX() );
+			final double area2 = ( b[ 0 ] - a[ 0 ] ) * ( c[ 1 ] - a[ 1 ] ) - ( b[ 1 ] - a[ 1 ] ) * ( c[ 0 ] - a[ 0 ] );
 			if ( area2 < 0 )
 				return -1;
 			else if ( area2 > 0 )
