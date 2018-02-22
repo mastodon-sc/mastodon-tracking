@@ -34,19 +34,11 @@ public final class RenderBoxHelper
 
 	private final List< double[] > intersectionPoints = new ArrayList<>();
 
-	// TODO: remove
-	private final double[] q000 = new double[ 3 ];
-	private final double[] q100 = new double[ 3 ];
-	private final double[] q010 = new double[ 3 ];
-	private final double[] q110 = new double[ 3 ];
-	private final double[] q001 = new double[ 3 ];
-	private final double[] q101 = new double[ 3 ];
-	private final double[] q011 = new double[ 3 ];
-	private final double[] q111 = new double[ 3 ];
+	final static int numCorners = 8;
 
-	// TODO: remove
-	// Order matters. We will use the order to know what we edit.
-	final double[][] corners = new double[][] { q000, q100, q010, q110, q001, q101, q011, q111 };
+	final double[][] corners = new double[ numCorners ][ 3 ];
+
+	final double[][] projectedCorners = new double[ numCorners ][ 2 ];
 
 	public void setPerspectiveProjection( final boolean b )
 	{
@@ -83,8 +75,8 @@ public final class RenderBoxHelper
 		final double f = perspective
 				? scale * depth / ( point[ 2 ] - origin[ 2 ] )
 				: scale;
-		projection[ 0 ] = ( point[ 0 ] - origin[ 0 ] ) * f;
-		projection[ 1 ] = ( point[ 1 ] - origin[ 1 ] ) * f;
+		projection[ 0 ] = ( point[ 0 ] - origin[ 0 ] ) * f + origin[ 0 ];
+		projection[ 1 ] = ( point[ 1 ] - origin[ 1 ] ) * f + origin[ 1 ];
 	}
 
 	/**
@@ -101,10 +93,35 @@ public final class RenderBoxHelper
 		return projection;
 	}
 
-	private void splitEdge( final double[] a, final double[] b, final GeneralPath before, final GeneralPath behind )
+	/**
+	 * Reproject a point
+	 *
+	 * @param x
+	 *            projected x
+	 * @param y
+	 *            projected y
+	 * @param z
+	 *            z plane to which to reproject
+	 * @return reprojected point
+	 */
+	public double[] reproject( final double x, final double y, final double z )
 	{
-		final double[] pa = project( a );
-		final double[] pb = project( b );
+		final double[] point = new double[ 3 ];
+		final double f = perspective
+				? ( z - origin[ 2 ] ) / ( scale * depth )
+				: 1. / scale;
+		point[ 0 ] = ( x - origin[ 0 ] ) * f + origin[ 0 ];
+		point[ 1 ] = ( y - origin[ 1 ] ) * f + origin[ 1 ];
+		point[ 2 ] = z;
+		return point;
+	}
+
+	private void splitEdge( final int ia, final int ib, final GeneralPath before, final GeneralPath behind )
+	{
+		final double[] a = corners[ ia ];
+		final double[] b = corners[ ib ];
+		final double[] pa = projectedCorners[ ia ];
+		final double[] pb = projectedCorners[ ib ];
 		if ( a[ 2 ] <= 0 )
 		{
 			before.moveTo( pa[ 0 ], pa[ 1 ] );
@@ -145,46 +162,26 @@ public final class RenderBoxHelper
 
 	public void renderBox( final Interval sourceInterval, final AffineTransform3D transform, final GeneralPath front, final GeneralPath back, final GeneralPath intersection )
 	{
-		final double sX0 = sourceInterval.min( 0 );
-		final double sX1 = sourceInterval.max( 0 );
-		final double sY0 = sourceInterval.min( 1 );
-		final double sY1 = sourceInterval.max( 1 );
-		final double sZ0 = sourceInterval.min( 2 );
-		final double sZ1 = sourceInterval.max( 2 );
-
-		final double[] p000 = new double[] { sX0, sY0, sZ0 };
-		final double[] p100 = new double[] { sX1, sY0, sZ0 };
-		final double[] p010 = new double[] { sX0, sY1, sZ0 };
-		final double[] p110 = new double[] { sX1, sY1, sZ0 };
-		final double[] p001 = new double[] { sX0, sY0, sZ1 };
-		final double[] p101 = new double[] { sX1, sY0, sZ1 };
-		final double[] p011 = new double[] { sX0, sY1, sZ1 };
-		final double[] p111 = new double[] { sX1, sY1, sZ1 };
-
-		transform.apply( p000, q000 );
-		transform.apply( p100, q100 );
-		transform.apply( p010, q010 );
-		transform.apply( p110, q110 );
-		transform.apply( p001, q001 );
-		transform.apply( p101, q101 );
-		transform.apply( p011, q011 );
-		transform.apply( p111, q111 );
+		for ( int i = 0; i < numCorners; ++i )
+		{
+			transform.apply( IntervalCorners.corner( sourceInterval, i ), corners[ i ] );
+			project( corners[ i ], projectedCorners[ i ] );
+		}
 
 		intersectionPoints.clear();
-		splitEdge( q000, q100, front, back );
-		splitEdge( q100, q110, front, back );
-		splitEdge( q110, q010, front, back );
-		splitEdge( q010, q000, front, back );
 
-		splitEdge( q001, q101, front, back );
-		splitEdge( q101, q111, front, back );
-		splitEdge( q111, q011, front, back );
-		splitEdge( q011, q001, front, back );
-
-		splitEdge( q000, q001, front, back );
-		splitEdge( q100, q101, front, back );
-		splitEdge( q110, q111, front, back );
-		splitEdge( q010, q011, front, back );
+		splitEdge( 0, 1, front, back );
+		splitEdge( 2, 3, front, back );
+		splitEdge( 4, 5, front, back );
+		splitEdge( 6, 7, front, back );
+		splitEdge( 0, 2, front, back );
+		splitEdge( 1, 3, front, back );
+		splitEdge( 4, 6, front, back );
+		splitEdge( 5, 7, front, back );
+		splitEdge( 0, 4, front, back );
+		splitEdge( 1, 5, front, back );
+		splitEdge( 2, 6, front, back );
+		splitEdge( 3, 7, front, back );
 
 		if ( intersectionPoints.size() > 2 )
 		{

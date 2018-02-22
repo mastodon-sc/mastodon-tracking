@@ -9,7 +9,6 @@ import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
 
@@ -32,7 +31,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		public void getIntervalTransform( final AffineTransform3D transform );
 	}
 
-	private final BoundingBoxOverlaySource model;
+	final BoundingBoxOverlaySource model;
 
 	private final Color backColor = new Color( 0x00994499 );// Color.MAGENTA;
 
@@ -48,7 +47,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private final AffineTransform3D viewerTransform;
 
-	final AffineTransform3D transform;
+	private final AffineTransform3D transform;
 
 	final RenderBoxHelper renderBoxHelper;
 
@@ -62,16 +61,9 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private boolean editMode;
 
-	private GeneralPath front;
-
-	private GeneralPath back;
-
-	private GeneralPath intersection;
-
 	private Ellipse2D cornerHandle;
 
 	int cornerId;
-
 
 	public BoundingBoxOverlay( final Interval interval )
 	{
@@ -120,27 +112,26 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	public void drawOverlays( final Graphics g )
 	{
 		final Graphics2D graphics = ( Graphics2D ) g;
-		final AffineTransform t = graphics.getTransform();
 
-		front = new GeneralPath();
-		back = new GeneralPath();
-		intersection = new GeneralPath();
+		final GeneralPath front = new GeneralPath();
+		final GeneralPath back = new GeneralPath();
+		final GeneralPath intersection = new GeneralPath();
 
 		final Interval interval = model.getInterval();
 		final double sourceSize = Math.max( Math.max( interval.dimension( 0 ), interval.dimension( 1 ) ), interval.dimension( 2 ) );
 		final double ox = canvasWidth / 2;
 		final double oy = canvasHeight / 2;
-		model.getIntervalTransform( transform );
-		transform.preConcatenate( viewerTransform );
+		synchronized ( viewerTransform )
+		{
+			model.getIntervalTransform( transform );
+			transform.preConcatenate( viewerTransform );
+		}
 		renderBoxHelper.setPerspectiveProjection( perspective > 0 );
 		renderBoxHelper.setDepth( perspective * sourceSize );
 		renderBoxHelper.setOrigin( ox, oy );
 		renderBoxHelper.setScale( 1 );
 		renderBoxHelper.renderBox( interval, transform, front, back, intersection );
 
-		final AffineTransform translate = new AffineTransform( 1, 0, 0, 1, ox, oy );
-		translate.preConcatenate( t );
-		graphics.setTransform( translate );
 		graphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
 
 		graphics.setPaint( intersectionColor );
@@ -154,8 +145,6 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 			graphics.setPaint( frontColor );
 			graphics.draw( front );
 		}
-
-		graphics.setTransform( t );
 
 		if ( cornerHandle != null )
 		{
@@ -176,13 +165,30 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	@Override
 	public void transformChanged( final AffineTransform3D t )
 	{
-		viewerTransform.set( t );
+		synchronized ( viewerTransform )
+		{
+			viewerTransform.set( t );
+		}
 	}
 
 	public void setDisplayMode( final DisplayMode mode )
 	{
 		this.displayMode = mode;
 
+	}
+
+	/**
+	 * Get the transformation from the local coordinate frame of the
+	 * {@link BoundingBoxOverlaySource} to viewer coordinates.
+	 *
+	 * @param t is set to the box-to-viewer transform.
+	 */
+	public void getBoxToViewerTransform( final AffineTransform3D t )
+	{
+		synchronized ( viewerTransform ) // not a typo, all transform modifications synchronize on viewerTransform
+		{
+			t.set( transform );
+		}
 	}
 
 	public class CornerHighlighter extends MouseMotionAdapter
@@ -200,17 +206,16 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 			final int y = e.getY();
 			cornerHandle = null;
 			cornerId = -1;
-			for ( int i = 0; i < renderBoxHelper.corners.length; i++ )
+			for ( int i = 0; i < RenderBoxHelper.numCorners; i++ )
 			{
-				final double[] corner = renderBoxHelper.corners[ i ];
+				final double[] corner = renderBoxHelper.projectedCorners[ i ];
 				final double dx = x - corner[ 0 ];
 				final double dy = y - corner[ 1 ];
 				final double dr2 = dx * dx + dy * dy;
 				if ( dr2 < SQU_DISTANCE_TOLERANCE )
 				{
 					cornerId = i;
-					cornerColor = ( corner[ 2 ] > 0 ) ? backColor : frontColor;
-					regenFrom( corner );
+					regen();
 					return;
 				}
 			}
@@ -222,16 +227,18 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 			if ( cornerId < 0 )
 				return;
 
-			regenFrom( renderBoxHelper.corners[ cornerId ] );
+			regen();
 		}
 
-		private void regenFrom( final double[] corner )
+		private void regen()
 		{
+			final double[] p = renderBoxHelper.projectedCorners[ cornerId ];
 			cornerHandle = new Ellipse2D.Double(
-					corner[ 0 ] - HANDLE_RADIUS,
-					corner[ 1 ] - HANDLE_RADIUS,
+					p[ 0 ] - HANDLE_RADIUS,
+					p[ 1 ] - HANDLE_RADIUS,
 					2 * HANDLE_RADIUS, 2 * HANDLE_RADIUS );
-			cornerColor = ( corner[ 2 ] > 0 ) ? backColor : frontColor;
+			final double z = renderBoxHelper.corners[ cornerId ][ 2 ];
+			cornerColor = ( z > 0 ) ? backColor : frontColor;
 		}
 	}
 }
