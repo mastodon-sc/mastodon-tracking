@@ -2,7 +2,6 @@ package org.mastodon.trackmate.ui.boundingbox;
 
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.WindowAdapter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
@@ -73,8 +72,6 @@ public class BoundingBoxMamut
 
 	private final ViewerFrameMamut viewerFrame;
 
-	private boolean editMode = false;
-
 	private final ModifiableInterval mInterval;
 
 	private final TriggerBehaviourBindings triggerbindings;
@@ -135,14 +132,6 @@ public class BoundingBoxMamut
 				viewerFrame.getViewerPanel(),
 				data.getSetupAssignments(),
 				interval );
-		dialog.addWindowListener( new WindowAdapter()
-		{
-			@Override
-			public void windowClosing( final java.awt.event.WindowEvent e )
-			{
-				toggleEditModeOff();
-			};
-		} );
 		dialog.addComponentListener( new ComponentAdapter()
 		{
 			@Override
@@ -175,7 +164,6 @@ public class BoundingBoxMamut
 		refreshBlockMap();
 
 		dialog.boxOverlay.setHighlightedCornerListener( this::highlightedCornerChanged );
-		toggleEditModeOff();
 	}
 
 	private void highlightedCornerChanged()
@@ -234,23 +222,10 @@ public class BoundingBoxMamut
 
 	private void toggleEditModeOn()
 	{
-		if ( !dialog.isVisible() || editMode )
-			return;
-
-		editMode = true;
-
 		// TODO: this should influence whether editing is possible
 		if ( !dialog.boxModePanel.full.isSelected() )
 			dialog.boxModePanel.full.doClick();
 		dialog.boxModePanel.setEnabled( false );
-
-		viewerFrame.getViewerPanel().requestRepaint();
-	}
-
-	private void toggleEditModeOff()
-	{
-		editMode = false;
-		dialog.boxModePanel.setEnabled( true );
 	}
 
 	public static void main( final String[] args )
