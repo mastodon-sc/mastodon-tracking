@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
-import net.imglib2.Interval;
+import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**
@@ -160,7 +160,7 @@ public final class RenderBoxHelper
 		}
 	}
 
-	public void renderBox( final Interval sourceInterval, final AffineTransform3D transform, final GeneralPath front, final GeneralPath back, final GeneralPath intersection )
+	public void renderBox( final RealInterval sourceInterval, final AffineTransform3D transform, final GeneralPath front, final GeneralPath back, final GeneralPath intersection )
 	{
 		for ( int i = 0; i < numCorners; ++i )
 		{

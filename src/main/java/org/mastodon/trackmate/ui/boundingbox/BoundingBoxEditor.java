@@ -10,7 +10,6 @@ import net.imglib2.realtransform.AffineTransform3D;
 
 public class BoundingBoxEditor implements DragBehaviour
 {
-
 	private final BoundingBoxOverlay boxOverlay;
 
 	private boolean moving = false;

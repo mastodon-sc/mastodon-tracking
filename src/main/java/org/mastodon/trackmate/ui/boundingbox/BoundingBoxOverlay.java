@@ -13,7 +13,9 @@ import java.awt.event.MouseMotionListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
 
+import bdv.util.Affine3DHelpers;
 import net.imglib2.Interval;
+import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.TransformListener;
@@ -31,14 +33,14 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	public static interface BoundingBoxOverlaySource
 	{
-		public Interval getInterval();
+		public RealInterval getInterval();
 
 		public void getIntervalTransform( final AffineTransform3D transform );
 	}
 
-	final BoundingBoxOverlaySource model;
+	private final BoundingBoxOverlaySource bbSource;
 
-	private final Color backColor = new Color( 0x00994499 );// Color.MAGENTA;
+	private final Color backColor = new Color( 0x00994499 );
 
 	private final Color frontColor = Color.GREEN;
 
@@ -56,7 +58,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private final CornerHighlighter cornerHighlighter;
 
-	private double perspective = 3;
+	private double perspective = 0.5;
 
 	private int canvasWidth;
 
@@ -88,7 +90,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	public BoundingBoxOverlay( final BoundingBoxOverlaySource bbSource )
 	{
-		this.model = bbSource;
+		this.bbSource = bbSource;
 		this.viewerTransform = new AffineTransform3D();
 		this.transform = new AffineTransform3D();
 		this.renderBoxHelper = new RenderBoxHelper();
@@ -121,13 +123,14 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		final GeneralPath back = new GeneralPath();
 		final GeneralPath intersection = new GeneralPath();
 
-		final Interval interval = model.getInterval();
-		final double sourceSize = Math.max( Math.max( interval.dimension( 0 ), interval.dimension( 1 ) ), interval.dimension( 2 ) );
+		final RealInterval interval = bbSource.getInterval();
+		final double sourceSize; // Math.max( Math.max( interval.dimension( 0 ), interval.dimension( 1 ) ), interval.dimension( 2 ) );
 		final double ox = canvasWidth / 2;
 		final double oy = canvasHeight / 2;
 		synchronized ( viewerTransform )
 		{
-			model.getIntervalTransform( transform );
+			sourceSize = Affine3DHelpers.extractScale( viewerTransform, 0 ) * canvasWidth;
+			bbSource.getIntervalTransform( transform );
 			transform.preConcatenate( viewerTransform );
 		}
 		renderBoxHelper.setPerspectiveProjection( perspective > 0 );

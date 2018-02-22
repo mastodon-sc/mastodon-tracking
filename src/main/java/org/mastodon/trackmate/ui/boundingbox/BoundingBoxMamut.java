@@ -22,6 +22,7 @@ import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Behaviours;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
+import bdv.util.ModifiableInterval;
 import bdv.viewer.Source;
 import mpicbg.spim.data.SpimDataException;
 import net.imglib2.Interval;
@@ -75,6 +76,8 @@ public class BoundingBoxMamut
 
 	private boolean editMode = false;
 
+	private final ModifiableInterval mInterval;
+
 	public BoundingBoxMamut(
 			final InputTriggerConfig keyconf,
 			final ViewerFrameMamut viewerFrame,
@@ -109,11 +112,13 @@ public class BoundingBoxMamut
 		 * Create bounding box dialog.
 		 */
 
-		this.model = new BoundingBoxModel( interval, interval, sourceTransform );
+		mInterval = new ModifiableInterval( interval );
+		this.model = new BoundingBoxModel( mInterval, sourceTransform );
 		model.install( viewerFrame.getViewerPanel(), setupID );
 		this.dialog = new BoundingBoxDialog(
 				viewerFrame,
 				title,
+				mInterval,
 				model,
 				viewerFrame.getViewerPanel(),
 				data.getSetupAssignments(),
@@ -148,7 +153,7 @@ public class BoundingBoxMamut
 
 	public Interval getInterval()
 	{
-		return model.getInterval();
+		return mInterval;
 	}
 
 	private void toggleEditModeOn()
@@ -227,7 +232,7 @@ public class BoundingBoxMamut
 			super( keyConfig, "bdv" );
 			behaviour( new ToggleEditModeBehaviour(),
 					BOUNDING_BOX_TOGGLE_EDIT_MODE_OFF, BOUNDING_BOX_TOGGLE_EDIT_MODE_KEYS );
-			behaviour( new BoundingBoxEditor( dialog.boxOverlay, viewerFrame.getViewerPanel(), dialog.boxSelectionPanel, model.getInterval() ),
+			behaviour( new BoundingBoxEditor( dialog.boxOverlay, viewerFrame.getViewerPanel(), dialog.boxSelectionPanel, mInterval ),
 					BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
 		}
 

@@ -1,53 +1,44 @@
 package org.mastodon.trackmate.ui.boundingbox;
 
-import bdv.tools.boundingbox.BoxRealRandomAccessible;
+import org.mastodon.trackmate.ui.boundingbox.tobdv.BoxRealRandomAccessible;
+
 import bdv.tools.brightness.RealARGBColorConverterSetup;
-import bdv.tools.transformation.TransformedSource;
+import bdv.util.RealRandomAccessibleIntervalSource;
 import bdv.util.RealRandomAccessibleSource;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerPanel;
-import net.imglib2.Interval;
+import net.imglib2.RealInterval;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.roi.Bounds;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 
-public class BoundingBoxModel extends BoxRealRandomAccessible< UnsignedShortType > implements BoundingBoxOverlay.BoundingBoxOverlaySource
+public class BoundingBoxModel implements BoundingBoxOverlay.BoundingBoxOverlaySource
 {
+	private final BoxRealRandomAccessible< UnsignedShortType > box;
 
 	private RealARGBColorConverterSetup boxConverterSetup;
 
-	private RealRandomAccessibleSource< UnsignedShortType > boxSource;
+	private final RealRandomAccessibleSource< UnsignedShortType > boxSource;
 
 	private SourceAndConverter< UnsignedShortType > boxSourceAndConverter;
 
-	private final TransformedSource< UnsignedShortType > ts;
+	private final RealInterval interval;
 
-	private final Interval maxInterval;
+	private final AffineTransform3D transform;
 
-	public BoundingBoxModel( final Interval interval, final Interval maxInterval, final AffineTransform3D transform )
+	public BoundingBoxModel( final RealInterval interval, final AffineTransform3D transform )
 	{
-		super( interval, new UnsignedShortType( 1000 ), new UnsignedShortType( 0 ) );
-		this.maxInterval = maxInterval;
-		this.boxSource =
-				new RealRandomAccessibleSource< UnsignedShortType >(
-						BoundingBoxModel.this,
-						new UnsignedShortType(),
-						"selection" )
-				{
-					@Override
-					public Interval getInterval( final int t, final int level )
-					{
-						return BoundingBoxModel.this.getInterval();
-					}
-				};
-		this.ts = new TransformedSource<>( boxSource );
-		ts.setFixedTransform( transform );
-	}
-
-	public Interval getMaxInterval()
-	{
-		return maxInterval;
+		this.interval = interval;
+		this.transform = transform;
+		box = new BoxRealRandomAccessible<>( interval, new UnsignedShortType( 1000 ), new UnsignedShortType( 0 ) );
+		boxSource = new RealRandomAccessibleIntervalSource<>(
+				box,
+				new Bounds.SmallestContainingInterval( interval ),
+				new UnsignedShortType(),
+				transform,
+				"selection" );
 	}
 
 	public void install(  final ViewerPanel viewer, final int boxSetupId )
@@ -63,13 +54,13 @@ public class BoundingBoxModel extends BoxRealRandomAccessible< UnsignedShortType
 		boxConverterSetup.setViewer( viewer );
 
 		// create a SourceAndConverter (can be added to the viewer for display)
-		boxSourceAndConverter = new SourceAndConverter<>( ts, converter );
+		boxSourceAndConverter = new SourceAndConverter<>( boxSource, converter );
 	}
 
 	@Override
 	public void getIntervalTransform( final AffineTransform3D transform )
 	{
-		ts.getSourceTransform( 0, 0, transform );
+		transform.set( this.transform );
 	}
 
 	public SourceAndConverter< UnsignedShortType > getBoxSourceAndConverter()
@@ -82,4 +73,9 @@ public class BoundingBoxModel extends BoxRealRandomAccessible< UnsignedShortType
 		return boxConverterSetup;
 	}
 
+	@Override
+	public RealInterval getInterval()
+	{
+		return interval;
+	}
 }

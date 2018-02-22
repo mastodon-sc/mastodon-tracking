@@ -30,6 +30,7 @@ import javax.swing.WindowConstants;
 
 import bdv.tools.boundingbox.BoxSelectionPanel;
 import bdv.tools.brightness.SetupAssignments;
+import bdv.util.ModifiableInterval;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.VisibilityAndGrouping;
@@ -50,23 +51,23 @@ class BoundingBoxDialog extends JDialog
 
 	private final ViewerPanel viewer;
 
-	public BoundingBoxDialog( final Frame owner, final String title, final BoundingBoxModel model, final ViewerPanel viewer, final SetupAssignments setupAssignments, final Interval rangeInterval )
+	public BoundingBoxDialog( final Frame owner, final String title, final ModifiableInterval interval, final BoundingBoxModel model, final ViewerPanel viewer, final SetupAssignments setupAssignments, final Interval rangeInterval )
 	{
-		this( owner, title, model, viewer, setupAssignments, rangeInterval, true, true );
+		this( owner, title, interval, model, viewer, setupAssignments, rangeInterval, true, true );
 	}
 
-	public BoundingBoxDialog( final Frame owner, final String title, final BoundingBoxModel model, final ViewerPanel viewer, final SetupAssignments setupAssignments, final Interval rangeInterval, final boolean showBoxSource, final boolean showBoxOverlay )
+	public BoundingBoxDialog( final Frame owner, final String title, final ModifiableInterval interval, final BoundingBoxModel model, final ViewerPanel viewer, final SetupAssignments setupAssignments, final Interval rangeInterval, final boolean showBoxSource, final boolean showBoxOverlay )
 	{
 		super( owner, title, false );
 		this.viewer = viewer;
 
 		// create an Overlay to show 3D wireframe box
 		boxOverlay = new BoundingBoxOverlay( model );
-		boxOverlay.setPerspective( 0 );
+//		boxOverlay.setPerspective( 0 );
 
 		// create a JPanel with sliders to modify the bounding box interval
 		// (boxRealRandomAccessible.getInterval())
-		boxSelectionPanel = new BoxSelectionPanel( model.getInterval(), rangeInterval );
+		boxSelectionPanel = new BoxSelectionPanel( interval, rangeInterval );
 		// listen for updates on the bbox to trigger repainting
 		boxSelectionPanel.addSelectionUpdateListener( new BoxSelectionPanel.SelectionUpdateListener()
 		{
