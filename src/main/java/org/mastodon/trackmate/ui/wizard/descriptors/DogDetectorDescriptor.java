@@ -457,7 +457,10 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 			preview = new JButton( "Preview", PREVIEW_ICON );
 			preview.addActionListener( ( e ) -> preview() );
 			gbc.gridy++;
-			gbc.gridx = 2;
+			gbc.gridx = 0;
+			gbc.gridwidth = 3;
+			gbc.anchor = GridBagConstraints.EAST;
+			gbc.fill = GridBagConstraints.NONE;
 			add( preview, gbc );
 
 			// Info text.
