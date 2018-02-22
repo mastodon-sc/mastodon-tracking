@@ -108,9 +108,9 @@ public class Wizard extends AbstractContextual
 		/*
 		 * Load SpimData
 		 */
-//		final String bdvFile = "samples/datasethdf5.xml";
+		final String bdvFile = "../TrackMate3/samples/datasethdf5.xml";
 //		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+//		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 
 		SpimDataMinimal sd = null;
 		try
@@ -126,7 +126,7 @@ public class Wizard extends AbstractContextual
 		final Settings settings = new Settings()
 				.spimData( spimData );
 
-		final WindowManager windowManager = new WindowManager();
+		final WindowManager windowManager = new WindowManager( context );
 		final MainWindow mw = new MainWindow( windowManager );
 
 		final MamutProject project = new MamutProject( null, new File( bdvFile ) );
