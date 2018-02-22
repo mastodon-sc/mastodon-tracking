@@ -264,9 +264,15 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 	{
 		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
 		if ( null != chartPanel )
+		{
 			panel.remove( chartPanel );
+			panel.repaint();
+		}
 
 		final double[] values = qualities.getMap().values();
+		if ( values.length == 0 )
+			return;
+
 		this.chartPanel = HistogramUtil.createHistogramPlot( values, false );
 		chartPanel.getChart().setTitle( new TextTitle( "Quality histogram", chartPanel.getFont() ) );
 
@@ -381,15 +387,15 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 		private static final long serialVersionUID = 1L;
 
-		private JFormattedTextField diameter;
+		private final JFormattedTextField diameter;
 
-		private JFormattedTextField threshold;
+		private final JFormattedTextField threshold;
 
-		private JLabel lblDiameterUnit;
+		private final JLabel lblDiameterUnit;
 
-		private JButton preview;
+		private final JButton preview;
 
-		private JLabel lblInfo;
+		private final JLabel lblInfo;
 
 		public DogDetectorPanel()
 		{
@@ -451,7 +457,10 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 			preview = new JButton( "Preview", PREVIEW_ICON );
 			preview.addActionListener( ( e ) -> preview() );
 			gbc.gridy++;
-			gbc.gridx = 2;
+			gbc.gridx = 0;
+			gbc.gridwidth = 3;
+			gbc.anchor = GridBagConstraints.EAST;
+			gbc.fill = GridBagConstraints.NONE;
 			add( preview, gbc );
 
 			// Info text.
@@ -468,7 +477,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 	private static class SelectAllOnFocus extends FocusAdapter
 	{
-		private JFormattedTextField textField;
+		private final JFormattedTextField textField;
 
 		public SelectAllOnFocus( final JFormattedTextField textField )
 		{
