@@ -143,7 +143,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 		graphics.setTransform( t );
 
-		if ( editMode && null != cornerHandle )
+		if ( cornerHandle != null )
 		{
 			graphics.setColor( cornerColor );
 			graphics.fill( cornerHandle );
