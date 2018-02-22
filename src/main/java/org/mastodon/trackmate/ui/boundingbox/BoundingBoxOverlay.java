@@ -38,11 +38,11 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private final Color frontColor = Color.GREEN;
 
-	private Stroke normalStroke = new BasicStroke();
+	private final Stroke normalStroke = new BasicStroke();
 
-	private Stroke intersectionStroke = new BasicStroke( 1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1f, new float[] { 10f, 10f }, 0f );
+	private final Stroke intersectionStroke = new BasicStroke( 1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1f, new float[] { 10f, 10f }, 0f );
 
-	private Paint intersectionColor = Color.WHITE.darker();
+	private final Paint intersectionColor = Color.WHITE.darker();
 
 	private Color cornerColor = frontColor;
 
