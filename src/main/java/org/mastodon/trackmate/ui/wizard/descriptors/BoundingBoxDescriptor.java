@@ -12,6 +12,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseMotionListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -29,7 +30,6 @@ import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxEditor;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxModel;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay;
-import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.CornerHighlighter;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.DisplayMode;
 import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
@@ -87,7 +87,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 
 	private BoundingBoxOverlay boxOverlay;
 
-	private CornerHighlighter cornerHighlighter;
+	private MouseMotionListener cornerHighlighter;
 
 	private ViewerFrameMamut viewFrame;
 
@@ -133,7 +133,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			roi = getBoundingBoxModel();
 			boxOverlay = new BoundingBoxOverlay( roi );
 			boxOverlay.setPerspective( 0 );
-			cornerHighlighter = boxOverlay.new CornerHighlighter();
+			cornerHighlighter = boxOverlay.getCornerHighlighter();
 
 			/*
 			 * We also have to recreate the selection panel linked to the new

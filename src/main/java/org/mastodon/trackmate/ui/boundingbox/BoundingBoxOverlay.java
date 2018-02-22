@@ -9,6 +9,7 @@ import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.event.MouseMotionListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
 
@@ -19,6 +20,10 @@ import net.imglib2.ui.TransformListener;
 
 public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< AffineTransform3D >
 {
+	private static final double DISTANCE_TOLERANCE = 20.;
+
+	private static final double HANDLE_RADIUS = DISTANCE_TOLERANCE / 2.;
+
 	public static enum DisplayMode
 	{
 		FULL, SECTION;
@@ -43,13 +48,13 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private final Paint intersectionColor = Color.WHITE.darker();
 
-	private Color cornerColor = frontColor;
-
 	private final AffineTransform3D viewerTransform;
 
 	private final AffineTransform3D transform;
 
 	final RenderBoxHelper renderBoxHelper;
+
+	private final CornerHighlighter cornerHighlighter;
 
 	private double perspective = 3;
 
@@ -61,9 +66,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private boolean editMode;
 
-	private Ellipse2D cornerHandle;
-
-	int cornerId;
+	private int cornerId;
 
 	public BoundingBoxOverlay( final Interval interval )
 	{
@@ -89,6 +92,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		this.viewerTransform = new AffineTransform3D();
 		this.transform = new AffineTransform3D();
 		this.renderBoxHelper = new RenderBoxHelper();
+		this.cornerHighlighter = new CornerHighlighter( DISTANCE_TOLERANCE );
 	}
 
 	/**
@@ -146,8 +150,17 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 			graphics.draw( front );
 		}
 
-		if ( cornerHandle != null )
+		final int id = getHighlightedCornerIndex();
+		if ( id >= 0 )
 		{
+			final double[] p = renderBoxHelper.projectedCorners[ id ];
+			final Ellipse2D cornerHandle = new Ellipse2D.Double(
+					p[ 0 ] - HANDLE_RADIUS,
+					p[ 1 ] - HANDLE_RADIUS,
+					2 * HANDLE_RADIUS, 2 * HANDLE_RADIUS );
+			final double z = renderBoxHelper.corners[ cornerId ][ 2 ];
+			final Color cornerColor = ( z > 0 ) ? backColor : frontColor;
+
 			graphics.setColor( cornerColor );
 			graphics.fill( cornerHandle );
 			graphics.setColor( cornerColor.darker().darker() );
@@ -191,54 +204,59 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		}
 	}
 
-	public class CornerHighlighter extends MouseMotionAdapter
+	/**
+	 * Get the index of the highlighted corner (if any).
+	 *
+	 * @return corner index or {@code -1} if no corner is highlighted
+	 */
+	public int getHighlightedCornerIndex()
 	{
-		private static final double DISTANCE_TOLERANCE = 20.;
+		return cornerId;
+	}
 
-		private static final double HANDLE_RADIUS = DISTANCE_TOLERANCE / 2.;
+	public MouseMotionListener getCornerHighlighter()
+	{
+		return cornerHighlighter;
+	}
 
-		private static final double SQU_DISTANCE_TOLERANCE = DISTANCE_TOLERANCE * DISTANCE_TOLERANCE;
+	/**
+	 * Set the index of the highlighted corner.
+	 *
+	 * @param id
+	 *            corner index, {@code -1} means that no corner is highlighted.
+	 */
+	void setHighlightedCorner( final int id )
+	{
+		cornerId = ( id >= 0 && id < RenderBoxHelper.numCorners ) ? id : -1;
+	}
+
+	class CornerHighlighter extends MouseMotionAdapter
+	{
+		private final double squTolerance;
+
+		CornerHighlighter( final double tolerance )
+		{
+			squTolerance = tolerance * tolerance;
+		}
 
 		@Override
 		public void mouseMoved( final MouseEvent e )
 		{
 			final int x = e.getX();
 			final int y = e.getY();
-			cornerHandle = null;
-			cornerId = -1;
 			for ( int i = 0; i < RenderBoxHelper.numCorners; i++ )
 			{
 				final double[] corner = renderBoxHelper.projectedCorners[ i ];
 				final double dx = x - corner[ 0 ];
 				final double dy = y - corner[ 1 ];
 				final double dr2 = dx * dx + dy * dy;
-				if ( dr2 < SQU_DISTANCE_TOLERANCE )
+				if ( dr2 < squTolerance )
 				{
-					cornerId = i;
-					regen();
+					setHighlightedCorner( i );
 					return;
 				}
 			}
-		}
-
-		@Override
-		public void mouseDragged( final MouseEvent e )
-		{
-			if ( cornerId < 0 )
-				return;
-
-			regen();
-		}
-
-		private void regen()
-		{
-			final double[] p = renderBoxHelper.projectedCorners[ cornerId ];
-			cornerHandle = new Ellipse2D.Double(
-					p[ 0 ] - HANDLE_RADIUS,
-					p[ 1 ] - HANDLE_RADIUS,
-					2 * HANDLE_RADIUS, 2 * HANDLE_RADIUS );
-			final double z = renderBoxHelper.corners[ cornerId ][ 2 ];
-			cornerColor = ( z > 0 ) ? backColor : frontColor;
+			setHighlightedCorner( -1 );
 		}
 	}
 }

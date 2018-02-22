@@ -28,8 +28,6 @@ import javax.swing.JRadioButton;
 import javax.swing.KeyStroke;
 import javax.swing.WindowConstants;
 
-import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.CornerHighlighter;
-
 import bdv.tools.boundingbox.BoxSelectionPanel;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.viewer.DisplayMode;
@@ -83,7 +81,6 @@ class BoundingBoxDialog extends JDialog
 
 		// when dialog is made visible, add bbox source
 		// when dialog is hidden, remove bbox source
-		final CornerHighlighter cornerHighlighter = boxOverlay.new CornerHighlighter();
 		addComponentListener( new ComponentAdapter()
 		{
 
@@ -112,7 +109,7 @@ class BoundingBoxDialog extends JDialog
 					viewer.getDisplay().addOverlayRenderer( boxOverlay );
 					viewer.addRenderTransformListener( boxOverlay );
 				}
-				viewer.getDisplay().addHandler( cornerHighlighter );
+				viewer.getDisplay().addHandler( boxOverlay.getCornerHighlighter() );
 			}
 
 			@Override
@@ -128,7 +125,7 @@ class BoundingBoxDialog extends JDialog
 					viewer.getDisplay().removeOverlayRenderer( boxOverlay );
 					viewer.removeTransformListener( boxOverlay );
 				}
-				viewer.getDisplay().removeHandler( cornerHighlighter );
+				viewer.getDisplay().removeHandler( boxOverlay.getCornerHighlighter() );
 			}
 		} );
 

@@ -27,6 +27,8 @@ public class BoundingBoxEditor implements DragBehaviour
 
 	private final double[] initCorner = new double[ 3 ];
 
+	private int cornerId;
+
 	public BoundingBoxEditor( final BoundingBoxOverlay boxOverlay, final ViewerPanel viewerPanel, final BoxSelectionPanel boxSelectionPanel, final ModifiableInterval interval )
 	{
 		this.boxOverlay = boxOverlay;
@@ -38,10 +40,11 @@ public class BoundingBoxEditor implements DragBehaviour
 	@Override
 	public void init( final int x, final int y )
 	{
-		if ( boxOverlay.cornerId < 0 )
+		cornerId = boxOverlay.getHighlightedCornerIndex();
+		if ( cornerId < 0 )
 			return;
 
-		IntervalCorners.corner( interval, boxOverlay.cornerId, initCorner );
+		IntervalCorners.corner( interval, cornerId, initCorner );
 		interval.min( initMin );
 		interval.max( initMax );
 
@@ -67,7 +70,7 @@ public class BoundingBoxEditor implements DragBehaviour
 		for ( int d = 0; d < 3; ++d )
 		{
 			final long p = Math.round( gPos[ d ] );
-			if ( ( boxOverlay.cornerId & ( 1 << d ) ) == 0 )
+			if ( ( cornerId & ( 1 << d ) ) == 0 )
 			{
 				min[ d ] = p;
 				if ( p > initMax[ d ] )
