@@ -32,7 +32,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		public void getIntervalTransform( final AffineTransform3D transform );
 	}
 
-	private final BoundingBoxModel model;
+	private final BoundingBoxOverlaySource model;
 
 	private final Color backColor = new Color( 0x00994499 );// Color.MAGENTA;
 
@@ -52,7 +52,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	final RenderBoxHelper renderBoxHelper;
 
-	private double perspective = 100.;
+	private double perspective = 3;
 
 	private int canvasWidth;
 
@@ -72,9 +72,28 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	int cornerId;
 
-	public BoundingBoxOverlay( final BoundingBoxModel model )
+
+	public BoundingBoxOverlay( final Interval interval )
 	{
-		this.model = model;
+		this( new BoundingBoxOverlaySource()
+		{
+			@Override
+			public Interval getInterval()
+			{
+				return interval;
+			}
+
+			@Override
+			public void getIntervalTransform( final AffineTransform3D transform )
+			{
+				transform.identity();
+			}
+		} );
+	}
+
+	public BoundingBoxOverlay( final BoundingBoxOverlaySource bbSource )
+	{
+		this.model = bbSource;
 		this.viewerTransform = new AffineTransform3D();
 		this.transform = new AffineTransform3D();
 		this.renderBoxHelper = new RenderBoxHelper();

@@ -12,7 +12,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 
-public class BoundingBoxModel extends BoxRealRandomAccessible< UnsignedShortType >
+public class BoundingBoxModel extends BoxRealRandomAccessible< UnsignedShortType > implements BoundingBoxOverlay.BoundingBoxOverlaySource
 {
 
 	private RealARGBColorConverterSetup boxConverterSetup;
@@ -66,6 +66,7 @@ public class BoundingBoxModel extends BoxRealRandomAccessible< UnsignedShortType
 		boxSourceAndConverter = new SourceAndConverter<>( ts, converter );
 	}
 
+	@Override
 	public void getIntervalTransform( final AffineTransform3D transform )
 	{
 		ts.getSourceTransform( 0, 0, transform );
