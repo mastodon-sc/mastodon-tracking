@@ -1,15 +1,29 @@
 package org.mastodon.trackmate.ui.boundingbox;
 
 import java.awt.event.WindowAdapter;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Locale;
+
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
+import org.mastodon.revised.bdv.ViewerFrameMamut;
+import org.mastodon.revised.mamut.MamutProject;
+import org.mastodon.revised.mamut.MamutProjectIO;
+import org.mastodon.revised.mamut.MamutViewBdv;
+import org.mastodon.revised.mamut.ProjectManager;
+import org.mastodon.revised.mamut.WindowManager;
+import org.scijava.Context;
 import org.scijava.ui.behaviour.ClickBehaviour;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Behaviours;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
 import bdv.viewer.Source;
-import bdv.viewer.ViewerFrame;
+import mpicbg.spim.data.SpimDataException;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -53,7 +67,7 @@ public class BoundingBoxMamut
 
 	private final BoundingBoxModel model;
 
-	private final ViewerFrame viewerFrame;
+	private final ViewerFrameMamut viewerFrame;
 
 	private final BoundingBoxVisualizationMode bbVisualization;
 
@@ -63,7 +77,7 @@ public class BoundingBoxMamut
 
 	public BoundingBoxMamut(
 			final InputTriggerConfig keyconf,
-			final ViewerFrame viewerFrame,
+			final ViewerFrameMamut viewerFrame,
 			final SharedBigDataViewerData data,
 			final int setupID,
 			final String title )
@@ -227,4 +241,32 @@ public class BoundingBoxMamut
 			}
 		}
 	}
+
+	public static void main( final String[] args )
+			throws IOException, SpimDataException, InvocationTargetException, InterruptedException, ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException
+	{
+		Locale.setDefault( Locale.US );
+		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
+		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
+
+		final Context context = new Context();
+		final WindowManager windowManager = new WindowManager( context );
+		final ProjectManager projectManager = windowManager.getProjectManager();
+		final MamutProject project = new MamutProjectIO().load( "/Users/pietzsch/workspace/Mastodon/TrackMate3/samples/mamutproject" );
+		projectManager.open( project );
+		final MamutViewBdv[] bdv = new MamutViewBdv[ 1 ];
+		SwingUtilities.invokeAndWait( () -> {
+			bdv[ 0 ] = windowManager.createBigDataViewer();
+		} );
+		final ViewerFrameMamut viewerFrame = ( ViewerFrameMamut ) bdv[ 0 ].getFrame();
+		final InputTriggerConfig keyconf = windowManager.getAppModel().getKeymap().getConfig();
+		new BoundingBoxMamut(
+				keyconf,
+				viewerFrame,
+				windowManager.getAppModel().getSharedBdvData(),
+				0,
+				"Test Bounding-box" );
+	}
+
+
 }
