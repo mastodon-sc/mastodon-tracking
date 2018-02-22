@@ -71,23 +71,13 @@ public class BoundingBoxEditor implements DragBehaviour
 			max[ d ] = initMax[ d ];
 		}
 
-		// Z.
-		if ( boxOverlay.cornerId < 4 )
-			min[ 2 ] = Math.round( gPos[ 2 ] );
-		else
-			max[ 2 ] = Math.round( gPos[ 2 ] );
-
-		// Y.
-		if ( ( boxOverlay.cornerId / 2 ) % 2 == 0 )
-			min[ 1 ] = Math.round( gPos[ 1 ] );
-		else
-			max[ 1 ] = Math.round( gPos[ 1 ] );
-
-		// X.
-		if ( boxOverlay.cornerId % 2 == 0 )
-			min[ 0 ] = Math.round( gPos[ 0 ] );
-		else
-			max[ 0 ] = Math.round( gPos[ 0 ] );
+		for ( int d = 0; d < 3; ++d )
+		{
+			if ( ( boxOverlay.cornerId & ( 1 << d ) ) == 0 )
+				min[ d ] = Math.round( gPos[ d ] );
+			else
+				max[ d ] = Math.round( gPos[ d ] );
+		}
 
 		interval.set( new FinalInterval( min, max ) );
 		boxSelectionPanel.updateSliders( interval );
