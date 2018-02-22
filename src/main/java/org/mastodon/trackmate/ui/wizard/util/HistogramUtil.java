@@ -24,10 +24,18 @@ public class HistogramUtil
 	public static ChartPanel createHistogramPlot( final double[] values, final boolean withAnnotation )
 	{
 		final LogHistogramDataset dataset = new LogHistogramDataset();
-		final int nBins = getNBins( values, 8, 100 );
-		if ( nBins > 1 )
-			dataset.addSeries( DATA_SERIES_NAME, values, nBins );
-		final double threshold = otsuThreshold( values );
+		final double threshold;
+		if ( values.length > 0 )
+		{
+			final int nBins = getNBins( values, 8, 100 );
+			if ( nBins > 1 )
+				dataset.addSeries( DATA_SERIES_NAME, values, nBins );
+			threshold = otsuThreshold( values );
+		}
+		else
+		{
+			threshold = 0.;
+		}
 
 		final JFreeChart chart = ChartFactory.createHistogram( null, null, null, dataset, PlotOrientation.VERTICAL, false, false, false );
 		final XYPlot plot = chart.getXYPlot();
