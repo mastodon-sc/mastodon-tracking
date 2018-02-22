@@ -382,7 +382,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			return;
 
 		editMode = true;
-		boxOverlay.setEditMode( true );
+		boxOverlay.showCornerHandles( true );
 
 		panel.boxModePanel.modeToggle.setText( "Edit mode" );
 		if ( !panel.boxModePanel.full.isSelected() )
@@ -401,7 +401,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 	private void toggleEditModeOff()
 	{
 		editMode = false;
-		boxOverlay.setEditMode( false );
+		boxOverlay.showCornerHandles( false );
 
 		final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
 		panel.boxModePanel.modeToggle.setText( "Navigation mode" );

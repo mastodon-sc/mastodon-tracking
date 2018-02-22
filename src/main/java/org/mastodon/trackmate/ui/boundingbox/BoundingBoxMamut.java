@@ -158,7 +158,7 @@ public class BoundingBoxMamut
 
 		editMode = true;
 
-		dialog.boxOverlay.setEditMode( true );
+		dialog.boxOverlay.showCornerHandles( true );
 		dialog.boxModePanel.modeLabel.setText( "Edit mode" );
 		if ( !dialog.boxModePanel.full.isSelected() )
 			dialog.boxModePanel.full.doClick();
@@ -177,7 +177,7 @@ public class BoundingBoxMamut
 	{
 		editMode = false;
 		dialog.boxModePanel.modeLabel.setText( "Navigation mode" );
-		dialog.boxOverlay.setEditMode( false );
+		dialog.boxOverlay.showCornerHandles( false );
 		dialog.boxModePanel.setEnabled( true );
 
 		final TriggerBehaviourBindings triggerBehaviourBindings = viewerFrame.getTriggerbindings();

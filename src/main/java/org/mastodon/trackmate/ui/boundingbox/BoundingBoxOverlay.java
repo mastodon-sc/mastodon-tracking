@@ -64,7 +64,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private DisplayMode displayMode = DisplayMode.FULL;
 
-	private boolean editMode;
+	private boolean showCornerHandles = true;
 
 	private int cornerId;
 
@@ -107,9 +107,9 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		this.perspective = perspective;
 	}
 
-	public void setEditMode( final boolean editMode )
+	public void showCornerHandles( final boolean showCornerHandles )
 	{
-		this.editMode = editMode;
+		this.showCornerHandles = showCornerHandles;
 	}
 
 	@Override
@@ -150,21 +150,24 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 			graphics.draw( front );
 		}
 
-		final int id = getHighlightedCornerIndex();
-		if ( id >= 0 )
+		if ( showCornerHandles )
 		{
-			final double[] p = renderBoxHelper.projectedCorners[ id ];
-			final Ellipse2D cornerHandle = new Ellipse2D.Double(
-					p[ 0 ] - HANDLE_RADIUS,
-					p[ 1 ] - HANDLE_RADIUS,
-					2 * HANDLE_RADIUS, 2 * HANDLE_RADIUS );
-			final double z = renderBoxHelper.corners[ cornerId ][ 2 ];
-			final Color cornerColor = ( z > 0 ) ? backColor : frontColor;
+			final int id = getHighlightedCornerIndex();
+			if ( id >= 0 )
+			{
+				final double[] p = renderBoxHelper.projectedCorners[ id ];
+				final Ellipse2D cornerHandle = new Ellipse2D.Double(
+						p[ 0 ] - HANDLE_RADIUS,
+						p[ 1 ] - HANDLE_RADIUS,
+						2 * HANDLE_RADIUS, 2 * HANDLE_RADIUS );
+				final double z = renderBoxHelper.corners[ cornerId ][ 2 ];
+				final Color cornerColor = ( z > 0 ) ? backColor : frontColor;
 
-			graphics.setColor( cornerColor );
-			graphics.fill( cornerHandle );
-			graphics.setColor( cornerColor.darker().darker() );
-			graphics.draw( cornerHandle );
+				graphics.setColor( cornerColor );
+				graphics.fill( cornerHandle );
+				graphics.setColor( cornerColor.darker().darker() );
+				graphics.draw( cornerHandle );
+			}
 		}
 	}
 
@@ -225,12 +228,12 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	 * @param id
 	 *            corner index, {@code -1} means that no corner is highlighted.
 	 */
-	void setHighlightedCorner( final int id )
+	private void setHighlightedCorner( final int id )
 	{
 		cornerId = ( id >= 0 && id < RenderBoxHelper.numCorners ) ? id : -1;
 	}
 
-	class CornerHighlighter extends MouseMotionAdapter
+	private class CornerHighlighter extends MouseMotionAdapter
 	{
 		private final double squTolerance;
 
