@@ -34,7 +34,7 @@
 	<dependencies>
 
 		<!-- BDV deps -->
-		
+
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>bigdataviewer-core</artifactId>
@@ -55,35 +55,45 @@
 			<artifactId>trackmate</artifactId>
 			<version>1.0.0-beta-3-SNAPSHOT</version>
 		</dependency>
-		
+		<dependency>
+			<groupId>org.mastodon</groupId>
+			<artifactId>mastodon-collection</artifactId>
+			<version>1.0.0-beta-13-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mastodon</groupId>
+			<artifactId>mastodon-graph</artifactId>
+			<version>1.0.0-beta-11-SNAPSHOT</version>
+		</dependency>
+
 		<!-- JFreeChart deps -->
-		
+
 		<dependency>
 			<groupId>org.jfree</groupId>
 			<artifactId>jfreechart</artifactId>
 		</dependency>
-		
+
 		<!-- ImgLib2 deps -->
 
 		<dependency>
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-algorithm-fft</artifactId>
 		</dependency>
-		
+
 		<!-- ImageJ deps -->
-	
+
 		<dependency>
 			<groupId>net.imagej</groupId>
 			<artifactId>imagej-ops</artifactId>
 		</dependency>
-		
+
 		<!-- SciJava deps -->
-		
+
 		<dependency>
 			<groupId>org.scijava</groupId>
 			<artifactId>scijava-plugins-commands</artifactId>
 		</dependency>
-		
+
 		<!-- Test dependencies -->
 		<dependency>
 			<groupId>junit</groupId>
@@ -91,11 +101,6 @@
 			<scope>test</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>org.mastodon</groupId>
-			<artifactId>mastodon-graph</artifactId>
-			<version>1.0.0-beta-4-SNAPSHOT</version>
-		</dependency>
 	</dependencies>
 
 	<mailingLists>
