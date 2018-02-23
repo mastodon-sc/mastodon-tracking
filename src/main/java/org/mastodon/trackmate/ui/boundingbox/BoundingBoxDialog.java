@@ -1,5 +1,8 @@
 package org.mastodon.trackmate.ui.boundingbox;
 
+import static org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode.FULL;
+import static org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode.SECTION;
+
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Font;
@@ -7,10 +10,9 @@ import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.util.ArrayList;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JDialog;
@@ -18,6 +20,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.WindowConstants;
+
+import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
 
 import bdv.tools.boundingbox.BoxSelectionPanel;
 import bdv.tools.brightness.SetupAssignments;
@@ -141,14 +145,26 @@ class BoundingBoxDialog extends JDialog
 		pack();
 	}
 
-	class BoxModePanel extends JPanel
+	public static class BoxModePanel extends JPanel
 	{
 		private static final long serialVersionUID = 1L;
 
-		final JRadioButton full;
+		public interface ModeChangeListener
+		{
+			void boxDisplayModeChanged();
+//					boxOverlay.setDisplayMode( full.isSelected() ? FULL : SECTION );
+//					viewer.requestRepaint();
+		}
+
+		private final ArrayList< ModeChangeListener > listeners;
+
+		private BoxDisplayMode mode;
 
 		public BoxModePanel()
 		{
+			listeners = new ArrayList<>();
+			mode = FULL;
+
 			final GridBagLayout layout = new GridBagLayout();
 			layout.columnWidths = new int[] { 80, 80 };
 			layout.columnWeights = new double[] { 0.5, 0.5 };
@@ -167,29 +183,24 @@ class BoundingBoxDialog extends JDialog
 
 			gbc.gridy++;
 			gbc.gridwidth = 1;
-			this.full = new JRadioButton( "Full" );
-			final JRadioButton section = new JRadioButton( "Section" );
-			final ActionListener l = new ActionListener()
-			{
-				@Override
-				public void actionPerformed( final ActionEvent e )
-				{
-					// TODO
-//					boxOverlay.setDisplayMode( full.isSelected() ? FULL : SECTION );
-					viewer.requestRepaint();
-				}
-			};
-			full.addActionListener( l );
-			section.addActionListener( l );
+			final JRadioButton full = new JRadioButton( "Full", mode == FULL );
+			full.addActionListener( e -> setBoxDisplayMode( FULL ) );
+			add( full, gbc );
+
+			gbc.gridx++;
+			final JRadioButton section = new JRadioButton( "Section", mode == SECTION );
+			section.addActionListener( e -> setBoxDisplayMode( SECTION ) );
+			add( section, gbc );
+
 			final ButtonGroup group = new ButtonGroup();
 			group.add( full );
 			group.add( section );
-			full.setSelected( true );
-			// TODO
-//			boxOverlay.setDisplayMode( FULL );
-			add( full, gbc );
-			gbc.gridx++;
-			add( section, gbc );
+		}
+
+		private void setBoxDisplayMode( final BoxDisplayMode mode )
+		{
+			this.mode = mode;
+			listeners.forEach( ModeChangeListener::boxDisplayModeChanged );
 		}
 
 		@Override
@@ -199,6 +210,15 @@ class BoundingBoxDialog extends JDialog
 			for ( final Component c : getComponents() )
 				c.setEnabled( b );
 		}
-	}
 
+		public void addListener( final ModeChangeListener l )
+		{
+			listeners.add( l );
+		}
+
+		public BoxDisplayMode getBoxDisplayMode()
+		{
+			return mode;
+		}
+	}
 }

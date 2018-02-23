@@ -20,14 +20,15 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.TransformListener;
 
+import static org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode.FULL;
+
 public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< AffineTransform3D >
 {
 	private static final double DISTANCE_TOLERANCE = 20.;
 
 	private static final double HANDLE_RADIUS = DISTANCE_TOLERANCE / 2.;
 
-	// TODO: Rename if possible, conflicts with bdv.viewer.DisplayMode
-	public enum DisplayMode
+	public enum BoxDisplayMode
 	{
 		FULL, SECTION;
 	}
@@ -70,7 +71,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private int canvasHeight;
 
-	private DisplayMode displayMode = DisplayMode.FULL;
+	private BoxDisplayMode displayMode = FULL;
 
 	private boolean showCornerHandles = true;
 
@@ -153,7 +154,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		graphics.setPaint( intersectionColor );
 		graphics.setStroke( intersectionStroke );
 		graphics.draw( intersection );
-		if ( displayMode == DisplayMode.FULL )
+		if ( displayMode == FULL )
 		{
 			graphics.setStroke( normalStroke );
 			graphics.setPaint( backColor );
@@ -199,7 +200,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		}
 	}
 
-	public void setDisplayMode( final DisplayMode mode )
+	public void setDisplayMode( final BoxDisplayMode mode )
 	{
 		this.displayMode = mode;
 

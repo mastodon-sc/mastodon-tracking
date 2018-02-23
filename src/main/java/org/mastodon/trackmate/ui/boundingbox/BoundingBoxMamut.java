@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
+import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
 import org.scijava.ui.behaviour.Behaviour;
 import org.scijava.ui.behaviour.BehaviourMap;
 import org.scijava.ui.behaviour.InputTrigger;
@@ -140,6 +141,8 @@ public class BoundingBoxMamut
 			}
 		} );
 
+		dialog.boxModePanel.addListener( this::boxDisplayModeChanged );
+
 		/*
 		 * Create DragBoxCornerBehaviour
 		 */
@@ -189,6 +192,24 @@ public class BoundingBoxMamut
 			block();
 	}
 
+	private void boxDisplayModeChanged()
+	{
+		final BoxDisplayMode mode = dialog.boxModePanel.getBoxDisplayMode();
+		boxOverlay.setDisplayMode( mode );
+		viewerFrame.getViewerPanel().requestRepaint();
+
+		if ( mode == BoxDisplayMode.FULL )
+		{
+			// TODO
+			// enable corner editing
+		}
+		else
+		{
+			// TODO
+			// disable corner editing
+		}
+	}
+
 	private void block()
 	{
 		triggerbindings.addBehaviourMap( BLOCKING_MAP, blockMap );
@@ -221,13 +242,5 @@ public class BoundingBoxMamut
 	public Interval getInterval()
 	{
 		return mInterval;
-	}
-
-	private void toggleEditModeOn()
-	{
-		// TODO: this should influence whether editing is possible
-		if ( !dialog.boxModePanel.full.isSelected() )
-			dialog.boxModePanel.full.doClick();
-		dialog.boxModePanel.setEnabled( false );
 	}
 }

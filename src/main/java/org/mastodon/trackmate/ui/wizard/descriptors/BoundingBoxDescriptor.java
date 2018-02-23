@@ -30,7 +30,7 @@ import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.ui.boundingbox.DragBoxCornerBehaviour;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxModel;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay;
-import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.DisplayMode;
+import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
 import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 import org.scijava.Context;
@@ -579,7 +579,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 					if ( null != boxOverlay && null == viewFrame )
 						return;
 
-					boxOverlay.setDisplayMode( full.isSelected() ? DisplayMode.FULL : DisplayMode.SECTION );
+					boxOverlay.setDisplayMode( full.isSelected() ? BoxDisplayMode.FULL : BoxDisplayMode.SECTION );
 					viewFrame.getViewerPanel().requestRepaint();
 				}
 			};
