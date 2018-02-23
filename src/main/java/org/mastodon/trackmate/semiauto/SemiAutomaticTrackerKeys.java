@@ -143,7 +143,7 @@ public class SemiAutomaticTrackerKeys
 	 * in time. If <code>true</code>, we track forward in time. If
 	 * <code>false</code>, backward.
 	 * <p>
-	 * Expected values are {@link Booleans}s.
+	 * Expected values are {@link Boolean}s.
 	 */
 	public static final String KEY_FORWARD_IN_TIME = "FORWARD_IN_TIME";
 
@@ -176,7 +176,7 @@ public class SemiAutomaticTrackerKeys
 	 * or outgoing links already (see {@link #KEY_ALLOW_LINKING_IF_HAS_INCOMING}
 	 * and {@link #KEY_ALLOW_LINKING_IF_HAS_OUTGOING}).
 	 * <p>
-	 * Expected values are {@link Booleans}s.
+	 * Expected values are {@link Boolean}s.
 	 */
 	public static final String KEY_ALLOW_LINKING_TO_EXISTING = "ALLOW_LINKING_TO_EXISTING";
 
@@ -194,7 +194,7 @@ public class SemiAutomaticTrackerKeys
 	 * parameter to be taken into account,
 	 * {@link #KEY_ALLOW_LINKING_TO_EXISTING} must be <code>true</code>.
 	 * <p>
-	 * Expected values are {@link Booleans}s.
+	 * Expected values are {@link Boolean}s.
 	 */
 	public static final String KEY_ALLOW_LINKING_IF_HAS_INCOMING = "ALLOW_LINKING_IF_HAS_INCOMING";
 
@@ -213,7 +213,7 @@ public class SemiAutomaticTrackerKeys
 	 * parameter to be taken into account,
 	 * {@link #KEY_ALLOW_LINKING_TO_EXISTING} must be <code>true</code>.
 	 * <p>
-	 * Expected values are {@link Booleans}s.
+	 * Expected values are {@link Boolean}s.
 	 */
 	public static final String KEY_ALLOW_LINKING_IF_HAS_OUTGOING = "ALLOW_LINKING_IF_HAS_OUTGOING";
 
@@ -229,7 +229,7 @@ public class SemiAutomaticTrackerKeys
 	 * target spots. For this parameter to be taken into account,
 	 * {@link #KEY_ALLOW_LINKING_TO_EXISTING} must be <code>true</code>.
 	 * <p>
-	 * Expected values are {@link Booleans}s.
+	 * Expected values are {@link Boolean}s.
 	 */
 	public static final String KEY_CONTINUE_IF_LINK_EXISTS = "CONTINUE_IF_LINK_EXISTS";
 

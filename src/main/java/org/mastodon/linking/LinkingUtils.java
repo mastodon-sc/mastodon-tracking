@@ -57,7 +57,6 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
-import org.mastodon.linking.sequential.SequentialParticleLinkerOp;
 import org.mastodon.linking.sequential.lap.costfunction.CostFunction;
 import org.mastodon.linking.sequential.lap.costfunction.FeaturePenaltiesCostFunction;
 import org.mastodon.linking.sequential.lap.costfunction.SquareDistCostFunction;
@@ -75,8 +74,7 @@ public class LinkingUtils
 	private static final Border RED_BORDER = new LineBorder( Color.RED );
 
 	/**
-	 * The key of the edge linking cost feature and projection returned by
-	 * {@link SequentialParticleLinkerOp#getLinkCostFeature()}.
+	 * The key of the edge linking cost feature and projection.
 	 */
 	public static final String LINK_COST_FEATURE_NAME = "Link cost";
 
