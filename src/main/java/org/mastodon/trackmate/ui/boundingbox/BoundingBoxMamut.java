@@ -134,7 +134,7 @@ public class BoundingBoxMamut
 		} );
 
 		behaviours = new Behaviours( keyconf, "bdv" );
-		behaviours.behaviour( new BoundingBoxEditor( dialog.boxOverlay, viewerFrame.getViewerPanel(), dialog.boxSelectionPanel, mInterval ),
+		behaviours.behaviour( new DragBoxCornerBehaviour( dialog.boxOverlay, viewerFrame.getViewerPanel(), dialog.boxSelectionPanel, mInterval ),
 				BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
 
 		blockMap = new BehaviourMap();

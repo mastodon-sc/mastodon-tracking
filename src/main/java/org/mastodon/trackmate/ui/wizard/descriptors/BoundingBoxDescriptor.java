@@ -27,7 +27,7 @@ import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.trackmate.Settings;
-import org.mastodon.trackmate.ui.boundingbox.BoundingBoxEditor;
+import org.mastodon.trackmate.ui.boundingbox.DragBoxCornerBehaviour;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxModel;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.DisplayMode;
@@ -446,7 +446,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
 			behaviour( new ToggleEditModeBehaviour(),
 					BOUNDING_BOX_TOGGLE_EDIT_MODE_OFF, BOUNDING_BOX_TOGGLE_EDIT_MODE_KEYS );
-			behaviour( new BoundingBoxEditor( boxOverlay, viewFrame.getViewerPanel(), panel.boxSelectionPanel, roi.getInterval() ),
+			behaviour( new DragBoxCornerBehaviour( boxOverlay, viewFrame.getViewerPanel(), panel.boxSelectionPanel, roi.getInterval() ),
 					BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
 		}
 

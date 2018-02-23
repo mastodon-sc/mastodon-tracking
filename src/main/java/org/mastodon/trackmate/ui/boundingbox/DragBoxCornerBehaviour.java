@@ -8,7 +8,7 @@ import bdv.viewer.ViewerPanel;
 import net.imglib2.FinalInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 
-public class BoundingBoxEditor implements DragBehaviour
+public class DragBoxCornerBehaviour implements DragBehaviour
 {
 	private final BoundingBoxOverlay boxOverlay;
 
@@ -28,7 +28,7 @@ public class BoundingBoxEditor implements DragBehaviour
 
 	private int cornerId;
 
-	public BoundingBoxEditor( final BoundingBoxOverlay boxOverlay, final ViewerPanel viewerPanel, final BoxSelectionPanel boxSelectionPanel, final ModifiableInterval interval )
+	public DragBoxCornerBehaviour( final BoundingBoxOverlay boxOverlay, final ViewerPanel viewerPanel, final BoxSelectionPanel boxSelectionPanel, final ModifiableInterval interval )
 	{
 		this.boxOverlay = boxOverlay;
 		this.viewerPanel = viewerPanel;
