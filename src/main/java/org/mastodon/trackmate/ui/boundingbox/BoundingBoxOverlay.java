@@ -26,6 +26,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private static final double HANDLE_RADIUS = DISTANCE_TOLERANCE / 2.;
 
+	// TODO: Rename if possible, conflicts with bdv.viewer.DisplayMode
 	public enum DisplayMode
 	{
 		FULL, SECTION;

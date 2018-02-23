@@ -1,8 +1,5 @@
 package org.mastodon.trackmate.ui.boundingbox;
 
-import static org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.DisplayMode.FULL;
-import static org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.DisplayMode.SECTION;
-
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Font;
@@ -39,25 +36,35 @@ class BoundingBoxDialog extends JDialog
 
 	final BoxModePanel boxModePanel;
 
-	final BoundingBoxOverlay boxOverlay;
-
 	private boolean contentCreated = false;
 
 	private final ViewerPanel viewer;
 
-	public BoundingBoxDialog( final Frame owner, final String title, final ModifiableInterval interval, final BoundingBoxModel model, final ViewerPanel viewer, final SetupAssignments setupAssignments, final Interval rangeInterval )
+	public BoundingBoxDialog(
+			final Frame owner,
+			final String title,
+			final ModifiableInterval interval,
+			final BoundingBoxModel model,
+			final ViewerPanel viewer,
+			final SetupAssignments setupAssignments,
+			final Interval rangeInterval )
 	{
 		this( owner, title, interval, model, viewer, setupAssignments, rangeInterval, true, true );
 	}
 
-	public BoundingBoxDialog( final Frame owner, final String title, final ModifiableInterval interval, final BoundingBoxModel model, final ViewerPanel viewer, final SetupAssignments setupAssignments, final Interval rangeInterval, final boolean showBoxSource, final boolean showBoxOverlay )
+	public BoundingBoxDialog(
+			final Frame owner,
+			final String title,
+			final ModifiableInterval interval,
+			final BoundingBoxModel model,
+			final ViewerPanel viewer,
+			final SetupAssignments setupAssignments,
+			final Interval rangeInterval,
+			final boolean showBoxSource,
+			final boolean showBoxOverlay )
 	{
 		super( owner, title, false );
 		this.viewer = viewer;
-
-		// create an Overlay to show 3D wireframe box
-		boxOverlay = new BoundingBoxOverlay( model );
-//		boxOverlay.setPerspective( 0 );
 
 		// create a JPanel with sliders to modify the bounding box interval
 		// (boxRealRandomAccessible.getInterval())
@@ -99,12 +106,6 @@ class BoundingBoxDialog extends JDialog
 					vg.setSourceActive( bbSourceIndex, true );
 					vg.setCurrentSource( bbSourceIndex );
 				}
-				if ( showBoxOverlay )
-				{
-					viewer.getDisplay().addOverlayRenderer( boxOverlay );
-					viewer.addRenderTransformListener( boxOverlay );
-				}
-				viewer.getDisplay().addHandler( boxOverlay.getCornerHighlighter() );
 			}
 
 			@Override
@@ -115,12 +116,6 @@ class BoundingBoxDialog extends JDialog
 					viewer.removeSource( model.getBoxSourceAndConverter().getSpimSource() );
 					setupAssignments.removeSetup( model.getBoxConverterSetup() );
 				}
-				if ( showBoxOverlay )
-				{
-					viewer.getDisplay().removeOverlayRenderer( boxOverlay );
-					viewer.removeTransformListener( boxOverlay );
-				}
-				viewer.getDisplay().removeHandler( boxOverlay.getCornerHighlighter() );
 			}
 		} );
 
@@ -179,7 +174,8 @@ class BoundingBoxDialog extends JDialog
 				@Override
 				public void actionPerformed( final ActionEvent e )
 				{
-					boxOverlay.setDisplayMode( full.isSelected() ? FULL : SECTION );
+					// TODO
+//					boxOverlay.setDisplayMode( full.isSelected() ? FULL : SECTION );
 					viewer.requestRepaint();
 				}
 			};
@@ -189,7 +185,8 @@ class BoundingBoxDialog extends JDialog
 			group.add( full );
 			group.add( section );
 			full.setSelected( true );
-			boxOverlay.setDisplayMode( FULL );
+			// TODO
+//			boxOverlay.setDisplayMode( FULL );
 			add( full, gbc );
 			gbc.gridx++;
 			add( section, gbc );

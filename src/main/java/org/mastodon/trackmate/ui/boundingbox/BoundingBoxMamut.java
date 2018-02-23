@@ -13,11 +13,11 @@ import org.scijava.ui.behaviour.BehaviourMap;
 import org.scijava.ui.behaviour.InputTrigger;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Behaviours;
-import org.scijava.ui.behaviour.util.InputActionBindings;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
 import bdv.util.ModifiableInterval;
 import bdv.viewer.Source;
+import bdv.viewer.ViewerPanel;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -43,6 +43,8 @@ public class BoundingBoxMamut
 		dialog.setVisible( !dialog.isVisible() );
 	}
 
+	private final BoundingBoxOverlay boxOverlay;
+
 	private static final String BOUNDING_BOX_TOGGLE_EDITOR = "edit bounding-box";
 
 	private static final String[] BOUNDING_BOX_TOGGLE_EDITOR_KEYS = new String[] { "button1" };
@@ -61,8 +63,6 @@ public class BoundingBoxMamut
 
 	private final TriggerBehaviourBindings triggerbindings;
 
-	private final InputActionBindings keybindings;
-
 	private final Behaviours behaviours;
 
 	private final BehaviourMap blockMap;
@@ -79,7 +79,6 @@ public class BoundingBoxMamut
 		this.keyconf = keyconf;
 		this.viewerFrame = viewerFrame;
 		triggerbindings = viewerFrame.getTriggerbindings();
-		keybindings = viewerFrame.getKeybindings();
 
 		/*
 		 * Compute an initial interval from the specified setup id.
@@ -102,12 +101,21 @@ public class BoundingBoxMamut
 		if ( null == interval )
 			interval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
 
+		mInterval = new ModifiableInterval( interval );
+		this.model = new BoundingBoxModel( mInterval, sourceTransform );
+
+
+		/*
+		 * Create an Overlay to show 3D wireframe box
+		 */
+		boxOverlay = new BoundingBoxOverlay( model );
+//		boxOverlay.setPerspective( 0 );
+		boxOverlay.setHighlightedCornerListener( this::highlightedCornerChanged );
+
 		/*
 		 * Create bounding box dialog.
 		 */
 
-		mInterval = new ModifiableInterval( interval );
-		this.model = new BoundingBoxModel( mInterval, sourceTransform );
 		model.install( viewerFrame.getViewerPanel(), setupID );
 		this.dialog = new BoundingBoxDialog(
 				viewerFrame,
@@ -122,30 +130,59 @@ public class BoundingBoxMamut
 			@Override
 			public void componentShown( final ComponentEvent e )
 			{
-				behaviours.install( triggerbindings, BOUNDING_BOX_MAP );
+				install();
 			}
 
 			@Override
 			public void componentHidden( final ComponentEvent e )
 			{
-				triggerbindings.removeInputTriggerMap( BOUNDING_BOX_MAP );
-				triggerbindings.removeBehaviourMap( BOUNDING_BOX_MAP );
+				uninstall();
 			}
 		} );
 
+		/*
+		 * Create DragBoxCornerBehaviour
+		 */
+
 		behaviours = new Behaviours( keyconf, "bdv" );
-		behaviours.behaviour( new DragBoxCornerBehaviour( dialog.boxOverlay, viewerFrame.getViewerPanel(), dialog.boxSelectionPanel, mInterval ),
+		behaviours.behaviour( new DragBoxCornerBehaviour( boxOverlay, viewerFrame.getViewerPanel(), dialog.boxSelectionPanel, mInterval ),
 				BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
 
+		/*
+		 * Create BehaviourMap to block behaviours interfering with
+		 * DragBoxCornerBehaviour. The block map is only active while a corner
+		 * is highlighted.
+		 */
 		blockMap = new BehaviourMap();
 		refreshBlockMap();
+	}
 
-		dialog.boxOverlay.setHighlightedCornerListener( this::highlightedCornerChanged );
+	public void install()
+	{
+		final ViewerPanel viewer = viewerFrame.getViewerPanel();
+
+		viewer.getDisplay().addOverlayRenderer( boxOverlay );
+		viewer.addRenderTransformListener( boxOverlay );
+		viewer.getDisplay().addHandler( boxOverlay.getCornerHighlighter() );
+
+		behaviours.install( triggerbindings, BOUNDING_BOX_MAP );
+	}
+
+	public void uninstall()
+	{
+		final ViewerPanel viewer = viewerFrame.getViewerPanel();
+
+		viewer.getDisplay().removeOverlayRenderer( boxOverlay );
+		viewer.removeTransformListener( boxOverlay );
+		viewer.getDisplay().removeHandler( boxOverlay.getCornerHighlighter() );
+
+		triggerbindings.removeInputTriggerMap( BOUNDING_BOX_MAP );
+		triggerbindings.removeBehaviourMap( BOUNDING_BOX_MAP );
 	}
 
 	private void highlightedCornerChanged()
 	{
-		final int index = dialog.boxOverlay.getHighlightedCornerIndex();
+		final int index = boxOverlay.getHighlightedCornerIndex();
 		if ( index < 0 )
 			unblock();
 		else
@@ -179,17 +216,6 @@ public class BoundingBoxMamut
 		final Behaviour block = new Behaviour() {};
 		for ( final String key : behavioursToBlock )
 			blockMap.put( key, block );
-	}
-
-	public void uninstall()
-	{
-		triggerbindings.removeInputTriggerMap( BOUNDING_BOX_MAP );
-		triggerbindings.removeBehaviourMap( BOUNDING_BOX_MAP );
-
-		keybindings.removeInputMap( BOUNDING_BOX_MAP );
-		keybindings.removeActionMap( BOUNDING_BOX_MAP );
-
-		dialog.setVisible( false );
 	}
 
 	public Interval getInterval()
