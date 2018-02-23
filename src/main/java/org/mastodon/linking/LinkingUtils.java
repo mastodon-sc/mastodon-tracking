@@ -97,6 +97,8 @@ public class LinkingUtils
 	 * an Edge linking cost feature for the linkers of Mastodon. This feature is
 	 * expected to be common to all particle linkers.
 	 *
+	 * @param <E>
+	 *            the type of edges.
 	 * @param linkCosts
 	 *            the property map containing the link cost values of all edges
 	 *            in the model.
@@ -206,6 +208,8 @@ public class LinkingUtils
 	 * Check that the given map has all some keys. Two String collection allows
 	 * specifying that some keys are mandatory, other are optional.
 	 *
+	 * @param <T>
+	 *            the type of the keys in the map.
 	 * @param map
 	 *            the map to inspect.
 	 * @param mandatoryKeys
@@ -567,6 +571,8 @@ public class LinkingUtils
 	/**
 	 * Returns the square distance between two {@link RealLocalizable}s.
 	 *
+	 * @param <K>
+	 *            the type of the {@link RealLocalizable}s.
 	 * @param source
 	 *            the source position.
 	 * @param target
@@ -598,7 +604,9 @@ public class LinkingUtils
 	 *
 	 * If one of the feature value cannot be found, this method returns
 	 * {@link Double#NaN}.
-	 *
+	 * 
+	 * @param <V>
+	 *            the type of vertices.
 	 * @param source
 	 *            the source vertex.
 	 * @param target

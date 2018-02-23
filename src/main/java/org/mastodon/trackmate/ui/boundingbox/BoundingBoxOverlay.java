@@ -86,7 +86,11 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	}
 
 	/**
-	 * {@code perspective < 0} means parallel projection.
+	 * Sets the perspective value. {@code perspective < 0} means parallel
+	 * projection.
+	 *
+	 * @param perspective
+	 *            the perspective value.
 	 */
 	public void setPerspective( final double perspective )
 	{

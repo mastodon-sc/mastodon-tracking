@@ -17,6 +17,7 @@ public class ImageHelper
 	 * Capture a Swing Component and return as a BufferedImage
 	 *
 	 * @param component
+	 *            the component to capture.
 	 * @return a new image.
 	 */
 	public static BufferedImage captureComponent( final Component component )
@@ -37,9 +38,14 @@ public class ImageHelper
 	 * Helper method to combine two images, in the specified format.
 	 *
 	 * @param img1
+	 *            the first image to combine.
 	 * @param img2
+	 *            the second image to combine.
 	 * @param renderHint
+	 *            how to combine them.
 	 * @return a new image.
+	 * @see #SIDE_BY_SIDE
+	 * @see #BOTTOM_TO_TOP
 	 */
 	public static BufferedImage combineImages( final BufferedImage img1, final BufferedImage img2, final int renderHint )
 	{
