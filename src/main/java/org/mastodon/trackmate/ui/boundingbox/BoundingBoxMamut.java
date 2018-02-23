@@ -2,38 +2,22 @@ package org.mastodon.trackmate.ui.boundingbox;
 
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
-import org.mastodon.revised.mamut.MamutProject;
-import org.mastodon.revised.mamut.MamutProjectIO;
-import org.mastodon.revised.mamut.MamutViewBdv;
-import org.mastodon.revised.mamut.ProjectManager;
-import org.mastodon.revised.mamut.WindowManager;
-import org.mastodon.revised.util.ToggleDialogAction;
-import org.scijava.Context;
 import org.scijava.ui.behaviour.Behaviour;
 import org.scijava.ui.behaviour.BehaviourMap;
 import org.scijava.ui.behaviour.InputTrigger;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
-import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.behaviour.util.Behaviours;
 import org.scijava.ui.behaviour.util.InputActionBindings;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
 import bdv.util.ModifiableInterval;
 import bdv.viewer.Source;
-import mpicbg.spim.data.SpimDataException;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -54,9 +38,10 @@ import net.imglib2.util.Intervals;
  */
 public class BoundingBoxMamut
 {
-	private static final String TOGGLE_BOUNDING_BOX = "toggle bounding-box";
-
-	static final String[] TOGGLE_BOUNDING_BOX_KEYS = new String[] { "V" };
+	public void toggle()
+	{
+		dialog.setVisible( !dialog.isVisible() );
+	}
 
 	private static final String BOUNDING_BOX_TOGGLE_EDITOR = "edit bounding-box";
 
@@ -148,14 +133,6 @@ public class BoundingBoxMamut
 			}
 		} );
 
-		/*
-		 * The actions in charge of toggling its visibility and its edit mode.
-		 */
-
-		final Actions actions = new Actions( keyconf, "bdv " );
-		actions.install( keybindings, BOUNDING_BOX_MAP );
-		actions.namedAction( new ToggleDialogAction( TOGGLE_BOUNDING_BOX, dialog ), TOGGLE_BOUNDING_BOX_KEYS );
-
 		behaviours = new Behaviours( keyconf, "bdv" );
 		behaviours.behaviour( new BoundingBoxEditor( dialog.boxOverlay, viewerFrame.getViewerPanel(), dialog.boxSelectionPanel, mInterval ),
 				BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
@@ -226,31 +203,5 @@ public class BoundingBoxMamut
 		if ( !dialog.boxModePanel.full.isSelected() )
 			dialog.boxModePanel.full.doClick();
 		dialog.boxModePanel.setEnabled( false );
-	}
-
-	public static void main( final String[] args )
-			throws IOException, SpimDataException, InvocationTargetException, InterruptedException, ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException
-	{
-		Locale.setDefault( Locale.US );
-		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
-		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-
-		final Context context = new Context();
-		final WindowManager windowManager = new WindowManager( context );
-		final ProjectManager projectManager = windowManager.getProjectManager();
-		final MamutProject project = new MamutProjectIO().load( "/Users/pietzsch/workspace/Mastodon/TrackMate3/samples/mamutproject" );
-		projectManager.open( project );
-		final MamutViewBdv[] bdv = new MamutViewBdv[ 1 ];
-		SwingUtilities.invokeAndWait( () -> {
-			bdv[ 0 ] = windowManager.createBigDataViewer();
-		} );
-		final ViewerFrameMamut viewerFrame = ( ViewerFrameMamut ) bdv[ 0 ].getFrame();
-		final InputTriggerConfig keyconf = windowManager.getAppModel().getKeymap().getConfig();
-		new BoundingBoxMamut(
-				keyconf,
-				viewerFrame,
-				windowManager.getAppModel().getSharedBdvData(),
-				0,
-				"Test Bounding-box" );
 	}
 }

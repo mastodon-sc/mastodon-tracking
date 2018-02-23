@@ -15,17 +15,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ActionMap;
 import javax.swing.ButtonGroup;
-import javax.swing.InputMap;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.KeyStroke;
 import javax.swing.WindowConstants;
 
 import bdv.tools.boundingbox.BoxSelectionPanel;
@@ -130,24 +124,6 @@ class BoundingBoxDialog extends JDialog
 			}
 		} );
 
-		// make 'V' key hide dialog
-		final ActionMap am = getRootPane().getActionMap();
-		final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
-		final Object hideKey = new Object();
-		final Action hideAction = new AbstractAction()
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				setVisible( false );
-			}
-		};
-		for ( final String s : BoundingBoxMamut.TOGGLE_BOUNDING_BOX_KEYS )
-			im.put( KeyStroke.getKeyStroke( s ), hideKey );
-		am.put( hideKey, hideAction );
-
 		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 	}
 
@@ -175,8 +151,6 @@ class BoundingBoxDialog extends JDialog
 		private static final long serialVersionUID = 1L;
 
 		final JRadioButton full;
-
-		final JLabel modeLabel;
 
 		public BoxModePanel()
 		{
@@ -219,11 +193,6 @@ class BoundingBoxDialog extends JDialog
 			add( full, gbc );
 			gbc.gridx++;
 			add( section, gbc );
-
-			gbc.gridy++;
-			gbc.gridx = 0;
-			this.modeLabel = new JLabel( "Navigation mode", JLabel.LEFT );
-			add( modeLabel, gbc );
 		}
 
 		@Override
