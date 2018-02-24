@@ -1,5 +1,7 @@
 package org.mastodon.trackmate.ui.boundingbox;
 
+import static org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode.FULL;
+
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.HashSet;
@@ -111,7 +113,6 @@ public class BoundingBoxMamut
 		 */
 		boxOverlay = new BoundingBoxOverlay( model );
 //		boxOverlay.setPerspective( 0 );
-		boxOverlay.setHighlightedCornerListener( this::highlightedCornerChanged );
 
 		/*
 		 * Create bounding box dialog.
@@ -157,7 +158,6 @@ public class BoundingBoxMamut
 		 * is highlighted.
 		 */
 		blockMap = new BehaviourMap();
-		refreshBlockMap();
 	}
 
 	public void install()
@@ -168,7 +168,8 @@ public class BoundingBoxMamut
 		viewer.addRenderTransformListener( boxOverlay );
 		viewer.getDisplay().addHandler( boxOverlay.getCornerHighlighter() );
 
-		behaviours.install( triggerbindings, BOUNDING_BOX_MAP );
+		refreshBlockMap();
+		updateEditability();
 	}
 
 	public void uninstall()
@@ -181,6 +182,8 @@ public class BoundingBoxMamut
 
 		triggerbindings.removeInputTriggerMap( BOUNDING_BOX_MAP );
 		triggerbindings.removeBehaviourMap( BOUNDING_BOX_MAP );
+
+		unblock();
 	}
 
 	private void highlightedCornerChanged()
@@ -197,16 +200,39 @@ public class BoundingBoxMamut
 		final BoxDisplayMode mode = dialog.boxModePanel.getBoxDisplayMode();
 		boxOverlay.setDisplayMode( mode );
 		viewerFrame.getViewerPanel().requestRepaint();
+		updateEditability();
+	}
 
-		if ( mode == BoxDisplayMode.FULL )
+	private boolean editable = true;
+
+	public boolean isEditable()
+	{
+		return editable;
+	}
+
+	public void setEditable( final boolean editable )
+	{
+		if ( this.editable == editable )
+			return;
+		this.editable = editable;
+		boxOverlay.showCornerHandles( editable );
+		updateEditability();
+	}
+
+	private void updateEditability()
+	{
+		if ( editable && boxOverlay.getDisplayMode() == FULL )
 		{
-			// TODO
-			// enable corner editing
+			boxOverlay.setHighlightedCornerListener( this::highlightedCornerChanged );
+			behaviours.install( triggerbindings, BOUNDING_BOX_MAP );
+			highlightedCornerChanged();
 		}
 		else
 		{
-			// TODO
-			// disable corner editing
+			boxOverlay.setHighlightedCornerListener( null );
+			triggerbindings.removeInputTriggerMap( BOUNDING_BOX_MAP );
+			triggerbindings.removeBehaviourMap( BOUNDING_BOX_MAP );
+			unblock();
 		}
 	}
 

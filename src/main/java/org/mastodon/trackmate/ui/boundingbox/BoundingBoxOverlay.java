@@ -1,5 +1,7 @@
 package org.mastodon.trackmate.ui.boundingbox;
 
+import static org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode.FULL;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -19,8 +21,6 @@ import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.TransformListener;
-
-import static org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode.FULL;
 
 public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< AffineTransform3D >
 {
@@ -75,7 +75,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private boolean showCornerHandles = true;
 
-	private int cornerId;
+	private int cornerId = -1;
 
 	private HighlightedCornerListener highlightedCornerListener;
 
@@ -161,25 +161,25 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 			graphics.draw( back );
 			graphics.setPaint( frontColor );
 			graphics.draw( front );
-		}
 
-		if ( showCornerHandles )
-		{
-			final int id = getHighlightedCornerIndex();
-			if ( id >= 0 )
+			if ( showCornerHandles )
 			{
-				final double[] p = renderBoxHelper.projectedCorners[ id ];
-				final Ellipse2D cornerHandle = new Ellipse2D.Double(
-						p[ 0 ] - HANDLE_RADIUS,
-						p[ 1 ] - HANDLE_RADIUS,
-						2 * HANDLE_RADIUS, 2 * HANDLE_RADIUS );
-				final double z = renderBoxHelper.corners[ cornerId ][ 2 ];
-				final Color cornerColor = ( z > 0 ) ? backColor : frontColor;
+				final int id = getHighlightedCornerIndex();
+				if ( id >= 0 )
+				{
+					final double[] p = renderBoxHelper.projectedCorners[ id ];
+					final Ellipse2D cornerHandle = new Ellipse2D.Double(
+							p[ 0 ] - HANDLE_RADIUS,
+							p[ 1 ] - HANDLE_RADIUS,
+							2 * HANDLE_RADIUS, 2 * HANDLE_RADIUS );
+					final double z = renderBoxHelper.corners[ cornerId ][ 2 ];
+					final Color cornerColor = ( z > 0 ) ? backColor : frontColor;
 
-				graphics.setColor( cornerColor );
-				graphics.fill( cornerHandle );
-				graphics.setColor( cornerColor.darker().darker() );
-				graphics.draw( cornerHandle );
+					graphics.setColor( cornerColor );
+					graphics.fill( cornerHandle );
+					graphics.setColor( cornerColor.darker().darker() );
+					graphics.draw( cornerHandle );
+				}
 			}
 		}
 	}
@@ -200,9 +200,14 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		}
 	}
 
+	public BoxDisplayMode getDisplayMode()
+	{
+		return displayMode;
+	}
+
 	public void setDisplayMode( final BoxDisplayMode mode )
 	{
-		this.displayMode = mode;
+		displayMode = mode;
 
 	}
 
@@ -250,7 +255,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	{
 		final int oldId = cornerId;
 		cornerId = ( id >= 0 && id < RenderBoxHelper.numCorners ) ? id : -1;
-		if ( cornerId != oldId && highlightedCornerListener != null )
+		if ( cornerId != oldId && highlightedCornerListener != null && displayMode == FULL )
 			highlightedCornerListener.highlightedCornerChanged();
 	}
 
