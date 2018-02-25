@@ -10,8 +10,6 @@ import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
 
 import javax.swing.ButtonGroup;
@@ -24,11 +22,8 @@ import javax.swing.WindowConstants;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
 
 import bdv.tools.boundingbox.BoxSelectionPanel;
-import bdv.tools.brightness.SetupAssignments;
 import bdv.util.ModifiableInterval;
-import bdv.viewer.DisplayMode;
 import bdv.viewer.ViewerPanel;
-import bdv.viewer.VisibilityAndGrouping;
 import net.imglib2.Interval;
 
 class BoundingBoxDialog extends JDialog
@@ -42,33 +37,14 @@ class BoundingBoxDialog extends JDialog
 
 	private boolean contentCreated = false;
 
-	private final ViewerPanel viewer;
-
 	public BoundingBoxDialog(
 			final Frame owner,
 			final String title,
 			final ModifiableInterval interval,
-			final BoundingBoxModel model,
-			final ViewerPanel viewer,
-			final SetupAssignments setupAssignments,
-			final Interval rangeInterval )
-	{
-		this( owner, title, interval, model, viewer, setupAssignments, rangeInterval, true, true );
-	}
-
-	public BoundingBoxDialog(
-			final Frame owner,
-			final String title,
-			final ModifiableInterval interval,
-			final BoundingBoxModel model,
-			final ViewerPanel viewer,
-			final SetupAssignments setupAssignments,
 			final Interval rangeInterval,
-			final boolean showBoxSource,
-			final boolean showBoxOverlay )
+			final ViewerPanel viewer )
 	{
 		super( owner, title, false );
-		this.viewer = viewer;
 
 		// create a JPanel with sliders to modify the bounding box interval
 		// (boxRealRandomAccessible.getInterval())
@@ -83,45 +59,7 @@ class BoundingBoxDialog extends JDialog
 			}
 		} );
 
-		this.boxModePanel = new BoxModePanel();
-
-		// when dialog is made visible, add bbox source
-		// when dialog is hidden, remove bbox source
-		addComponentListener( new ComponentAdapter()
-		{
-
-			@Override
-			public void componentShown( final ComponentEvent e )
-			{
-				if ( showBoxSource )
-				{
-					viewer.addSource( model.getBoxSourceAndConverter() );
-					setupAssignments.addSetup( model.getBoxConverterSetup() );
-					model.getBoxConverterSetup().setViewer( viewer );
-
-					final int bbSourceIndex = viewer.getState().numSources() - 1;
-					final VisibilityAndGrouping vg = viewer.getVisibilityAndGrouping();
-					if ( vg.getDisplayMode() != DisplayMode.FUSED )
-					{
-						for ( int i = 0; i < bbSourceIndex; ++i )
-							vg.setSourceActive( i, vg.isSourceVisible( i ) );
-						vg.setDisplayMode( DisplayMode.FUSED );
-					}
-					vg.setSourceActive( bbSourceIndex, true );
-					vg.setCurrentSource( bbSourceIndex );
-				}
-			}
-
-			@Override
-			public void componentHidden( final ComponentEvent e )
-			{
-				if ( showBoxSource )
-				{
-					viewer.removeSource( model.getBoxSourceAndConverter().getSpimSource() );
-					setupAssignments.removeSetup( model.getBoxConverterSetup() );
-				}
-			}
-		} );
+		boxModePanel = new BoxModePanel();
 
 		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 	}
@@ -152,8 +90,6 @@ class BoundingBoxDialog extends JDialog
 		public interface ModeChangeListener
 		{
 			void boxDisplayModeChanged();
-//					boxOverlay.setDisplayMode( full.isSelected() ? FULL : SECTION );
-//					viewer.requestRepaint();
 		}
 
 		private final ArrayList< ModeChangeListener > listeners;

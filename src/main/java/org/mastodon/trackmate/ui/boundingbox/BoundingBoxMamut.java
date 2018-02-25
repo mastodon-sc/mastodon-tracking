@@ -10,6 +10,7 @@ import java.util.Set;
 
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
+import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoundingBoxOverlaySource;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
 import org.scijava.ui.behaviour.Behaviour;
 import org.scijava.ui.behaviour.BehaviourMap;
@@ -18,11 +19,13 @@ import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Behaviours;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
+import bdv.tools.brightness.SetupAssignments;
 import bdv.util.ModifiableInterval;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerPanel;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
 
@@ -58,30 +61,33 @@ public class BoundingBoxMamut
 
 	private final BoundingBoxDialog dialog;
 
-	private final BoundingBoxModel model;
+	private final BoundingBoxSource boxSource;
 
-	private final ViewerFrameMamut viewerFrame;
-
-	private final ModifiableInterval mInterval;
+	private final ViewerPanel viewer;
 
 	private final TriggerBehaviourBindings triggerbindings;
+
+	private final boolean showBoxSource;
+
+	private final ModifiableInterval mInterval;
 
 	private final Behaviours behaviours;
 
 	private final BehaviourMap blockMap;
 
-	private final InputTriggerConfig keyconf;
-
 	public BoundingBoxMamut(
 			final InputTriggerConfig keyconf,
-			final ViewerFrameMamut viewerFrame,
+			final ViewerFrameMamut viewerFrame, // TODO: replace by ViewerPanel and TriggerBindings
 			final SharedBigDataViewerData data,
 			final int setupID,
-			final String title )
+			final String title,
+			final boolean showBoxSource )
 	{
-		this.keyconf = keyconf;
-		this.viewerFrame = viewerFrame;
-		triggerbindings = viewerFrame.getTriggerbindings();
+		this.viewer = viewerFrame.getViewerPanel();
+		this.triggerbindings = viewerFrame.getTriggerbindings();
+		this.showBoxSource = showBoxSource;
+
+		final SetupAssignments setupAssignments = data.getSetupAssignments();
 
 		/*
 		 * Compute an initial interval from the specified setup id.
@@ -105,28 +111,42 @@ public class BoundingBoxMamut
 			interval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
 
 		mInterval = new ModifiableInterval( interval );
-		this.model = new BoundingBoxModel( mInterval, sourceTransform );
-
 
 		/*
 		 * Create an Overlay to show 3D wireframe box
 		 */
-		boxOverlay = new BoundingBoxOverlay( model );
+		boxOverlay = new BoundingBoxOverlay( new BoundingBoxOverlaySource()
+		{
+			@Override
+			public void getIntervalTransform( final AffineTransform3D transform )
+			{
+				transform.set( sourceTransform );
+			}
+
+			@Override
+			public RealInterval getInterval()
+			{
+				return mInterval;
+			}
+		} );
 //		boxOverlay.setPerspective( 0 );
+
+		/*
+		 * Create a BDV source to show bounding box slice
+		 */
+		boxSource = showBoxSource
+				? new BoundingBoxSource( mInterval, sourceTransform, viewer, setupAssignments )
+				: null;
 
 		/*
 		 * Create bounding box dialog.
 		 */
-
-		model.install( viewerFrame.getViewerPanel(), setupID );
-		this.dialog = new BoundingBoxDialog(
+		dialog = new BoundingBoxDialog(
 				viewerFrame,
 				title,
 				mInterval,
-				model,
-				viewerFrame.getViewerPanel(),
-				data.getSetupAssignments(),
-				interval );
+				interval,
+				viewer );
 		dialog.addComponentListener( new ComponentAdapter()
 		{
 			@Override
@@ -149,7 +169,7 @@ public class BoundingBoxMamut
 		 */
 
 		behaviours = new Behaviours( keyconf, "bdv" );
-		behaviours.behaviour( new DragBoxCornerBehaviour( boxOverlay, viewerFrame.getViewerPanel(), dialog.boxSelectionPanel, mInterval ),
+		behaviours.behaviour( new DragBoxCornerBehaviour( boxOverlay, viewer, dialog.boxSelectionPanel, mInterval ),
 				BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
 
 		/*
@@ -162,20 +182,19 @@ public class BoundingBoxMamut
 
 	public void install()
 	{
-		final ViewerPanel viewer = viewerFrame.getViewerPanel();
-
 		viewer.getDisplay().addOverlayRenderer( boxOverlay );
 		viewer.addRenderTransformListener( boxOverlay );
 		viewer.getDisplay().addHandler( boxOverlay.getCornerHighlighter() );
 
 		refreshBlockMap();
 		updateEditability();
+
+		if ( boxSource != null )
+			boxSource.addToViewer();
 	}
 
 	public void uninstall()
 	{
-		final ViewerPanel viewer = viewerFrame.getViewerPanel();
-
 		viewer.getDisplay().removeOverlayRenderer( boxOverlay );
 		viewer.removeTransformListener( boxOverlay );
 		viewer.getDisplay().removeHandler( boxOverlay.getCornerHighlighter() );
@@ -184,6 +203,9 @@ public class BoundingBoxMamut
 		triggerbindings.removeBehaviourMap( BOUNDING_BOX_MAP );
 
 		unblock();
+
+		if ( boxSource != null )
+			boxSource.removeFromViewer();
 	}
 
 	private void highlightedCornerChanged()
@@ -199,7 +221,7 @@ public class BoundingBoxMamut
 	{
 		final BoxDisplayMode mode = dialog.boxModePanel.getBoxDisplayMode();
 		boxOverlay.setDisplayMode( mode );
-		viewerFrame.getViewerPanel().requestRepaint();
+		viewer.requestRepaint();
 		updateEditability();
 	}
 

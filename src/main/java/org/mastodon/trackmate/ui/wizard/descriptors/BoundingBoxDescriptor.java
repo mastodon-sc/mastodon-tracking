@@ -28,7 +28,7 @@ import org.mastodon.revised.bdv.ViewerFrameMamut;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.ui.boundingbox.DragBoxCornerBehaviour;
-import org.mastodon.trackmate.ui.boundingbox.BoundingBoxModel;
+import org.mastodon.trackmate.ui.boundingbox.BoundingBoxSource;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
 import org.mastodon.trackmate.ui.wizard.WizardLogService;
@@ -91,7 +91,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 
 	private ViewerFrameMamut viewFrame;
 
-	private BoundingBoxModel roi;
+	private BoundingBoxSource roi;
 
 	private BoundingBoxEditMode bbEdit;
 
@@ -103,7 +103,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		this.wm = wm;
 		this.panelIdentifier = IDENTIFIER;
 		final long[] a = Util.getArrayFromValue( 1000l, 3 );
-		this.roi = new BoundingBoxModel( new FinalInterval( a, a ), new FinalInterval( a, a ), new AffineTransform3D() );
+		this.roi = new BoundingBoxSource( new FinalInterval( a, a ), new FinalInterval( a, a ), new AffineTransform3D() );
 		this.targetPanel = new BoundingBoxPanel();
 	}
 
@@ -245,9 +245,9 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 	 * Build a model for the bounding-box from the settings passed to this
 	 * descriptor or sensible defaults if there are no settings yet.
 	 *
-	 * @return a new {@link BoundingBoxModel}.
+	 * @return a new {@link BoundingBoxSource}.
 	 */
-	private BoundingBoxModel getBoundingBoxModel()
+	private BoundingBoxSource getBoundingBoxModel()
 	{
 		Interval interval = ( Interval ) settings.values.getDetectorSettings().get( KEY_ROI );
 		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
@@ -281,7 +281,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 				interval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
 			maxInterval = interval;
 		}
-		return new BoundingBoxModel( interval, maxInterval, sourceTransform );
+		return new BoundingBoxSource( interval, maxInterval, sourceTransform );
 	}
 
 	private void toggleBoundingBox( final boolean useRoi )

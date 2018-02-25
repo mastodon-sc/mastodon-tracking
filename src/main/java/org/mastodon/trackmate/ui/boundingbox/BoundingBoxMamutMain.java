@@ -63,7 +63,8 @@ public class BoundingBoxMamutMain
 				viewerFrame,
 				windowManager.getAppModel().getSharedBdvData(),
 				0,
-				"Test Bounding-box" );
+				"Test Bounding-box",
+				true );
 
 
 		final Actions actions = new Actions( keyconf, "bbtest" );
