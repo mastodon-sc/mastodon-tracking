@@ -18,7 +18,13 @@ import net.imglib2.roi.Bounds;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 
-public class BoundingBoxSource
+/**
+ * A BDV source (and converter etc) representing the BoundingBox.
+ *
+ * @author Tobias Pietzsch
+ * @author Jean-Yves Tinevez
+ */
+public class BoundingBoxVirtualSource
 {
 	private final BoxRealRandomAccessible< UnsignedShortType > box;
 
@@ -32,7 +38,7 @@ public class BoundingBoxSource
 
 	private final SetupAssignments setupAssignments;
 
-	public BoundingBoxSource(
+	public BoundingBoxVirtualSource(
 			final RealInterval interval, // bounding box model
 			final AffineTransform3D transform, // bounding box model
 			final ViewerPanel viewer,

@@ -6,7 +6,6 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Paint;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.event.MouseEvent;
@@ -55,7 +54,9 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private final Stroke intersectionStroke = new BasicStroke( 1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1f, new float[] { 10f, 10f }, 0f );
 
-	private final Paint intersectionColor = Color.WHITE.darker();
+	private final Color intersectionColor = Color.WHITE.darker();
+
+	private Color intersectionFillColor = new Color( 0x88994499, true );
 
 	private final AffineTransform3D viewerTransform;
 
@@ -74,6 +75,8 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	private BoxDisplayMode displayMode = FULL;
 
 	private boolean showCornerHandles = true;
+
+	private boolean fillIntersection = true;
 
 	private int cornerId = -1;
 
@@ -124,6 +127,16 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		this.showCornerHandles = showCornerHandles;
 	}
 
+	public void fillIntersection( final boolean fillIntersection )
+	{
+		this.fillIntersection = fillIntersection;
+	}
+
+	public void setIntersectionFillColor( final Color intersectionFillColor )
+	{
+		this.intersectionFillColor = intersectionFillColor;
+	}
+
 	@Override
 	public void drawOverlays( final Graphics g )
 	{
@@ -151,14 +164,26 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 		graphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
 
-		graphics.setPaint( intersectionColor );
-		graphics.setStroke( intersectionStroke );
-		graphics.draw( intersection );
 		if ( displayMode == FULL )
 		{
 			graphics.setStroke( normalStroke );
 			graphics.setPaint( backColor );
 			graphics.draw( back );
+		}
+
+		if ( fillIntersection )
+		{
+			graphics.setPaint( intersectionFillColor );
+			graphics.fill( intersection );
+		}
+
+		graphics.setPaint( intersectionColor );
+		graphics.setStroke( intersectionStroke );
+		graphics.draw( intersection );
+
+		if ( displayMode == FULL )
+		{
+			graphics.setStroke( normalStroke );
 			graphics.setPaint( frontColor );
 			graphics.draw( front );
 

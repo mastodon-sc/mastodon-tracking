@@ -61,7 +61,7 @@ public class BoundingBoxMamut
 
 	private final BoundingBoxDialog dialog;
 
-	private final BoundingBoxSource boxSource;
+	private final BoundingBoxPlaceholderSource boxSource;
 
 	private final ViewerPanel viewer;
 
@@ -135,7 +135,7 @@ public class BoundingBoxMamut
 		 * Create a BDV source to show bounding box slice
 		 */
 		boxSource = showBoxSource
-				? new BoundingBoxSource( mInterval, sourceTransform, viewer, setupAssignments )
+				? new BoundingBoxPlaceholderSource( boxOverlay, viewer, setupAssignments )
 				: null;
 
 		/*
