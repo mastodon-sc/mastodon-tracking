@@ -10,7 +10,6 @@ import java.util.Set;
 
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
-import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoundingBoxOverlaySource;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
 import org.scijava.ui.behaviour.Behaviour;
 import org.scijava.ui.behaviour.BehaviourMap;
@@ -25,7 +24,6 @@ import bdv.viewer.Source;
 import bdv.viewer.ViewerPanel;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
 
@@ -108,24 +106,13 @@ public class BoundingBoxMamut
 			interval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
 
 		mInterval = new ModifiableInterval( interval );
+		final DefaultBoundingBoxModel model = new DefaultBoundingBoxModel( mInterval, sourceTransform );
+
 
 		/*
 		 * Create an Overlay to show 3D wireframe box
 		 */
-		boxOverlay = new BoundingBoxOverlay( new BoundingBoxOverlaySource()
-		{
-			@Override
-			public void getIntervalTransform( final AffineTransform3D transform )
-			{
-				transform.set( sourceTransform );
-			}
-
-			@Override
-			public RealInterval getInterval()
-			{
-				return mInterval;
-			}
-		} );
+		boxOverlay = new BoundingBoxOverlay( model );
 //		boxOverlay.setPerspective( 0 );
 
 		/*
@@ -141,9 +128,8 @@ public class BoundingBoxMamut
 		dialog = new BoundingBoxDialog(
 				viewerFrame,
 				title,
-				mInterval,
-				interval,
-				viewer );
+				model,
+				interval );
 		dialog.addComponentListener( new ComponentAdapter()
 		{
 			@Override
@@ -159,15 +145,19 @@ public class BoundingBoxMamut
 			}
 		} );
 
-		dialog.boxModePanel.addListener( this::boxDisplayModeChanged );
+		dialog.boxModePanel.addListener( () -> setBoxDisplayMode( dialog.boxModePanel.getBoxDisplayMode() ) );
+
+		model.intervalChangedListeners().add( () -> {
+			dialog.boxSelectionPanel.updateSliders( mInterval );
+			viewer.getDisplay().repaint();
+		});
 
 		/*
 		 * Create DragBoxCornerBehaviour
 		 */
 
 		behaviours = new Behaviours( keyconf, "bdv" );
-		behaviours.behaviour( new DragBoxCornerBehaviour( boxOverlay, viewer, dialog.boxSelectionPanel, mInterval ),
-				BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
+		behaviours.behaviour( new DragBoxCornerBehaviour( boxOverlay, model ), BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
 
 		/*
 		 * Create BehaviourMap to block behaviours interfering with
@@ -214,12 +204,17 @@ public class BoundingBoxMamut
 			block();
 	}
 
-	private void boxDisplayModeChanged()
+	public BoxDisplayMode getBoxDisplayMode()
 	{
-		final BoxDisplayMode mode = dialog.boxModePanel.getBoxDisplayMode();
+		return boxOverlay.getDisplayMode();
+	}
+
+	public void setBoxDisplayMode( final BoxDisplayMode mode )
+	{
 		boxOverlay.setDisplayMode( mode );
 		viewer.requestRepaint();
 		updateEditability();
+
 	}
 
 	private boolean editable = true;
@@ -282,10 +277,5 @@ public class BoundingBoxMamut
 		final Behaviour block = new Behaviour() {};
 		for ( final String key : behavioursToBlock )
 			blockMap.put( key, block );
-	}
-
-	public Interval getInterval()
-	{
-		return mInterval;
 	}
 }

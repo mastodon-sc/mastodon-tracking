@@ -20,10 +20,9 @@ import javax.swing.JRadioButton;
 import javax.swing.WindowConstants;
 
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
+import org.mastodon.trackmate.ui.boundingbox.tobdv.BoxSelectionPanel;
+import org.mastodon.trackmate.ui.boundingbox.tobdv.BoxSelectionPanel.Box;
 
-import bdv.tools.boundingbox.BoxSelectionPanel;
-import bdv.util.ModifiableInterval;
-import bdv.viewer.ViewerPanel;
 import net.imglib2.Interval;
 
 class BoundingBoxDialog extends JDialog
@@ -40,24 +39,14 @@ class BoundingBoxDialog extends JDialog
 	public BoundingBoxDialog(
 			final Frame owner,
 			final String title,
-			final ModifiableInterval interval,
-			final Interval rangeInterval,
-			final ViewerPanel viewer )
+			final Box interval,
+			final Interval rangeInterval )
 	{
 		super( owner, title, false );
 
 		// create a JPanel with sliders to modify the bounding box interval
 		// (boxRealRandomAccessible.getInterval())
 		boxSelectionPanel = new BoxSelectionPanel( interval, rangeInterval );
-		// listen for updates on the bbox to trigger repainting
-		boxSelectionPanel.addSelectionUpdateListener( new BoxSelectionPanel.SelectionUpdateListener()
-		{
-			@Override
-			public void selectionUpdated()
-			{
-				viewer.requestRepaint();
-			}
-		} );
 
 		boxModePanel = new BoxModePanel();
 
@@ -82,6 +71,7 @@ class BoundingBoxDialog extends JDialog
 		getContentPane().add( boxModePanel, BorderLayout.SOUTH );
 		pack();
 	}
+
 
 	public static class BoxModePanel extends JPanel
 	{

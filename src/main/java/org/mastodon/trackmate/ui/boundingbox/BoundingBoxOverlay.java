@@ -36,7 +36,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	{
 		public RealInterval getInterval();
 
-		public void getIntervalTransform( final AffineTransform3D transform );
+		public void getTransform( final AffineTransform3D transform );
 	}
 
 	public interface HighlightedCornerListener
@@ -93,7 +93,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 			}
 
 			@Override
-			public void getIntervalTransform( final AffineTransform3D transform )
+			public void getTransform( final AffineTransform3D transform )
 			{
 				transform.identity();
 			}
@@ -153,7 +153,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		synchronized ( viewerTransform )
 		{
 			sourceSize = Affine3DHelpers.extractScale( viewerTransform, 0 ) * canvasWidth;
-			bbSource.getIntervalTransform( transform );
+			bbSource.getTransform( transform );
 			transform.preConcatenate( viewerTransform );
 		}
 		renderBoxHelper.setPerspectiveProjection( perspective > 0 );
