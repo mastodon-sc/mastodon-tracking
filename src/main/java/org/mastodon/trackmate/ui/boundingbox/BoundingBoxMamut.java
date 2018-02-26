@@ -67,8 +67,6 @@ public class BoundingBoxMamut
 
 	private final TriggerBehaviourBindings triggerbindings;
 
-	private final boolean showBoxSource;
-
 	private final ModifiableInterval mInterval;
 
 	private final Behaviours behaviours;
@@ -85,7 +83,6 @@ public class BoundingBoxMamut
 	{
 		this.viewer = viewerFrame.getViewerPanel();
 		this.triggerbindings = viewerFrame.getTriggerbindings();
-		this.showBoxSource = showBoxSource;
 
 		final SetupAssignments setupAssignments = data.getSetupAssignments();
 
