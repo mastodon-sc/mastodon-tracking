@@ -2,14 +2,10 @@ package org.mastodon.trackmate.ui.boundingbox;
 
 import static org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode.FULL;
 
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.mastodon.revised.bdv.SharedBigDataViewerData;
-import org.mastodon.revised.bdv.ViewerFrameMamut;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
 import org.scijava.ui.behaviour.Behaviour;
 import org.scijava.ui.behaviour.BehaviourMap;
@@ -19,34 +15,20 @@ import org.scijava.ui.behaviour.util.Behaviours;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
 import bdv.tools.brightness.SetupAssignments;
-import bdv.util.ModifiableInterval;
-import bdv.viewer.Source;
 import bdv.viewer.ViewerPanel;
-import net.imglib2.Interval;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.util.Intervals;
 
 /**
  * Installs an interactive bounding-box tool on a BDV.
  * <p>
- * The feature consists of a bounding-box model, a dialog and an overlay added
- * to the BDV. The user can edit the bounding-box using a GUI panel, or directly
- * interacting with the overlay using an 'edit' mode. The user switches between
- * normal ('visualization') and 'edit' modes by pressing the ESC key. In 'edit'
- * mode, the mouse button is used to drag the corners of the bounding-box.
- * <p>
- * Adapted from code by Tobias Pietzsch and others taken in the BDV core
- * packages.
+ * The feature consists of an overlay added to the BDV and editing behaviours
+ * where the user can edit the bounding-box directly interacting with the
+ * overlay. The mouse button is used to drag the corners of the bounding-box.
  *
+ * @author Tobias Pietzsch
+ * @author Jean-Yves Tinevez
  */
 public class BoundingBoxMamut
 {
-	public void toggle()
-	{
-		dialog.setVisible( !dialog.isVisible() );
-	}
-
 	private final BoundingBoxOverlay boxOverlay;
 
 	private static final String BOUNDING_BOX_TOGGLE_EDITOR = "edit bounding-box";
@@ -57,15 +39,11 @@ public class BoundingBoxMamut
 
 	private static final String BLOCKING_MAP = "bounding-box-blocking";
 
-	private final BoundingBoxDialog dialog;
-
 	private final BoundingBoxPlaceholderSource boxSource;
 
 	private final ViewerPanel viewer;
 
 	private final TriggerBehaviourBindings triggerbindings;
-
-	private final ModifiableInterval mInterval;
 
 	private final Behaviours behaviours;
 
@@ -73,41 +51,14 @@ public class BoundingBoxMamut
 
 	public BoundingBoxMamut(
 			final InputTriggerConfig keyconf,
-			final ViewerFrameMamut viewerFrame, // TODO: replace by ViewerPanel and TriggerBindings
-			final SharedBigDataViewerData data,
-			final int setupID,
-			final String title,
+			final ViewerPanel viewer,
+			final SetupAssignments setupAssignments,
+			final TriggerBehaviourBindings triggerbindings,
+			final DefaultBoundingBoxModel model,
 			final boolean showBoxSource )
 	{
-		this.viewer = viewerFrame.getViewerPanel();
-		this.triggerbindings = viewerFrame.getTriggerbindings();
-
-		final SetupAssignments setupAssignments = data.getSetupAssignments();
-
-		/*
-		 * Compute an initial interval from the specified setup id.
-		 */
-		final Source< ? > source = data.getSources().get( setupID ).getSpimSource();
-		final int numTimepoints = data.getNumTimepoints();
-		int tp = 0;
-		Interval interval = null;
-		final AffineTransform3D sourceTransform = new AffineTransform3D();
-		while ( tp++ < numTimepoints )
-		{
-			if ( source.isPresent( tp ) )
-			{
-				final RandomAccessibleInterval< ? > intervalPix = source.getSource( tp, 0 );
-				source.getSourceTransform( tp, 0, sourceTransform );
-				interval = intervalPix;
-				break;
-			}
-		}
-		if ( null == interval )
-			interval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
-
-		mInterval = new ModifiableInterval( interval );
-		final DefaultBoundingBoxModel model = new DefaultBoundingBoxModel( mInterval, sourceTransform );
-
+		this.viewer = viewer;
+		this.triggerbindings = triggerbindings;
 
 		/*
 		 * Create an Overlay to show 3D wireframe box
@@ -121,36 +72,6 @@ public class BoundingBoxMamut
 		boxSource = showBoxSource
 				? new BoundingBoxPlaceholderSource( boxOverlay, viewer, setupAssignments )
 				: null;
-
-		/*
-		 * Create bounding box dialog.
-		 */
-		dialog = new BoundingBoxDialog(
-				viewerFrame,
-				title,
-				model,
-				interval );
-		dialog.addComponentListener( new ComponentAdapter()
-		{
-			@Override
-			public void componentShown( final ComponentEvent e )
-			{
-				install();
-			}
-
-			@Override
-			public void componentHidden( final ComponentEvent e )
-			{
-				uninstall();
-			}
-		} );
-
-		dialog.boxModePanel.addListener( () -> setBoxDisplayMode( dialog.boxModePanel.getBoxDisplayMode() ) );
-
-		model.intervalChangedListeners().add( () -> {
-			dialog.boxSelectionPanel.updateSliders( mInterval );
-			viewer.getDisplay().repaint();
-		});
 
 		/*
 		 * Create DragBoxCornerBehaviour

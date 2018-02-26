@@ -1,14 +1,15 @@
 package org.mastodon.trackmate.ui.boundingbox;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
+import java.awt.Frame;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.Locale;
 
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.revised.bdv.ViewerFrameMamut;
+import org.mastodon.revised.bdv.ViewerPanelMamut;
 import org.mastodon.revised.mamut.MamutProject;
 import org.mastodon.revised.mamut.MamutProjectIO;
 import org.mastodon.revised.mamut.MamutViewBdv;
@@ -18,7 +19,13 @@ import org.scijava.Context;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Actions;
 
-import mpicbg.spim.data.SpimDataException;
+import bdv.util.ModifiableInterval;
+import bdv.viewer.Source;
+import bdv.viewer.state.ViewerState;
+import net.imglib2.Interval;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.util.Intervals;
 
 /**
  * Installs an interactive bounding-box tool on a BDV.
@@ -39,8 +46,7 @@ public class BoundingBoxMamutMain
 
 	static final String[] TOGGLE_BOUNDING_BOX_KEYS = new String[] { "V" };
 
-	public static void main( final String[] args )
-			throws IOException, SpimDataException, InvocationTargetException, InterruptedException, ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException
+	public static void main( final String[] args ) throws Exception
 	{
 		Locale.setDefault( Locale.US );
 		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
@@ -56,19 +62,81 @@ public class BoundingBoxMamutMain
 			bdv[ 0 ] = windowManager.createBigDataViewer();
 		} );
 		final ViewerFrameMamut viewerFrame = ( ViewerFrameMamut ) bdv[ 0 ].getFrame();
+		final ViewerPanelMamut viewer = viewerFrame.getViewerPanel();
 		final InputTriggerConfig keyconf = windowManager.getAppModel().getKeymap().getConfig();
 
+
+		/*
+		 * Compute an initial interval from the specified setup id.
+		 */
+		final int setupID = 0;
+		final ViewerState state = viewer.getState();
+		final Source< ? > source = state.getSources().get( setupID ).getSpimSource();
+		final int numTimepoints = state.getNumTimepoints();
+		int tp = 0;
+		Interval interval = null;
+		final AffineTransform3D sourceTransform = new AffineTransform3D();
+		while ( tp++ < numTimepoints )
+		{
+			if ( source.isPresent( tp ) )
+			{
+				final RandomAccessibleInterval< ? > intervalPix = source.getSource( tp, 0 );
+				source.getSourceTransform( tp, 0, sourceTransform );
+				interval = intervalPix;
+				break;
+			}
+		}
+		if ( null == interval )
+			interval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
+		final DefaultBoundingBoxModel model = new DefaultBoundingBoxModel( new ModifiableInterval( interval ), sourceTransform );
+
+
+
+		final Frame owner = viewerFrame; // for BoundingBoxDialog...
 		final BoundingBoxMamut boundingBoxMamut = new BoundingBoxMamut(
 				keyconf,
-				viewerFrame,
-				windowManager.getAppModel().getSharedBdvData(),
-				0,
-				"Test Bounding-box",
+				viewerFrame.getViewerPanel(),
+				windowManager.getAppModel().getSharedBdvData().getSetupAssignments(),
+				viewerFrame.getTriggerbindings(),
+				model,
 				true );
 
 
+
+
+
+
+
+		/*
+		 * Create bounding box dialog.
+		 */
+		final BoundingBoxDialog dialog = new BoundingBoxDialog(
+				owner,
+				"Test Bounding-box",
+				model,
+				interval );
+		dialog.addComponentListener( new ComponentAdapter()
+		{
+			@Override
+			public void componentShown( final ComponentEvent e )
+			{
+				boundingBoxMamut.install();
+			}
+
+			@Override
+			public void componentHidden( final ComponentEvent e )
+			{
+				boundingBoxMamut.uninstall();
+			}
+		} );
+		dialog.boxModePanel.addListener( () -> boundingBoxMamut.setBoxDisplayMode( dialog.boxModePanel.getBoxDisplayMode() ) );
+		model.intervalChangedListeners().add( () -> {
+			dialog.boxSelectionPanel.updateSliders( model.getInterval() );
+			viewer.getDisplay().repaint();
+		});
+
 		final Actions actions = new Actions( keyconf, "bbtest" );
 		actions.install( viewerFrame.getKeybindings(), "bbtest" );
-		actions.runnableAction( boundingBoxMamut::toggle, TOGGLE_BOUNDING_BOX, TOGGLE_BOUNDING_BOX_KEYS );
+		actions.runnableAction( () -> dialog.setVisible( !dialog.isVisible() ), TOGGLE_BOUNDING_BOX, TOGGLE_BOUNDING_BOX_KEYS );
 	}
 }
