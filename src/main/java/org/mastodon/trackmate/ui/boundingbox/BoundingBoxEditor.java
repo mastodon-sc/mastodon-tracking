@@ -96,6 +96,7 @@ public class BoundingBoxEditor
 			break;
 		case VIRTUAL:
 			boxSource = new BoundingBoxVirtualSource( boxSourceName, model, viewer, setupAssignments );
+			boxOverlay.fillIntersection( false );
 			break;
 
 		case NONE:
