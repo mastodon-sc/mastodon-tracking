@@ -1,85 +1,245 @@
 package org.mastodon.trackmate.ui.boundingbox;
 
-import org.scijava.ui.behaviour.DragBehaviour;
+import static org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode.FULL;
 
-import bdv.tools.boundingbox.BoxSelectionPanel;
-import bdv.util.ModifiableInterval;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
+import org.scijava.ui.behaviour.Behaviour;
+import org.scijava.ui.behaviour.BehaviourMap;
+import org.scijava.ui.behaviour.InputTrigger;
+import org.scijava.ui.behaviour.io.InputTriggerConfig;
+import org.scijava.ui.behaviour.util.Behaviours;
+import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
+
+import bdv.tools.brightness.SetupAssignments;
 import bdv.viewer.ViewerPanel;
-import net.imglib2.FinalInterval;
 
-public class BoundingBoxEditor implements DragBehaviour
+/**
+ * Installs an interactive bounding-box tool on a BDV.
+ * <p>
+ * The feature consists of an overlay added to the BDV and editing behaviours
+ * where the user can edit the bounding-box directly interacting with the
+ * overlay. The mouse button is used to drag the corners of the bounding-box.
+ *
+ * @author Tobias Pietzsch
+ * @author Jean-Yves Tinevez
+ */
+public class BoundingBoxEditor
 {
+	private static final String BOUNDING_BOX_TOGGLE_EDITOR = "edit bounding-box";
+
+	private static final String[] BOUNDING_BOX_TOGGLE_EDITOR_KEYS = new String[] { "button1" };
+
+	private static final String BOUNDING_BOX_MAP = "bounding-box";
+
+	private static final String BLOCKING_MAP = "bounding-box-blocking";
 
 	private final BoundingBoxOverlay boxOverlay;
 
-	private boolean moving = false;
+	private final BoundingBoxSource boxSource;
 
-	private ViewerPanel viewerPanel;
+	private final ViewerPanel viewer;
 
-	private BoxSelectionPanel boxSelectionPanel;
+	private final TriggerBehaviourBindings triggerbindings;
 
-	private ModifiableInterval interval;
+	private final Behaviours behaviours;
 
-	public BoundingBoxEditor( final BoundingBoxOverlay boxOverlay, final ViewerPanel viewerPanel, final BoxSelectionPanel boxSelectionPanel, final ModifiableInterval interval )
+	private final BehaviourMap blockMap;
+
+	private boolean editable = true;
+
+	public enum BoxSourceType
 	{
-		this.boxOverlay = boxOverlay;
-		this.viewerPanel = viewerPanel;
-		this.boxSelectionPanel = boxSelectionPanel;
-		this.interval = interval;
+		NONE,
+		VIRTUAL,
+		PLACEHOLDER
 	}
 
-	@Override
-	public void init( final int x, final int y )
+	public BoundingBoxEditor(
+			final InputTriggerConfig keyconf,
+			final ViewerPanel viewer,
+			final SetupAssignments setupAssignments,
+			final TriggerBehaviourBindings triggerbindings,
+			final BoundingBoxModel model )
 	{
-		if ( boxOverlay.cornerId < 0 )
+		this( keyconf, viewer, setupAssignments, triggerbindings, model, "selection", BoxSourceType.PLACEHOLDER );
+	}
+
+	public BoundingBoxEditor(
+			final InputTriggerConfig keyconf,
+			final ViewerPanel viewer,
+			final SetupAssignments setupAssignments,
+			final TriggerBehaviourBindings triggerbindings,
+			final BoundingBoxModel model,
+			final String boxSourceName,
+			final BoxSourceType boxSourceType )
+	{
+		this.viewer = viewer;
+		this.triggerbindings = triggerbindings;
+
+		/*
+		 * Create an Overlay to show 3D wireframe box
+		 */
+		boxOverlay = new BoundingBoxOverlay( model );
+		boxOverlay.setPerspective( 0 );
+
+		/*
+		 * Create a BDV source to show bounding box slice
+		 */
+		switch ( boxSourceType )
+		{
+		case PLACEHOLDER:
+			boxSource = new BoundingBoxPlaceholderSource( boxSourceName, boxOverlay, model, viewer, setupAssignments );
+			break;
+		case VIRTUAL:
+			boxSource = new BoundingBoxVirtualSource( boxSourceName, model, viewer, setupAssignments );
+			boxOverlay.fillIntersection( false );
+			break;
+
+		case NONE:
+		default:
+			boxSource = null;
+			break;
+		}
+
+		/*
+		 * Create DragBoxCornerBehaviour
+		 */
+
+		behaviours = new Behaviours( keyconf, "bdv" );
+		behaviours.behaviour( new DragBoxCornerBehaviour( boxOverlay, model ), BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
+
+		/*
+		 * Create BehaviourMap to block behaviours interfering with
+		 * DragBoxCornerBehaviour. The block map is only active while a corner
+		 * is highlighted.
+		 */
+		blockMap = new BehaviourMap();
+	}
+
+	public void install()
+	{
+		viewer.getDisplay().addOverlayRenderer( boxOverlay );
+		viewer.addRenderTransformListener( boxOverlay );
+		viewer.getDisplay().addHandler( boxOverlay.getCornerHighlighter() );
+
+		refreshBlockMap();
+		updateEditability();
+
+		if ( boxSource != null )
+			boxSource.addToViewer();
+	}
+
+	public void uninstall()
+	{
+		viewer.getDisplay().removeOverlayRenderer( boxOverlay );
+		viewer.removeTransformListener( boxOverlay );
+		viewer.getDisplay().removeHandler( boxOverlay.getCornerHighlighter() );
+
+		triggerbindings.removeInputTriggerMap( BOUNDING_BOX_MAP );
+		triggerbindings.removeBehaviourMap( BOUNDING_BOX_MAP );
+
+		unblock();
+
+		if ( boxSource != null )
+			boxSource.removeFromViewer();
+	}
+
+	public BoxDisplayMode getBoxDisplayMode()
+	{
+		return boxOverlay.getDisplayMode();
+	}
+
+	public void setBoxDisplayMode( final BoxDisplayMode mode )
+	{
+		boxOverlay.setDisplayMode( mode );
+		viewer.requestRepaint();
+		updateEditability();
+
+	}
+
+	public boolean isEditable()
+	{
+		return editable;
+	}
+
+	public void setEditable( final boolean editable )
+	{
+		if ( this.editable == editable )
 			return;
-
-		moving = true;
+		this.editable = editable;
+		boxOverlay.showCornerHandles( editable );
+		updateEditability();
 	}
 
-	@Override
-	public void drag( final int x, final int y )
+	/**
+	 * Sets up perspective projection for the overlay. Basically, the projection
+	 * center is placed at distance {@code perspective * sourceSize} from the
+	 * projection plane (screen). Specify {@code perspective = 0} to set
+	 * parallel projection.
+	 */
+	public void setPerspective( final double perspective, final double sourceSize )
 	{
-		if ( !moving )
-			return;
-
-		final double[] corner = boxOverlay.renderBoxHelper.corners[ boxOverlay.cornerId ];
-		final double[] lPos = new double[] { x, y, corner[ 2 ] };
-		final double[] gPos = new double[ 3 ];
-		boxOverlay.transform.applyInverse( gPos, lPos );
-
-		final long[] max = new long[ 3 ];
-		final long[] min = new long[ 3 ];
-		interval.max( max );
-		interval.min( min );
-
-		// Z.
-		if ( boxOverlay.cornerId < 4 )
-			min[ 2 ] = Math.round( gPos[ 2 ] );
-		else
-			max[ 2 ] = Math.round( gPos[ 2 ] );
-
-		// Y.
-		if ( ( boxOverlay.cornerId / 2 ) % 2 == 0 )
-			min[ 1 ] = Math.round( gPos[ 1 ] );
-		else
-			max[ 1 ] = Math.round( gPos[ 1 ] );
-
-		// X.
-		if ( boxOverlay.cornerId % 2 == 0 )
-			min[ 0 ] = Math.round( gPos[ 0 ] );
-		else
-			max[ 0 ] = Math.round( gPos[ 0 ] );
-
-		interval.set( new FinalInterval( min, max ) );
-		boxSelectionPanel.updateSliders( interval );
-		viewerPanel.requestRepaint();
+		boxOverlay.setPerspective( perspective );
+		boxOverlay.setSourceSize( sourceSize );
 	}
 
-	@Override
-	public void end( final int x, final int y )
+
+	private void updateEditability()
 	{
-		moving = false;
-		viewerPanel.requestRepaint();
+		if ( editable && boxOverlay.getDisplayMode() == FULL )
+		{
+			boxOverlay.setHighlightedCornerListener( this::highlightedCornerChanged );
+			behaviours.install( triggerbindings, BOUNDING_BOX_MAP );
+			highlightedCornerChanged();
+		}
+		else
+		{
+			boxOverlay.setHighlightedCornerListener( null );
+			triggerbindings.removeInputTriggerMap( BOUNDING_BOX_MAP );
+			triggerbindings.removeBehaviourMap( BOUNDING_BOX_MAP );
+			unblock();
+		}
+	}
+
+	private void block()
+	{
+		triggerbindings.addBehaviourMap( BLOCKING_MAP, blockMap );
+	}
+
+	private void unblock()
+	{
+		triggerbindings.removeBehaviourMap( BLOCKING_MAP );
+	}
+
+	private void highlightedCornerChanged()
+	{
+		final int index = boxOverlay.getHighlightedCornerIndex();
+		if ( index < 0 )
+			unblock();
+		else
+			block();
+	}
+
+	private void refreshBlockMap()
+	{
+		triggerbindings.removeBehaviourMap( BLOCKING_MAP );
+
+		final Set< InputTrigger > moveCornerTriggers = new HashSet<>();
+		for ( final String s : BOUNDING_BOX_TOGGLE_EDITOR_KEYS )
+			moveCornerTriggers.add( InputTrigger.getFromString( s ) );
+
+		final Map< InputTrigger, Set< String > > bindings = triggerbindings.getConcatenatedInputTriggerMap().getAllBindings();
+		final Set< String > behavioursToBlock = new HashSet<>();
+		for ( final InputTrigger t : moveCornerTriggers )
+			behavioursToBlock.addAll( bindings.get( t ) );
+
+		blockMap.clear();
+		final Behaviour block = new Behaviour() {};
+		for ( final String key : behavioursToBlock )
+			blockMap.put( key, block );
 	}
 }
