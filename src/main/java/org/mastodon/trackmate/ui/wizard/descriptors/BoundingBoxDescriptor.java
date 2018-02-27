@@ -25,7 +25,6 @@ import org.mastodon.trackmate.ui.boundingbox.BoundingBoxEditor;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxEditor.BoxSourceType;
 import org.mastodon.trackmate.ui.boundingbox.BoxModePanel;
 import org.mastodon.trackmate.ui.boundingbox.DefaultBoundingBoxModel;
-import org.mastodon.trackmate.ui.boundingbox.tobdv.BoxSelectionPanel;
 import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 import org.scijava.Context;
@@ -36,6 +35,7 @@ import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
 import bdv.tools.boundingbox.BoundingBoxUtil;
+import bdv.tools.boundingbox.BoxSelectionPanel;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.tools.brightness.SliderPanel;
 import bdv.util.BoundedValue;

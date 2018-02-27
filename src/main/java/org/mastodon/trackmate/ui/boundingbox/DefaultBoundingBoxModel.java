@@ -1,8 +1,8 @@
 package org.mastodon.trackmate.ui.boundingbox;
 
-import org.mastodon.trackmate.ui.boundingbox.tobdv.BoxSelectionPanel.Box;
 import org.mastodon.util.Listeners;
 
+import bdv.tools.boundingbox.BoxSelectionPanel.Box;
 import bdv.util.ModifiableInterval;
 import net.imglib2.Interval;
 import net.imglib2.RealInterval;

@@ -1,8 +1,8 @@
 package org.mastodon.trackmate.ui.boundingbox;
 
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoundingBoxOverlaySource;
-import org.mastodon.trackmate.ui.boundingbox.tobdv.BoxRealRandomAccessible;
 
+import bdv.tools.boundingbox.BoxRealRandomAccessible;
 import bdv.tools.brightness.RealARGBColorConverterSetup;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.util.BdvFunctions;

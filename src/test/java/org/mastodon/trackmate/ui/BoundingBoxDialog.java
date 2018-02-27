@@ -22,11 +22,11 @@ import org.mastodon.trackmate.ui.boundingbox.BoundingBoxEditor;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay;
 import org.mastodon.trackmate.ui.boundingbox.BoxModePanel;
 import org.mastodon.trackmate.ui.boundingbox.DefaultBoundingBoxModel;
-import org.mastodon.trackmate.ui.boundingbox.tobdv.BoxSelectionPanel;
 import org.scijava.Context;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Actions;
 
+import bdv.tools.boundingbox.BoxSelectionPanel;
 import bdv.util.ModifiableInterval;
 import bdv.viewer.Source;
 import bdv.viewer.state.ViewerState;
