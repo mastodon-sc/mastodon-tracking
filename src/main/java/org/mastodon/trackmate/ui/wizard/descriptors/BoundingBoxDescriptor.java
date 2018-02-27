@@ -296,7 +296,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			final ViewerPanel viewer = viewFrame.getViewerPanel();
 			final SetupAssignments setupAssignments = wm.getAppModel().getSharedBdvData().getSetupAssignments();
 			final TriggerBehaviourBindings triggerBindings = viewFrame.getTriggerbindings();
-			boundingBoxEditor = new BoundingBoxEditor( keyconf, viewer, setupAssignments, triggerBindings, roi, "bounding box", BoxSourceType.VIRTUAL );
+			boundingBoxEditor = new BoundingBoxEditor( keyconf, viewer, setupAssignments, triggerBindings, roi, "ROI", BoxSourceType.PLACEHOLDER );
 
 			final Interval bb = BoundingBoxUtil.getSourcesBoundingBox( viewFrame.getViewerPanel().getState() );
 			final double sourceSize = Math.max( Math.max( bb.dimension( 0 ), bb.dimension( 1 ) ), bb.dimension( 2 ) );

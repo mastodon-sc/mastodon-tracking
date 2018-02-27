@@ -10,6 +10,7 @@ import bdv.util.BdvFunctions;
 import bdv.util.PlaceHolderConverterSetup;
 import bdv.util.PlaceHolderSource;
 import bdv.viewer.DisplayMode;
+import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.VisibilityAndGrouping;
@@ -35,7 +36,7 @@ public class BoundingBoxPlaceholderSource implements UpdateListener, BoundingBox
 
 	private final PlaceHolderConverterSetup boxConverterSetup;
 
-	private final PlaceHolderSource boxSource;
+	private final Source< UnsignedShortType > boxSource;
 
 	private final SourceAndConverter< UnsignedShortType > boxSourceAndConverter;
 
@@ -45,9 +46,12 @@ public class BoundingBoxPlaceholderSource implements UpdateListener, BoundingBox
 
 	private boolean isVisible;
 
+	private static final boolean USE_ALTERNATIVE_PLACEHOLDER_SOURCE = true;
+
 	public BoundingBoxPlaceholderSource(
 			final String name,
 			final BoundingBoxOverlay boxOverlay,
+			final BoundingBoxOverlay.BoundingBoxOverlaySource bbSource,
 			final ViewerPanel viewer,
 			final SetupAssignments setupAssignments )
 	{
@@ -59,8 +63,8 @@ public class BoundingBoxPlaceholderSource implements UpdateListener, BoundingBox
 		boxConverterSetup = new PlaceHolderConverterSetup( setupId, 0, 128, new ARGBType( 0x00994499) );
 
 		boxConverterSetup.setViewer( this::repaint );
-		boxSource = new PlaceHolderSource( name );
-		boxSourceAndConverter = new SourceAndConverter<>( boxSource, null );
+		boxSource = USE_ALTERNATIVE_PLACEHOLDER_SOURCE ? new AlternativePlaceHolderSource( name, bbSource ) : new PlaceHolderSource( name );
+		boxSourceAndConverter = new SourceAndConverter<>( boxSource, ( input, output ) -> output.set( 0 ) );
 	}
 
 	@Override

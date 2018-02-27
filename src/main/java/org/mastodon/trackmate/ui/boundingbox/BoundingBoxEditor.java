@@ -92,7 +92,7 @@ public class BoundingBoxEditor
 		switch ( boxSourceType )
 		{
 		case PLACEHOLDER:
-			boxSource = new BoundingBoxPlaceholderSource( boxSourceName, boxOverlay, viewer, setupAssignments );
+			boxSource = new BoundingBoxPlaceholderSource( boxSourceName, boxOverlay, model, viewer, setupAssignments );
 			break;
 		case VIRTUAL:
 			boxSource = new BoundingBoxVirtualSource( boxSourceName, model, viewer, setupAssignments );
