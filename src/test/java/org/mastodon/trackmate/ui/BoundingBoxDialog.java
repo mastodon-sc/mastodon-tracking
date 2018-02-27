@@ -107,8 +107,7 @@ public class BoundingBoxDialog
 				viewerFrame.getViewerPanel(),
 				windowManager.getAppModel().getSharedBdvData().getSetupAssignments(),
 				viewerFrame.getTriggerbindings(),
-				model,
-				true );
+				model );
 		boundingBoxMamut.setPerspective( 1, 1000 );
 
 		/*

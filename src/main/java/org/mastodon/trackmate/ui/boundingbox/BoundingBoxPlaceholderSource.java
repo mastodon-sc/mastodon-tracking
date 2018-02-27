@@ -29,7 +29,7 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
  *
  * @author Tobias Pietzsch
  */
-public class BoundingBoxPlaceholderSource implements UpdateListener
+public class BoundingBoxPlaceholderSource implements UpdateListener, BoundingBoxSource
 {
 	private final BoundingBoxOverlay boxOverlay;
 
@@ -46,6 +46,7 @@ public class BoundingBoxPlaceholderSource implements UpdateListener
 	private boolean isVisible;
 
 	public BoundingBoxPlaceholderSource(
+			final String name,
 			final BoundingBoxOverlay boxOverlay,
 			final ViewerPanel viewer,
 			final SetupAssignments setupAssignments )
@@ -58,10 +59,11 @@ public class BoundingBoxPlaceholderSource implements UpdateListener
 		boxConverterSetup = new PlaceHolderConverterSetup( setupId, 0, 128, new ARGBType( 0x00994499) );
 
 		boxConverterSetup.setViewer( this::repaint );
-		boxSource = new PlaceHolderSource( "selection" ); // TODO: make parameter
+		boxSource = new PlaceHolderSource( name );
 		boxSourceAndConverter = new SourceAndConverter<>( boxSource, null );
 	}
 
+	@Override
 	public void addToViewer()
 	{
 		final VisibilityAndGrouping vg = viewer.getVisibilityAndGrouping();
@@ -85,6 +87,7 @@ public class BoundingBoxPlaceholderSource implements UpdateListener
 		repaint();
 	}
 
+	@Override
 	public void removeFromViewer()
 	{
 		final VisibilityAndGrouping vg = viewer.getVisibilityAndGrouping();

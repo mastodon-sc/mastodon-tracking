@@ -1,22 +1,23 @@
 package org.mastodon.trackmate.ui.boundingbox;
 
+import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoundingBoxOverlaySource;
 import org.mastodon.trackmate.ui.boundingbox.tobdv.BoxRealRandomAccessible;
 
 import bdv.tools.brightness.RealARGBColorConverterSetup;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.util.BdvFunctions;
-import bdv.util.RealRandomAccessibleIntervalSource;
 import bdv.util.RealRandomAccessibleSource;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.VisibilityAndGrouping;
+import net.imglib2.Interval;
 import net.imglib2.RealInterval;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.roi.Bounds;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.util.Intervals;
 
 /**
  * A BDV source (and converter etc) representing the BoundingBox.
@@ -24,7 +25,7 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
  */
-public class BoundingBoxVirtualSource
+public class BoundingBoxVirtualSource implements BoundingBoxSource
 {
 	private final BoxRealRandomAccessible< UnsignedShortType > box;
 
@@ -39,21 +40,33 @@ public class BoundingBoxVirtualSource
 	private final SetupAssignments setupAssignments;
 
 	public BoundingBoxVirtualSource(
-			final RealInterval interval, // bounding box model
-			final AffineTransform3D transform, // bounding box model
+			final String name,
+			final BoundingBoxOverlaySource bbSource,
 			final ViewerPanel viewer,
 			final SetupAssignments setupAssignments )
 	{
 		this.viewer = viewer;
 		this.setupAssignments = setupAssignments;
 
+		final RealInterval interval = bbSource.getInterval();
+		final AffineTransform3D transform = new AffineTransform3D();
+		bbSource.getTransform( transform );
+
 		box = new BoxRealRandomAccessible<>( interval, new UnsignedShortType( 1000 ), new UnsignedShortType( 0 ) );
-		boxSource = new RealRandomAccessibleIntervalSource<>(
-				box,
-				new Bounds.SmallestContainingInterval( interval ),
-				new UnsignedShortType(),
-				transform,
-				"selection" );
+		boxSource = new RealRandomAccessibleSource< UnsignedShortType >( box,	new UnsignedShortType(),	name )
+		{
+			@Override
+			public synchronized void getSourceTransform( final int t, final int level, final AffineTransform3D transform )
+			{
+				bbSource.getTransform( transform );
+			}
+
+			@Override
+			public Interval getInterval( final int t, final int level )
+			{
+				return Intervals.smallestContainingInterval( bbSource.getInterval() );
+			}
+		};
 
 		/*
 		 * Set up a converter from the source type (UnsignedShortType in this
@@ -74,6 +87,7 @@ public class BoundingBoxVirtualSource
 		boxSourceAndConverter = new SourceAndConverter<>( boxSource, converter );
 	}
 
+	@Override
 	public void addToViewer()
 	{
 		final VisibilityAndGrouping vg = viewer.getVisibilityAndGrouping();
@@ -92,6 +106,7 @@ public class BoundingBoxVirtualSource
 		setupAssignments.addSetup( boxConverterSetup );
 	}
 
+	@Override
 	public void removeFromViewer()
 	{
 		viewer.removeSource( boxSource );

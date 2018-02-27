@@ -40,7 +40,7 @@ public class BoundingBoxMamut
 
 	private final BoundingBoxOverlay boxOverlay;
 
-	private final BoundingBoxPlaceholderSource boxSource;
+	private final BoundingBoxSource boxSource;
 
 	private final ViewerPanel viewer;
 
@@ -52,13 +52,31 @@ public class BoundingBoxMamut
 
 	private boolean editable = true;
 
+	public enum BoxSourceType
+	{
+		NONE,
+		VIRTUAL,
+		PLACEHOLDER
+	}
+
+	public BoundingBoxMamut(
+			final InputTriggerConfig keyconf,
+			final ViewerPanel viewer,
+			final SetupAssignments setupAssignments,
+			final TriggerBehaviourBindings triggerbindings,
+			final BoundingBoxModel model )
+	{
+		this( keyconf, viewer, setupAssignments, triggerbindings, model, "selection", BoxSourceType.PLACEHOLDER );
+	}
+
 	public BoundingBoxMamut(
 			final InputTriggerConfig keyconf,
 			final ViewerPanel viewer,
 			final SetupAssignments setupAssignments,
 			final TriggerBehaviourBindings triggerbindings,
 			final BoundingBoxModel model,
-			final boolean showBoxSource )
+			final String boxSourceName,
+			final BoxSourceType boxSourceType )
 	{
 		this.viewer = viewer;
 		this.triggerbindings = triggerbindings;
@@ -72,9 +90,20 @@ public class BoundingBoxMamut
 		/*
 		 * Create a BDV source to show bounding box slice
 		 */
-		boxSource = showBoxSource
-				? new BoundingBoxPlaceholderSource( boxOverlay, viewer, setupAssignments )
-				: null;
+		switch ( boxSourceType )
+		{
+		case PLACEHOLDER:
+			boxSource = new BoundingBoxPlaceholderSource( boxSourceName, boxOverlay, viewer, setupAssignments );
+			break;
+		case VIRTUAL:
+			boxSource = new BoundingBoxVirtualSource( boxSourceName, model, viewer, setupAssignments );
+			break;
+
+		case NONE:
+		default:
+			boxSource = null;
+			break;
+		}
 
 		/*
 		 * Create DragBoxCornerBehaviour
