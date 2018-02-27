@@ -8,7 +8,6 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.util.ArrayList;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JLabel;
@@ -16,6 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
+import org.mastodon.util.Listeners;
 
 /**
  * Panel with radio-buttons to switch between {@link BoxDisplayMode}s.
@@ -32,13 +32,13 @@ public class BoxModePanel extends JPanel
 
 	private static final long serialVersionUID = 1L;
 
-	private final ArrayList< BoxModePanel.ModeChangeListener > listeners;
+	private final Listeners.List< ModeChangeListener > listeners;
 
 	private BoxDisplayMode mode;
 
 	public BoxModePanel()
 	{
-		listeners = new ArrayList<>();
+		listeners = new Listeners.SynchronizedList<>();
 		mode = FULL;
 
 		final GridBagLayout layout = new GridBagLayout();
@@ -76,7 +76,7 @@ public class BoxModePanel extends JPanel
 	private void setBoxDisplayMode( final BoxDisplayMode mode )
 	{
 		this.mode = mode;
-		listeners.forEach( ModeChangeListener::boxDisplayModeChanged );
+		listeners.list.forEach( ModeChangeListener::boxDisplayModeChanged );
 	}
 
 	@Override
@@ -87,13 +87,13 @@ public class BoxModePanel extends JPanel
 			c.setEnabled( b );
 	}
 
-	public void addListener( final BoxModePanel.ModeChangeListener l )
-	{
-		listeners.add( l );
-	}
-
 	public BoxDisplayMode getBoxDisplayMode()
 	{
 		return mode;
+	}
+
+	public Listeners< ModeChangeListener > modeChangeListeners()
+	{
+		return listeners;
 	}
 }

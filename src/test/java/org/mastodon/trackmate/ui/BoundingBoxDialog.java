@@ -135,7 +135,7 @@ public class BoundingBoxDialog
 				boundingBoxMamut.uninstall();
 			}
 		} );
-		boxModePanel.addListener( () -> boundingBoxMamut.setBoxDisplayMode( boxModePanel.getBoxDisplayMode() ) );
+		boxModePanel.modeChangeListeners().add( () -> boundingBoxMamut.setBoxDisplayMode( boxModePanel.getBoxDisplayMode() ) );
 		model.intervalChangedListeners().add( () -> {
 			boxSelectionPanel.updateSliders( model.getInterval() );
 			viewer.getDisplay().repaint();
