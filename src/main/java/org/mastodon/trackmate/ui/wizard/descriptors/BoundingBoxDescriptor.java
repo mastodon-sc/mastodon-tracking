@@ -10,45 +10,38 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseMotionListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JToggleButton;
 
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.trackmate.Settings;
-import org.mastodon.trackmate.ui.boundingbox.DragBoxCornerBehaviour;
-import org.mastodon.trackmate.ui.boundingbox.BoundingBoxVirtualSource;
-import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay;
-import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
+import org.mastodon.trackmate.ui.boundingbox.BoundingBoxEditor;
+import org.mastodon.trackmate.ui.boundingbox.BoundingBoxEditor.BoxSourceType;
+import org.mastodon.trackmate.ui.boundingbox.BoxModePanel;
+import org.mastodon.trackmate.ui.boundingbox.DefaultBoundingBoxModel;
+import org.mastodon.trackmate.ui.boundingbox.tobdv.BoxSelectionPanel;
 import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 import org.scijava.Context;
 import org.scijava.Contextual;
 import org.scijava.NullContextException;
 import org.scijava.plugin.Parameter;
-import org.scijava.ui.behaviour.ClickBehaviour;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
-import org.scijava.ui.behaviour.util.Behaviours;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
-import bdv.tools.boundingbox.BoxSelectionPanel;
+import bdv.tools.boundingbox.BoundingBoxUtil;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.tools.brightness.SliderPanel;
 import bdv.util.BoundedValue;
+import bdv.util.ModifiableInterval;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerPanel;
-import bdv.viewer.VisibilityAndGrouping;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -57,26 +50,7 @@ import net.imglib2.util.Util;
 
 public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Contextual
 {
-
 	public static final String IDENTIFIER = "Setup bounding-box";
-
-	private static final String BOUNDING_BOX_TOGGLE_EDIT_MODE_ON = "togggle bounding-box edit-mode on";
-
-	private static final String EDIT_MODE = "edit bounding-box";
-
-	private static final String BOUNDING_BOX_TOGGLE_EDIT_MODE_OFF = "togggle bounding-box edit-mode off";
-
-	private static final String[] BOUNDING_BOX_TOGGLE_EDIT_MODE_KEYS = new String[] { "ESCAPE" };
-
-	private static final String VISUALIZATION_MODE = "bounding-box";
-
-	private static final String BOUNDING_BOX_TOGGLE_EDITOR = "edit bounding-box";
-
-	private static final String BOUNDING_BOX_TOGGLE_EDITOR_KEYS = "button1";
-
-	private static final boolean showBoxSource = true;
-
-	private static final boolean showBoxOverlay = true;
 
 	@Parameter
 	private WizardLogService log;
@@ -85,17 +59,30 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 
 	private final WindowManager wm;
 
-	private BoundingBoxOverlay boxOverlay;
-
-	private MouseMotionListener cornerHighlighter;
+	private BoundingBoxEditor boundingBoxEditor;
 
 	private ViewerFrameMamut viewFrame;
 
-	private BoundingBoxVirtualSource roi;
+	private static class MyBoundingBoxModel extends DefaultBoundingBoxModel
+	{
+		private final Interval maxInterval;
 
-	private BoundingBoxEditMode bbEdit;
+		public MyBoundingBoxModel(
+				final Interval interval,
+				final Interval maxInterval,
+				final AffineTransform3D transform )
+		{
+			super( new ModifiableInterval( interval ), transform );
+			this.maxInterval = new FinalInterval( maxInterval );
+		}
 
-	private BoundingBoxVisualizationMode bbVisualization;
+		public Interval getMaxInterval()
+		{
+			return maxInterval;
+		}
+	}
+
+	private MyBoundingBoxModel roi;
 
 	public BoundingBoxDescriptor( final Settings settings, final WindowManager wm )
 	{
@@ -103,7 +90,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		this.wm = wm;
 		this.panelIdentifier = IDENTIFIER;
 		final long[] a = Util.getArrayFromValue( 1000l, 3 );
-		this.roi = new BoundingBoxVirtualSource( new FinalInterval( a, a ), new FinalInterval( a, a ), new AffineTransform3D() );
+		this.roi = new MyBoundingBoxModel( new FinalInterval( a, a ), new FinalInterval( a, a ), new AffineTransform3D() );
 		this.targetPanel = new BoundingBoxPanel();
 	}
 
@@ -125,34 +112,25 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		if ( setupID != previousSetupID )
 		{
 			// Remove old overlay.
-			hideOverlay();
+			if ( boundingBoxEditor != null )
+				boundingBoxEditor.uninstall();
+			viewFrame = null;
 
 			/*
 			 * Change ROI source and overlay.
 			 */
 			roi = getBoundingBoxModel();
-			boxOverlay = new BoundingBoxOverlay( roi );
-			boxOverlay.setPerspective( 0 );
-			cornerHighlighter = boxOverlay.getCornerHighlighter();
+			roi.intervalChangedListeners().add( () -> {
+				panel.boxSelectionPanel.updateSliders( roi.getInterval() );
+				if ( viewFrame != null )
+					viewFrame.getViewerPanel().getDisplay().repaint();
+			} );
 
 			/*
 			 * We also have to recreate the selection panel linked to the new
 			 * ROI.
 			 */
-			panel.remove( panel.boundsPanel );
-			panel.boundsPanel = new JPanel();
-			panel.boundsPanel.setLayout( new BoxLayout( panel.boundsPanel, BoxLayout.PAGE_AXIS ) );
-
-			panel.boxSelectionPanel = new BoxSelectionPanel( roi.getInterval(), roi.getMaxInterval() );
-			panel.boxSelectionPanel.addSelectionUpdateListener( new BoxSelectionPanel.SelectionUpdateListener()
-			{
-				@Override
-				public void selectionUpdated()
-				{
-					if ( null != viewFrame )
-						viewFrame.getViewerPanel().requestRepaint();
-				}
-			} );
+			panel.boxSelectionPanel = new BoxSelectionPanel( roi, roi.getMaxInterval() );
 
 			/*
 			 * We reset time bounds.
@@ -168,23 +146,17 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			final SliderPanel tMaxPanel = new SliderPanel( "t max", panel.maxT, 1 );
 			tMaxPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
 
+			panel.boundsPanel.removeAll();
 			panel.boundsPanel.add( panel.boxSelectionPanel );
 			panel.boundsPanel.add( tMinPanel );
 			panel.boundsPanel.add( tMaxPanel );
 
-			final GridBagConstraints gbc = new GridBagConstraints();
-			gbc.gridx = 0;
-			gbc.gridy = 2;
-			gbc.anchor = GridBagConstraints.CENTER;
-			gbc.fill = GridBagConstraints.HORIZONTAL;
-			gbc.weighty = 1.;
-			gbc.insets = new Insets( 5, 5, 5, 5 );
 			setPanelEnabled( panel.boundsPanel, panel.useRoi.isSelected() );
 			setPanelEnabled( panel.boxModePanel, panel.useRoi.isSelected() );
-			panel.add( panel.boundsPanel, gbc );
 
 			panel.boxSelectionPanel.setBoundsInterval( roi.getMaxInterval() );
 			panel.boxSelectionPanel.updateSliders( roi.getInterval() );
+
 			previousSetupID = setupID;
 		}
 		else
@@ -215,7 +187,6 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		settings.values.getDetectorSettings().put( KEY_MIN_TIMEPOINT, panel.minT.getCurrentValue() );
 		settings.values.getDetectorSettings().put( KEY_MAX_TIMEPOINT, panel.maxT.getCurrentValue() );
 
-		toggleEditModeOff();
 		toggleBoundingBox( false );
 		log.info( info );
 		log.info( String.format( "  - min time-point: %d\n", ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT ) ) );
@@ -244,10 +215,8 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 	/**
 	 * Build a model for the bounding-box from the settings passed to this
 	 * descriptor or sensible defaults if there are no settings yet.
-	 *
-	 * @return a new {@link BoundingBoxVirtualSource}.
 	 */
-	private BoundingBoxVirtualSource getBoundingBoxModel()
+	private MyBoundingBoxModel getBoundingBoxModel()
 	{
 		Interval interval = ( Interval ) settings.values.getDetectorSettings().get( KEY_ROI );
 		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
@@ -281,9 +250,11 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 				interval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
 			maxInterval = interval;
 		}
-		return new BoundingBoxVirtualSource( interval, maxInterval, sourceTransform );
+
+		return new MyBoundingBoxModel( interval, maxInterval, sourceTransform );
 	}
 
+	// TODO rename
 	private void toggleBoundingBox( final boolean useRoi )
 	{
 		final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
@@ -293,172 +264,46 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		if ( useRoi )
 		{
 			showViewer();
-			showOverlay();
 		}
-		else if ( viewFrame != null )
+		else
 		{
-			hideOverlay();
+			if ( boundingBoxEditor != null )
+				boundingBoxEditor.uninstall();
 		}
-	}
-
-	private void hideOverlay()
-	{
-		if ( null == viewFrame )
-			return;
-
-		final ViewerPanel viewer = viewFrame.getViewerPanel();
-		final SetupAssignments setupAssignments = wm.getAppModel().getSharedBdvData().getSetupAssignments();
-
-		if ( showBoxSource )
-		{
-			if ( viewer.isShowing() && null != roi.getBoxSourceAndConverter() )
-				viewer.removeSource( roi.getBoxSourceAndConverter().getSpimSource() );
-			setupAssignments.removeSetup( roi.getBoxConverterSetup() );
-		}
-		if ( showBoxOverlay )
-		{
-			viewer.getDisplay().removeOverlayRenderer( boxOverlay );
-			viewer.removeTransformListener( boxOverlay );
-		}
-		viewer.getDisplay().removeHandler( cornerHighlighter );
-	}
-
-	private void showOverlay()
-	{
-		final SetupAssignments setupAssignments = wm.getAppModel().getSharedBdvData().getSetupAssignments();
-		final ViewerPanel viewer = viewFrame.getViewerPanel();
-		final int setupId = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
-		roi.install( viewFrame.getViewerPanel(), setupId );
-
-		if ( showBoxSource )
-		{
-			viewer.addSource( roi.getBoxSourceAndConverter() );
-			setupAssignments.addSetup( roi.getBoxConverterSetup() );
-			roi.getBoxConverterSetup().setViewer( viewer );
-
-			final int bbSourceIndex = viewer.getState().numSources() - 1;
-			final VisibilityAndGrouping vg = viewer.getVisibilityAndGrouping();
-			if ( vg.getDisplayMode() != bdv.viewer.DisplayMode.FUSED )
-			{
-				for ( int i = 0; i < bbSourceIndex; ++i )
-					vg.setSourceActive( i, vg.isSourceVisible( i ) );
-				vg.setDisplayMode( bdv.viewer.DisplayMode.FUSED );
-			}
-			vg.setSourceActive( bbSourceIndex, true );
-			vg.setCurrentSource( bbSourceIndex );
-		}
-		if ( showBoxOverlay )
-		{
-			viewer.getDisplay().addOverlayRenderer( boxOverlay );
-			viewer.addRenderTransformListener( boxOverlay );
-		}
-		viewer.getDisplay().addHandler( cornerHighlighter );
 	}
 
 	private void showViewer()
 	{
+		final ViewerFrameMamut oldViewFrame = viewFrame;
+
 		// Is there a BDV open?
-		if (viewFrame == null || !viewFrame.isShowing() )
-			wm.forEachBdvView( (view) -> { viewFrame = ( ViewerFrameMamut ) view.getFrame(); } );
+		if ( viewFrame == null || !viewFrame.isShowing() )
+			wm.forEachBdvView( view -> viewFrame = ( ViewerFrameMamut ) view.getFrame() );
 
 		// Create one
-		if (viewFrame == null)
+		if ( viewFrame == null )
 			viewFrame = ( ViewerFrameMamut ) wm.createBigDataViewer().getFrame();
 
-		final InputTriggerConfig keyconf = wm.getAppModel().getKeymap().getConfig();
-		this.bbEdit = new BoundingBoxEditMode( keyconf );
-		this.bbVisualization = new BoundingBoxVisualizationMode( keyconf );
-		toggleEditModeOff();
+		if ( oldViewFrame != viewFrame )
+		{
+			if ( boundingBoxEditor != null )
+			{
+				boundingBoxEditor.uninstall();
+				boundingBoxEditor = null;
+			}
+
+			final InputTriggerConfig keyconf = wm.getAppModel().getKeymap().getConfig();
+			final ViewerPanel viewer = viewFrame.getViewerPanel();
+			final SetupAssignments setupAssignments = wm.getAppModel().getSharedBdvData().getSetupAssignments();
+			final TriggerBehaviourBindings triggerBindings = viewFrame.getTriggerbindings();
+			boundingBoxEditor = new BoundingBoxEditor( keyconf, viewer, setupAssignments, triggerBindings, roi, "bounding box", BoxSourceType.VIRTUAL );
+
+			final Interval bb = BoundingBoxUtil.getSourcesBoundingBox( viewFrame.getViewerPanel().getState() );
+			final double sourceSize = Math.max( Math.max( bb.dimension( 0 ), bb.dimension( 1 ) ), bb.dimension( 2 ) );
+			boundingBoxEditor.setPerspective( 1, Math.max( sourceSize, 1 ) );
+		}
+		boundingBoxEditor.install();
 		viewFrame.toFront();
-	}
-
-	private boolean editMode = false;
-
-	private void toggleEditModeOn()
-	{
-		final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
-
-		if ( editMode || !panel.useRoi.isSelected() )
-			return;
-
-		editMode = true;
-		boxOverlay.showCornerHandles( true );
-
-		panel.boxModePanel.modeToggle.setText( "Edit mode" );
-		if ( !panel.boxModePanel.full.isSelected() )
-			panel.boxModePanel.full.doClick();
-		setPanelEnabled( panel.boxModePanel, false );
-		panel.boxModePanel.modeToggle.setEnabled( true );
-		panel.boxModePanel.modeToggle.setSelected( true );
-
-		final TriggerBehaviourBindings triggerBehaviourBindings = viewFrame.getTriggerbindings();
-		triggerBehaviourBindings.removeBehaviourMap( VISUALIZATION_MODE );
-		triggerBehaviourBindings.removeInputTriggerMap( VISUALIZATION_MODE );
-		triggerBehaviourBindings.addInputTriggerMap( EDIT_MODE, bbEdit.getInputTriggerMap(), "all", "navigation" );
-		triggerBehaviourBindings.addBehaviourMap( EDIT_MODE, bbEdit.getBehaviourMap() );
-	}
-
-	private void toggleEditModeOff()
-	{
-		editMode = false;
-		boxOverlay.showCornerHandles( false );
-
-		final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
-		panel.boxModePanel.modeToggle.setText( "Navigation mode" );
-		panel.boxModePanel.modeToggle.setSelected( false );
-		setPanelEnabled( panel.boxModePanel, true );
-
-		if ( null != viewFrame )
-		{
-			final TriggerBehaviourBindings triggerBehaviourBindings = viewFrame.getTriggerbindings();
-			triggerBehaviourBindings.removeInputTriggerMap( EDIT_MODE );
-			triggerBehaviourBindings.removeBehaviourMap( EDIT_MODE );
-			bbVisualization.install( viewFrame.getTriggerbindings(), VISUALIZATION_MODE );
-		}
-	}
-
-	private class BoundingBoxVisualizationMode extends Behaviours
-	{
-
-		public BoundingBoxVisualizationMode( final InputTriggerConfig keyConfig )
-		{
-			super( keyConfig, "bdv" );
-			behaviour( new ToggleEditMode(), BOUNDING_BOX_TOGGLE_EDIT_MODE_ON, BOUNDING_BOX_TOGGLE_EDIT_MODE_KEYS );
-		}
-
-		private class ToggleEditMode implements ClickBehaviour
-		{
-
-			@Override
-			public void click( final int x, final int y )
-			{
-				toggleEditModeOn();
-			}
-		}
-	}
-
-	private class BoundingBoxEditMode extends Behaviours
-	{
-
-		private BoundingBoxEditMode( final InputTriggerConfig keyConfig )
-		{
-			super( keyConfig, "bdv" );
-			final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
-			behaviour( new ToggleEditModeBehaviour(),
-					BOUNDING_BOX_TOGGLE_EDIT_MODE_OFF, BOUNDING_BOX_TOGGLE_EDIT_MODE_KEYS );
-			behaviour( new DragBoxCornerBehaviour( boxOverlay, viewFrame.getViewerPanel(), panel.boxSelectionPanel, roi.getInterval() ),
-					BOUNDING_BOX_TOGGLE_EDITOR, BOUNDING_BOX_TOGGLE_EDITOR_KEYS );
-		}
-
-		private class ToggleEditModeBehaviour implements ClickBehaviour
-		{
-
-			@Override
-			public void click( final int x, final int y )
-			{
-				toggleEditModeOff();
-			}
-		}
 	}
 
 	private class BoundingBoxPanel extends JPanel
@@ -470,7 +315,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 
 		private final BoxModePanel boxModePanel;
 
-		private JPanel boundsPanel;
+		private final JPanel boundsPanel;
 
 		private final JCheckBox useRoi;
 
@@ -504,113 +349,26 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			add( useRoi, gbc );
 
 			gbc.gridy++;
-			this.boxSelectionPanel = new BoxSelectionPanel( roi.getInterval(), roi.getMaxInterval() );
-			boxSelectionPanel.addSelectionUpdateListener( new BoxSelectionPanel.SelectionUpdateListener()
-			{
-				@Override
-				public void selectionUpdated()
-				{
-					if ( null != viewFrame )
-						viewFrame.getViewerPanel().requestRepaint();
-				}
-			} );
+			this.boxSelectionPanel = new BoxSelectionPanel( roi, roi.getMaxInterval() );
 
 			// Time panel
 			final int nTimepoints = wm.getAppModel().getMaxTimepoint() - wm.getAppModel().getMinTimepoint();
-			final int minTimepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT );
-			final int maxTimepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MAX_TIMEPOINT );
+			minT = new BoundedValue( 0, nTimepoints, 0 );
+			maxT = new BoundedValue( 0, nTimepoints, nTimepoints );
 
-			this.minT = new BoundedValue( 0, nTimepoints, minTimepoint );
-			final SliderPanel tMinPanel = new SliderPanel( "t min", minT, 1 );
-			tMinPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
-
-			this.maxT = new BoundedValue( 0, nTimepoints, maxTimepoint );
-			final SliderPanel tMaxPanel = new SliderPanel( "t max", maxT, 1 );
-			tMaxPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
-
-			this.boundsPanel = new JPanel();
+			boundsPanel = new JPanel();
 			boundsPanel.setLayout( new BoxLayout( boundsPanel, BoxLayout.PAGE_AXIS ) );
-			boundsPanel.add( boxSelectionPanel );
-			boundsPanel.add( tMinPanel );
-			boundsPanel.add( tMaxPanel );
 			add( boundsPanel, gbc );
 
 			gbc.gridy++;
-			this.boxModePanel = new BoxModePanel();
+			boxModePanel = new BoxModePanel();
+			boxModePanel.modeChangeListeners().add( () -> {
+				if ( boundingBoxEditor != null )
+					boundingBoxEditor.setBoxDisplayMode( boxModePanel.getBoxDisplayMode() );
+			} );
 			add( boxModePanel, gbc );
 		}
 	}
-
-	private class BoxModePanel extends JPanel
-	{
-		private static final long serialVersionUID = 1L;
-
-		final JRadioButton full;
-
-		final JToggleButton modeToggle;
-
-		public BoxModePanel()
-		{
-			final GridBagLayout layout = new GridBagLayout();
-			layout.columnWidths = new int[] { 80, 80 };
-			layout.columnWeights = new double[] { 0.5, 0.5 };
-			setLayout( layout );
-			final GridBagConstraints gbc = new GridBagConstraints();
-
-			gbc.gridy = 0;
-			gbc.gridx = 0;
-			gbc.gridwidth = 2;
-			gbc.anchor = GridBagConstraints.BASELINE_LEADING;
-			gbc.insets = new Insets( 5, 5, 5, 5 );
-
-			final JLabel overlayLabel = new JLabel( "Overlay:", JLabel.LEFT );
-			overlayLabel.setFont( getFont().deriveFont( Font.BOLD ) );
-			add( overlayLabel, gbc );
-
-			gbc.gridy++;
-			gbc.gridwidth = 1;
-			this.full = new JRadioButton( "Full" );
-			final JRadioButton section = new JRadioButton( "Section" );
-			final ActionListener l = new ActionListener()
-			{
-				@Override
-				public void actionPerformed( final ActionEvent e )
-				{
-					if ( null != boxOverlay && null == viewFrame )
-						return;
-
-					boxOverlay.setDisplayMode( full.isSelected() ? BoxDisplayMode.FULL : BoxDisplayMode.SECTION );
-					viewFrame.getViewerPanel().requestRepaint();
-				}
-			};
-			full.addActionListener( l );
-			section.addActionListener( l );
-			final ButtonGroup group = new ButtonGroup();
-			group.add( full );
-			group.add( section );
-			full.setSelected( true );
-			add( full, gbc );
-			gbc.gridx++;
-			add( section, gbc );
-
-			gbc.gridy++;
-			gbc.gridx = 0;
-			this.modeToggle = new JToggleButton( "Navigation mode", false );
-			modeToggle.addActionListener( new ActionListener()
-			{
-				@Override
-				public void actionPerformed( final ActionEvent e )
-				{
-					if ( modeToggle.isSelected() )
-						toggleEditModeOn();
-					else
-						toggleEditModeOff();
-				}
-			} );
-			add( modeToggle, gbc );
-		}
-	}
-
 
 	// -- Contextual methods --
 
