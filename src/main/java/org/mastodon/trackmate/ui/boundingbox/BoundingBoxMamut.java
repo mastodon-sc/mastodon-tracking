@@ -27,10 +27,9 @@ import bdv.viewer.ViewerPanel;
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
  */
+// TODO: RENAME BoundingBoxTool? BoundingBoxEditor?
 public class BoundingBoxMamut
 {
-	private final BoundingBoxOverlay boxOverlay;
-
 	private static final String BOUNDING_BOX_TOGGLE_EDITOR = "edit bounding-box";
 
 	private static final String[] BOUNDING_BOX_TOGGLE_EDITOR_KEYS = new String[] { "button1" };
@@ -38,6 +37,8 @@ public class BoundingBoxMamut
 	private static final String BOUNDING_BOX_MAP = "bounding-box";
 
 	private static final String BLOCKING_MAP = "bounding-box-blocking";
+
+	private final BoundingBoxOverlay boxOverlay;
 
 	private final BoundingBoxPlaceholderSource boxSource;
 
@@ -49,12 +50,14 @@ public class BoundingBoxMamut
 
 	private final BehaviourMap blockMap;
 
+	private boolean editable = true;
+
 	public BoundingBoxMamut(
 			final InputTriggerConfig keyconf,
 			final ViewerPanel viewer,
 			final SetupAssignments setupAssignments,
 			final TriggerBehaviourBindings triggerbindings,
-			final DefaultBoundingBoxModel model,
+			final BoundingBoxModel model,
 			final boolean showBoxSource )
 	{
 		this.viewer = viewer;
@@ -116,15 +119,6 @@ public class BoundingBoxMamut
 			boxSource.removeFromViewer();
 	}
 
-	private void highlightedCornerChanged()
-	{
-		final int index = boxOverlay.getHighlightedCornerIndex();
-		if ( index < 0 )
-			unblock();
-		else
-			block();
-	}
-
 	public BoxDisplayMode getBoxDisplayMode()
 	{
 		return boxOverlay.getDisplayMode();
@@ -137,8 +131,6 @@ public class BoundingBoxMamut
 		updateEditability();
 
 	}
-
-	private boolean editable = true;
 
 	public boolean isEditable()
 	{
@@ -181,6 +173,15 @@ public class BoundingBoxMamut
 		triggerbindings.removeBehaviourMap( BLOCKING_MAP );
 	}
 
+	private void highlightedCornerChanged()
+	{
+		final int index = boxOverlay.getHighlightedCornerIndex();
+		if ( index < 0 )
+			unblock();
+		else
+			block();
+	}
+
 	private void refreshBlockMap()
 	{
 		triggerbindings.removeBehaviourMap( BLOCKING_MAP );
@@ -199,4 +200,5 @@ public class BoundingBoxMamut
 		for ( final String key : behavioursToBlock )
 			blockMap.put( key, block );
 	}
+
 }
