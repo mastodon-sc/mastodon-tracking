@@ -14,7 +14,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
 
-import bdv.util.Affine3DHelpers;
 import net.imglib2.Interval;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -65,6 +64,8 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	final RenderBoxHelper renderBoxHelper;
 
 	private final CornerHighlighter cornerHighlighter;
+
+	private double sourceSize = 5000;
 
 	private double perspective = 0.5;
 
@@ -147,12 +148,10 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		final GeneralPath intersection = new GeneralPath();
 
 		final RealInterval interval = bbSource.getInterval();
-		final double sourceSize; // Math.max( Math.max( interval.dimension( 0 ), interval.dimension( 1 ) ), interval.dimension( 2 ) );
 		final double ox = canvasWidth / 2;
 		final double oy = canvasHeight / 2;
 		synchronized ( viewerTransform )
 		{
-			sourceSize = Affine3DHelpers.extractScale( viewerTransform, 0 ) * canvasWidth;
 			bbSource.getTransform( transform );
 			transform.preConcatenate( viewerTransform );
 		}
@@ -282,6 +281,11 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		cornerId = ( id >= 0 && id < RenderBoxHelper.numCorners ) ? id : -1;
 		if ( cornerId != oldId && highlightedCornerListener != null && displayMode == FULL )
 			highlightedCornerListener.highlightedCornerChanged();
+	}
+
+	public void setSourceSize( final double sourceSize )
+	{
+		this.sourceSize = sourceSize;
 	}
 
 	private class CornerHighlighter extends MouseMotionAdapter

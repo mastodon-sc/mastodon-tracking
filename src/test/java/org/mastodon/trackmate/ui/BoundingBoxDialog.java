@@ -109,6 +109,7 @@ public class BoundingBoxDialog
 				viewerFrame.getTriggerbindings(),
 				model,
 				true );
+		boundingBoxMamut.setPerspective( 1, 1000 );
 
 		/*
 		 * Create bounding box dialog.

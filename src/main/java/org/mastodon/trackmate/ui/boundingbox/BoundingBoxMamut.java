@@ -67,7 +67,7 @@ public class BoundingBoxMamut
 		 * Create an Overlay to show 3D wireframe box
 		 */
 		boxOverlay = new BoundingBoxOverlay( model );
-//		boxOverlay.setPerspective( 0 );
+		boxOverlay.setPerspective( 0 );
 
 		/*
 		 * Create a BDV source to show bounding box slice
@@ -146,6 +146,19 @@ public class BoundingBoxMamut
 		updateEditability();
 	}
 
+	/**
+	 * Sets up perspective projection for the overlay. Basically, the projection
+	 * center is placed at distance {@code perspective * sourceSize} from the
+	 * projection plane (screen). Specify {@code perspective = 0} to set
+	 * parallel projection.
+	 */
+	public void setPerspective( final double perspective, final double sourceSize )
+	{
+		boxOverlay.setPerspective( perspective );
+		boxOverlay.setSourceSize( sourceSize );
+	}
+
+
 	private void updateEditability()
 	{
 		if ( editable && boxOverlay.getDisplayMode() == FULL )
@@ -200,5 +213,4 @@ public class BoundingBoxMamut
 		for ( final String key : behavioursToBlock )
 			blockMap.put( key, block );
 	}
-
 }
