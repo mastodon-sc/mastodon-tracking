@@ -1,4 +1,4 @@
-package org.mastodon.trackmate.ui.boundingbox;
+package org.mastodon.trackmate.ui;
 
 import java.awt.BorderLayout;
 import java.awt.event.ComponentAdapter;
@@ -18,6 +18,10 @@ import org.mastodon.revised.mamut.MamutViewBdv;
 import org.mastodon.revised.mamut.ProjectManager;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.revised.util.ToggleDialogAction;
+import org.mastodon.trackmate.ui.boundingbox.BoundingBoxMamut;
+import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay;
+import org.mastodon.trackmate.ui.boundingbox.BoxModePanel;
+import org.mastodon.trackmate.ui.boundingbox.DefaultBoundingBoxModel;
 import org.mastodon.trackmate.ui.boundingbox.tobdv.BoxSelectionPanel;
 import org.scijava.Context;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
