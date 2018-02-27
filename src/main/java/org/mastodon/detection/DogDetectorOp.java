@@ -37,9 +37,6 @@ import net.imglib2.view.Views;
  *
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
- * @param <O>
- *            the type of the detection creator, that is in charge of creating
- *            the detection objects from coordinates returned by this algorithm.
  */
 @Plugin( type = DetectorOp.class )
 public class DogDetectorOp

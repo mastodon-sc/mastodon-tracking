@@ -57,7 +57,6 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
-import org.mastodon.linking.sequential.SequentialParticleLinkerOp;
 import org.mastodon.linking.sequential.lap.costfunction.CostFunction;
 import org.mastodon.linking.sequential.lap.costfunction.FeaturePenaltiesCostFunction;
 import org.mastodon.linking.sequential.lap.costfunction.SquareDistCostFunction;
@@ -75,8 +74,7 @@ public class LinkingUtils
 	private static final Border RED_BORDER = new LineBorder( Color.RED );
 
 	/**
-	 * The key of the edge linking cost feature and projection returned by
-	 * {@link SequentialParticleLinkerOp#getLinkCostFeature()}.
+	 * The key of the edge linking cost feature and projection.
 	 */
 	public static final String LINK_COST_FEATURE_NAME = "Link cost";
 
@@ -99,6 +97,8 @@ public class LinkingUtils
 	 * an Edge linking cost feature for the linkers of Mastodon. This feature is
 	 * expected to be common to all particle linkers.
 	 *
+	 * @param <E>
+	 *            the type of edges.
 	 * @param linkCosts
 	 *            the property map containing the link cost values of all edges
 	 *            in the model.
@@ -208,6 +208,8 @@ public class LinkingUtils
 	 * Check that the given map has all some keys. Two String collection allows
 	 * specifying that some keys are mandatory, other are optional.
 	 *
+	 * @param <T>
+	 *            the type of the keys in the map.
 	 * @param map
 	 *            the map to inspect.
 	 * @param mandatoryKeys
@@ -569,6 +571,8 @@ public class LinkingUtils
 	/**
 	 * Returns the square distance between two {@link RealLocalizable}s.
 	 *
+	 * @param <K>
+	 *            the type of the {@link RealLocalizable}s.
 	 * @param source
 	 *            the source position.
 	 * @param target
@@ -600,7 +604,9 @@ public class LinkingUtils
 	 *
 	 * If one of the feature value cannot be found, this method returns
 	 * {@link Double#NaN}.
-	 *
+	 * 
+	 * @param <V>
+	 *            the type of vertices.
 	 * @param source
 	 *            the source vertex.
 	 * @param target

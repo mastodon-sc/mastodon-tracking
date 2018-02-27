@@ -48,8 +48,6 @@ import net.imglib2.algorithm.Benchmark;
  *
  * @param <V>
  *            the type of vertices in the graph.
- * @param <E>
- *            the type of edges in the graph.
  */
 @Plugin( type = SequentialParticleLinkerOp.class )
 public class KalmanLinker< V extends RealLocalizable >

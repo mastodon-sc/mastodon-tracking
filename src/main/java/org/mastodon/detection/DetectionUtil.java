@@ -70,11 +70,14 @@ public class DetectionUtil
 	 * Returns a new feature wrapping the specified property map, that serves as
 	 * a Quality feature for the detectors of Mastodon. This feature is expected
 	 * to be common to all detectors.
-	 *
+	 * 
+	 * @param <V>
+	 *            the type of spots.
 	 * @param quality
 	 *            the property map containing the quality values of all spots in
 	 *            the model.
 	 * @param clazz
+	 *            the class of the spots.
 	 * @return the quality feature.
 	 */
 	public static final < V > Feature< V, DoublePropertyMap< V > > getQualityFeature( final DoublePropertyMap< V > quality, final Class< V > clazz )
@@ -314,6 +317,9 @@ public class DetectionUtil
 	/**
 	 * Possibly wraps and extends the specified image in a view over floats.
 	 *
+	 * @param <T>
+	 *            the type of the pixels in the image. Must extend
+	 *            {@link RealType}.
 	 * @param img
 	 *            the image to wrap.
 	 * @return an extend view of the image over floats.

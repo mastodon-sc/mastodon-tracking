@@ -35,13 +35,13 @@ public interface DetectionCreatorFactory
 
 		/**
 		 * Method called before a batch of detections is added to the output via
-		 * the {@link #createDetection(double[], double, int, double)} method.
+		 * the {@link #createDetection(double[], double, double)} method.
 		 */
 		public void preAddition();
 
 		/**
 		 * Method called after a batch of detections is added to the output via
-		 * the {@link #createDetection(double[], double, int, double)} method.
+		 * the {@link #createDetection(double[], double, double)} method.
 		 */
 		public void postAddition();
 	}

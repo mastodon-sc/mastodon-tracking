@@ -24,7 +24,9 @@ import net.imglib2.algorithm.Benchmark;
  * @author Jean-Yves Tinevez - 2014
  *
  * @param <K>
+ *            the type of the source objects.
  * @param <J>
+ *            the type of the target objects.
  */
 @Plugin( type = CostMatrixCreatorOp.class )
 public class JaqamanLinkingCostMatrixCreator< K, J >
