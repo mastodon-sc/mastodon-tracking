@@ -18,7 +18,7 @@ import org.mastodon.revised.mamut.MamutViewBdv;
 import org.mastodon.revised.mamut.ProjectManager;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.revised.util.ToggleDialogAction;
-import org.mastodon.trackmate.ui.boundingbox.BoundingBoxMamut;
+import org.mastodon.trackmate.ui.boundingbox.BoundingBoxEditor;
 import org.mastodon.trackmate.ui.boundingbox.BoundingBoxOverlay;
 import org.mastodon.trackmate.ui.boundingbox.BoxModePanel;
 import org.mastodon.trackmate.ui.boundingbox.DefaultBoundingBoxModel;
@@ -102,7 +102,7 @@ public class BoundingBoxDialog
 		/*
 		 * Create bounding box overlay and editor.
 		 */
-		final BoundingBoxMamut boundingBoxMamut = new BoundingBoxMamut(
+		final BoundingBoxEditor boundingBoxMamut = new BoundingBoxEditor(
 				keyconf,
 				viewerFrame.getViewerPanel(),
 				windowManager.getAppModel().getSharedBdvData().getSetupAssignments(),

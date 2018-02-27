@@ -27,8 +27,7 @@ import bdv.viewer.ViewerPanel;
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
  */
-// TODO: RENAME BoundingBoxTool? BoundingBoxEditor?
-public class BoundingBoxMamut
+public class BoundingBoxEditor
 {
 	private static final String BOUNDING_BOX_TOGGLE_EDITOR = "edit bounding-box";
 
@@ -59,7 +58,7 @@ public class BoundingBoxMamut
 		PLACEHOLDER
 	}
 
-	public BoundingBoxMamut(
+	public BoundingBoxEditor(
 			final InputTriggerConfig keyconf,
 			final ViewerPanel viewer,
 			final SetupAssignments setupAssignments,
@@ -69,7 +68,7 @@ public class BoundingBoxMamut
 		this( keyconf, viewer, setupAssignments, triggerbindings, model, "selection", BoxSourceType.PLACEHOLDER );
 	}
 
-	public BoundingBoxMamut(
+	public BoundingBoxEditor(
 			final InputTriggerConfig keyconf,
 			final ViewerPanel viewer,
 			final SetupAssignments setupAssignments,
