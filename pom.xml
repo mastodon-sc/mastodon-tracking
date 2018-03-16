@@ -54,17 +54,17 @@
 		<dependency>
 			<groupId>net.trackmate</groupId>
 			<artifactId>trackmate</artifactId>
-			<version>1.0.0-beta-3-SNAPSHOT</version>
+			<version>1.0.0-beta-4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mastodon</groupId>
 			<artifactId>mastodon-collection</artifactId>
-			<version>1.0.0-beta-13-SNAPSHOT</version>
+			<version>1.0.0-beta-14</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mastodon</groupId>
 			<artifactId>mastodon-graph</artifactId>
-			<version>1.0.0-beta-11-SNAPSHOT</version>
+			<version>1.0.0-beta-11</version>
 		</dependency>
 
 		<!-- JFreeChart deps -->
@@ -128,7 +128,7 @@
 
 	<properties>
 		<package-name>org.trndy</package-name>
-		<enforcer.skip>true</enforcer.skip>
+		<!-- <enforcer.skip>true</enforcer.skip> -->
 		<license.licenseName>not licensed yet</license.licenseName>
 		<license.projectName>mastodon-tracking</license.projectName>
 		<license.organizationName>Mastodon authors</license.organizationName>
