@@ -23,7 +23,6 @@ import org.mastodon.trackmate.ui.wizard.descriptors.ExecuteDetectionDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.ExecuteLinkingDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.LogDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.SetupIdDecriptor;
-import org.scijava.AbstractContextual;
 import org.scijava.Context;
 import org.scijava.plugin.Parameter;
 
@@ -31,7 +30,7 @@ import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import mpicbg.spim.data.SpimDataException;
 
-public class Wizard extends AbstractContextual
+public class Wizard
 {
 	@Parameter
 	private WizardLogService logService;
@@ -61,22 +60,22 @@ public class Wizard extends AbstractContextual
 		logService.clearLog();
 
 		final SetupIdDecriptor setupIdDecriptor = new SetupIdDecriptor( trackmate.getSettings() );
-		setupIdDecriptor.setContext( context() );
+		setupIdDecriptor.setContext( windowManager.getContext() );
 		controller.registerWizardPanel( setupIdDecriptor );
 
 		final BoundingBoxDescriptor boundingBoxDescriptor = new BoundingBoxDescriptor( trackmate.getSettings(), windowManager );
-		boundingBoxDescriptor.setContext( context() );
+		boundingBoxDescriptor.setContext( windowManager.getContext() );
 		controller.registerWizardPanel( boundingBoxDescriptor );
 
 		final ChooseDetectorDescriptor chooseDetectorDescriptor = new ChooseDetectorDescriptor( trackmate, controller, windowManager );
-		chooseDetectorDescriptor.setContext( context() );
+		chooseDetectorDescriptor.setContext( windowManager.getContext() );
 		controller.registerWizardPanel( chooseDetectorDescriptor );
 
 		final ExecuteDetectionDescriptor executeDetectionDescriptor = new ExecuteDetectionDescriptor( trackmate, logService.getPanel() );
 		controller.registerWizardPanel( executeDetectionDescriptor );
 
 		final ChooseLinkerDescriptor chooseLinkerDescriptor = new ChooseLinkerDescriptor( trackmate, controller, windowManager );
-		chooseLinkerDescriptor.setContext( context() );
+		chooseLinkerDescriptor.setContext( windowManager.getContext() );
 		controller.registerWizardPanel( chooseLinkerDescriptor );
 
 		final ExecuteLinkingDescriptor executeLinkingDescriptor = new ExecuteLinkingDescriptor( trackmate, logService.getPanel() );
@@ -139,7 +138,6 @@ public class Wizard extends AbstractContextual
 
 		mw.setVisible( true );
 		final Wizard wizard = new Wizard( trackmate, windowManager );
-		context.inject( wizard );
 		wizard.show();
 	}
 
