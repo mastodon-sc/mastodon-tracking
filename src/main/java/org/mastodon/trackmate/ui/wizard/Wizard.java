@@ -93,7 +93,7 @@ public class Wizard extends AbstractContextual
 	{
 		createDescriptors();
 		frame.getContentPane().add( controller.getWizardPanel() );
-		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
+		frame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
 		frame.setSize( 300, 600 );
 		frame.setVisible( true );
 	}
