@@ -51,6 +51,7 @@ import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
+import org.mastodon.trackmate.ui.wizard.Wizard;
 import org.mastodon.trackmate.ui.wizard.util.HistogramUtil;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
@@ -73,7 +74,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 	public static final String IDENTIFIER = "Configure DoG detector";
 
-	private static final Icon PREVIEW_ICON = new ImageIcon( DogDetectorDescriptor.class.getResource( "../led-icon-eye-green.png" ) );
+	private static final Icon PREVIEW_ICON = new ImageIcon( Wizard.class.getResource( "led-icon-eye-green.png" ) );
 
 	@Parameter
 	private LogService log;

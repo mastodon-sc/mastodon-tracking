@@ -54,6 +54,7 @@ import org.mastodon.linking.FeatureKey;
 import org.mastodon.linking.LinkingUtils;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.feature.FeatureModel;
+import org.mastodon.trackmate.ui.wizard.Wizard;
 import org.mastodon.trackmate.ui.wizard.util.EverythingDisablerAndReenabler;
 import org.mastodon.trackmate.ui.wizard.util.ScrollToFocusListener;
 import org.mastodon.trackmate.ui.wizard.util.SelectOnFocusListener;
@@ -63,9 +64,9 @@ public class LAPLinkerConfigPanel extends JPanel
 
 	private static final long serialVersionUID = -1L;
 
-	private static final ImageIcon ADD_ICON = new ImageIcon( JPanelFeatureSelectionGui.class.getResource( "../add.png" ) );
+	private static final ImageIcon ADD_ICON = new ImageIcon( Wizard.class.getResource( "add.png" ) );
 
-	private static final ImageIcon REMOVE_ICON = new ImageIcon( JPanelFeatureSelectionGui.class.getResource( "../remove.png" ) );
+	private static final ImageIcon REMOVE_ICON = new ImageIcon( Wizard.class.getResource( "remove.png" ) );
 
 	private static final NumberFormat FORMAT = new DecimalFormat( "0.0" );
 

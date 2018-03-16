@@ -2,6 +2,7 @@ package org.mastodon.trackmate;
 
 import java.util.Map;
 
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.mastodon.HasErrorMessage;
 import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.graph.algorithm.RootFinder;
@@ -92,8 +93,17 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		 * Clear previous content.
 		 */
 
-		for ( final Spot spot : model.getGraph().vertices() )
-			model.getGraph().remove( spot );
+		final ReentrantReadWriteLock lock = graph.getLock();
+		lock.writeLock().lock();
+		try
+		{
+			for ( final Spot spot : graph.vertices() )
+				graph.remove( spot );
+		}
+		finally
+		{
+			lock.writeLock().unlock();
+		}
 
 		/*
 		 * Exec detection.
@@ -124,7 +134,7 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		log.info( String.format( "Detection completed in %.1f s.\n", ( end - start ) / 1000. ) );
 		log.info( "Found " + graph.vertices().size() + " spots.\n" );
 
-		model.getGraph().notifyGraphChanged();
+		graph.notifyGraphChanged();
 		return true;
 	}
 
