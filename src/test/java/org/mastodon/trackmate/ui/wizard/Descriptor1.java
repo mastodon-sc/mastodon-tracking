@@ -1,4 +1,4 @@
-package org.mastodon.trackmate.ui.wizard.descriptors;
+package org.mastodon.trackmate.ui.wizard;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -8,19 +8,12 @@ import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 public class Descriptor1 extends WizardPanelDescriptor
 {
 
-	static final String ID = "panel 1";
-
+	private static final String ID = "panel 1";
 
 	public Descriptor1()
 	{
 		panelIdentifier = ID;
 		targetPanel = new Descriptor1Panel();
-	}
-
-	@Override
-	public String getNextPanelDescriptorIdentifier()
-	{
-		return Descriptor2.ID;
 	}
 
 	private class Descriptor1Panel extends JPanel
@@ -32,7 +25,5 @@ public class Descriptor1 extends WizardPanelDescriptor
 			final JLabel jLabel = new JLabel( "Heyyyy" );
 			add( jLabel );
 		}
-
 	}
-
 }

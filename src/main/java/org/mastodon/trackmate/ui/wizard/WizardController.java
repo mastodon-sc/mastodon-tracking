@@ -14,19 +14,23 @@ import org.scijava.ui.behaviour.util.AbstractNamedAction;
 public class WizardController
 {
 
-	private final WizardModel wizardModel;
+	private final WizardSequence sequence;
 
 	private final WizardPanel wizardPanel;
 
-	public WizardController( final WizardModel wizardModel )
+	private final LogDescriptor logDescriptor;
+
+	public WizardController( final WizardSequence sequence, final LogDescriptor logDescriptor )
 	{
-		this.wizardModel = wizardModel;
+		this.sequence = sequence;
+		this.logDescriptor = logDescriptor;
 		this.wizardPanel = new WizardPanel();
 		wizardPanel.btnLog.setAction( getLogAction() );
 		wizardPanel.btnNext.setAction( getNextAction() );
 		wizardPanel.btnPrevious.setAction( getPreviousAction() );
 		wizardPanel.btnCancel.setAction( getCancelAction() );
 		wizardPanel.btnCancel.setVisible( false );
+		registerWizardPanel( logDescriptor );
 	}
 
 	public WizardPanel getWizardPanel()
@@ -37,14 +41,12 @@ public class WizardController
 	public void registerWizardPanel( final WizardPanelDescriptor panel )
 	{
 		wizardPanel.panelMain.add( panel.getPanelComponent(), panel.getPanelDescriptorIdentifier() );
-		wizardModel.registerPanel( panel );
 	}
 
 	protected void log( final boolean show )
 	{
 		System.out.println( "log " + show ); // DEBUG
-		final WizardPanelDescriptor logDescriptor = wizardModel.getDescriptor( LogDescriptor.IDENTIFIER );
-		final WizardPanelDescriptor current = wizardModel.getCurrent();
+		final WizardPanelDescriptor current = sequence.current();
 
 		if ( show )
 		{
@@ -56,59 +58,50 @@ public class WizardController
 		{
 			display( current, logDescriptor, Direction.BOTTOM );
 		}
-
 	}
 
 	protected synchronized void previous()
 	{
 		System.out.println( "previous" ); // DEBUG
-		final WizardPanelDescriptor current = wizardModel.getCurrent();
+		final WizardPanelDescriptor current = sequence.current();
 		if ( current == null )
 			return;
 
 		current.aboutToHidePanel();
-		final String backId = wizardModel.popPreviousDescriptorId();
-		if ( null == backId )
-			return;
-
-		final WizardPanelDescriptor back = wizardModel.getDescriptor( backId );
+		final WizardPanelDescriptor back = sequence.previous();
 		if ( null == back )
 			return;
 
+		back.targetPanel.setSize( current.targetPanel.getSize() );
 		back.aboutToDisplayPanel();
 		display( back, current, Direction.LEFT );
 		back.displayingPanel();
-		wizardModel.setCurrent( back );
 		exec( back.getBackwardRunnable() );
 	}
 
 	protected synchronized void next()
 	{
-		final WizardPanelDescriptor current = wizardModel.getCurrent();
+		final WizardPanelDescriptor current = sequence.current();
 		if ( current == null )
 			return;
 
 		current.aboutToHidePanel();
-		if ( null == current.getNextPanelDescriptorIdentifier() )
+		final WizardPanelDescriptor next = sequence.next();
+		if ( null == next)
 			return;
 
-		final String nextId = current.getNextPanelDescriptorIdentifier();
-		final WizardPanelDescriptor next = wizardModel.getDescriptor( nextId );
 		System.out.println( "next is " + next ); // DEBUG
-		if ( null == next )
-			return;
-		wizardModel.pushDescriptorId( current.getPanelDescriptorIdentifier() );
 
+		next.targetPanel.setSize( current.targetPanel.getSize() );
 		next.aboutToDisplayPanel();
 		display( next, current, Direction.RIGHT );
 		next.displayingPanel();
-		wizardModel.setCurrent( next );
 		exec( next.getForwardRunnable() );
 	}
 
 	protected void cancel()
 	{
-		final Cancelable cancelable = wizardModel.getCurrent().getCancelable();
+		final Cancelable cancelable = sequence.current().getCancelable();
 		System.out.println( "canceling " + cancelable ); // DEBUG
 		if (null != cancelable)
 			cancelable.cancel( "User pressed cancel button." );
@@ -143,12 +136,12 @@ public class WizardController
 		}.start();
 	}
 
-	public void init( final WizardPanelDescriptor descriptor )
+	public void init()
 	{
-		wizardModel.setCurrent( descriptor );
-		wizardPanel.btnPrevious.setEnabled( wizardModel.hasPrevious() );
-		wizardPanel.btnNext.setEnabled( null != descriptor.getNextPanelDescriptorIdentifier() );
-		descriptor.aboutToDisplayPanel();
+		final WizardPanelDescriptor descriptor = sequence.init();
+		wizardPanel.btnPrevious.setEnabled( sequence.hasPrevious() );
+		wizardPanel.btnNext.setEnabled( sequence.hasNext() );
+		descriptor .aboutToDisplayPanel();
 		wizardPanel.display( descriptor );
 		descriptor.displayingPanel();
 	}
@@ -158,8 +151,8 @@ public class WizardController
 		if ( null == to )
 			return;
 
-		wizardPanel.btnPrevious.setEnabled( wizardModel.hasPrevious() );
-		wizardPanel.btnNext.setEnabled( null != to.getNextPanelDescriptorIdentifier() );
+		wizardPanel.btnPrevious.setEnabled( sequence.hasPrevious() );
+		wizardPanel.btnNext.setEnabled( sequence.hasNext() );
 		wizardPanel.transition( to, from, direction );
 	}
 

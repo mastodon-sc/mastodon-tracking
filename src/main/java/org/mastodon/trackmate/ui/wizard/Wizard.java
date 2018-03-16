@@ -13,18 +13,8 @@ import org.mastodon.revised.mamut.MamutProject;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
-import org.mastodon.trackmate.ui.wizard.descriptors.BoundingBoxDescriptor;
-import org.mastodon.trackmate.ui.wizard.descriptors.ChooseDetectorDescriptor;
-import org.mastodon.trackmate.ui.wizard.descriptors.ChooseLinkerDescriptor;
-import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor1;
-import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor2;
-import org.mastodon.trackmate.ui.wizard.descriptors.Descriptor3;
-import org.mastodon.trackmate.ui.wizard.descriptors.ExecuteDetectionDescriptor;
-import org.mastodon.trackmate.ui.wizard.descriptors.ExecuteLinkingDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.LogDescriptor;
-import org.mastodon.trackmate.ui.wizard.descriptors.SetupIdDecriptor;
 import org.scijava.Context;
-import org.scijava.plugin.Parameter;
 
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
@@ -32,68 +22,29 @@ import mpicbg.spim.data.SpimDataException;
 
 public class Wizard
 {
-	@Parameter
-	private WizardLogService logService;
-
-	private final TrackMate trackmate;
-
 	private final JFrame frame;
 
-	private final WizardController controller;
+	private final WizardLogService logService;
 
-	private final WindowManager windowManager;
-
-	public Wizard( final TrackMate trackmate, final WindowManager windowManager )
+	public Wizard( final Context context )
 	{
-		this.trackmate = trackmate;
-		this.windowManager = windowManager;
 		this.frame = new JFrame( "Mastodon Trackmate" );
-		final WizardModel model = new WizardModel();
-		this.controller = new WizardController( model );
+		this.logService = context.getService( WizardLogService.class );
 	}
 
-	private void createDescriptors()
+	public WizardLogService getLogService()
 	{
-		final LogDescriptor logDescriptor = new LogDescriptor( logService.getPanel() );
-		controller.registerWizardPanel( logDescriptor );
-		logService.clearStatus();
-		logService.clearLog();
-
-		final SetupIdDecriptor setupIdDecriptor = new SetupIdDecriptor( trackmate.getSettings() );
-		setupIdDecriptor.setContext( windowManager.getContext() );
-		controller.registerWizardPanel( setupIdDecriptor );
-
-		final BoundingBoxDescriptor boundingBoxDescriptor = new BoundingBoxDescriptor( trackmate.getSettings(), windowManager );
-		boundingBoxDescriptor.setContext( windowManager.getContext() );
-		controller.registerWizardPanel( boundingBoxDescriptor );
-
-		final ChooseDetectorDescriptor chooseDetectorDescriptor = new ChooseDetectorDescriptor( trackmate, controller, windowManager );
-		chooseDetectorDescriptor.setContext( windowManager.getContext() );
-		controller.registerWizardPanel( chooseDetectorDescriptor );
-
-		final ExecuteDetectionDescriptor executeDetectionDescriptor = new ExecuteDetectionDescriptor( trackmate, logService.getPanel() );
-		controller.registerWizardPanel( executeDetectionDescriptor );
-
-		final ChooseLinkerDescriptor chooseLinkerDescriptor = new ChooseLinkerDescriptor( trackmate, controller, windowManager );
-		chooseLinkerDescriptor.setContext( windowManager.getContext() );
-		controller.registerWizardPanel( chooseLinkerDescriptor );
-
-		final ExecuteLinkingDescriptor executeLinkingDescriptor = new ExecuteLinkingDescriptor( trackmate, logService.getPanel() );
-		controller.registerWizardPanel( executeLinkingDescriptor );
-
-		controller.registerWizardPanel( new Descriptor1() );
-		controller.registerWizardPanel( new Descriptor2() );
-		controller.registerWizardPanel( new Descriptor3() );
-
-		controller.init( setupIdDecriptor );
+		return logService;
 	}
 
-	public void show()
+	public void show( final WizardSequence sequence )
 	{
-		createDescriptors();
+		final WizardController controller = new WizardController( sequence, new LogDescriptor( logService.getPanel() ) );
+		frame.getContentPane().removeAll();
 		frame.getContentPane().add( controller.getWizardPanel() );
 		frame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
 		frame.setSize( 300, 600 );
+		controller.init();
 		frame.setVisible( true );
 	}
 
@@ -133,12 +84,14 @@ public class Wizard
 		final MamutProject project = new MamutProject( null, new File( bdvFile ) );
 		windowManager.getProjectManager().open( project );
 
-		final TrackMate trackmate = new TrackMate( settings, windowManager.getAppModel().getModel() );
-		context.inject( trackmate );
 
 		mw.setVisible( true );
-		final Wizard wizard = new Wizard( trackmate, windowManager );
-		wizard.show();
+
+		final Wizard wizard = new Wizard( windowManager.getContext() );
+		final TrackMate trackmate = new TrackMate( settings, windowManager.getAppModel().getModel() );
+		context.inject( trackmate );
+		final DetectionSequence sequence = new DetectionSequence( trackmate, windowManager, wizard.getLogService().getPanel() );
+		wizard.show( sequence );
 	}
 
 }

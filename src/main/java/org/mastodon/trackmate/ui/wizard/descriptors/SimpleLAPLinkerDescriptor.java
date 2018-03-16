@@ -78,12 +78,6 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 	}
 
 	@Override
-	public String getNextPanelDescriptorIdentifier()
-	{
-		return ExecuteLinkingDescriptor.IDENTIFIER;
-	}
-
-	@Override
 	public void aboutToDisplayPanel()
 	{
 		final SimpleLAPLinkerPanel panel = ( SimpleLAPLinkerPanel ) targetPanel;
@@ -102,12 +96,12 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 				? settings.values.getSpimData().getSequenceDescription()
 						.getViewSetups().get( setupID ).getVoxelSize().unit()
 				: "pixels";
-		log.info( "Configured Simple LAP linker with the following parameters:\n" );
-		log.info( String.format( "  - max linking distance: %.1f %s\n", ( double ) ls.get( KEY_LINKING_MAX_DISTANCE ), units ) );
-		log.info( String.format( "  - max gap-closing distance: %.1f %s\n", ( double ) ls.get( KEY_GAP_CLOSING_MAX_DISTANCE ), units ) );
-		log.info( String.format( "  - max frame gap: %d\n", ( int ) ls.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) ) );
-		log.info( String.format( "  - min time-point: %d\n", ( int ) ls.get( KEY_MIN_TIMEPOINT ) ) );
-		log.info( String.format( "  - max time-point: %d\n", ( int ) ls.get( KEY_MAX_TIMEPOINT ) ) );
+		log.log( "Configured Simple LAP linker with the following parameters:\n" );
+		log.log( String.format( "  - max linking distance: %.1f %s\n", ( double ) ls.get( KEY_LINKING_MAX_DISTANCE ), units ) );
+		log.log( String.format( "  - max gap-closing distance: %.1f %s\n", ( double ) ls.get( KEY_GAP_CLOSING_MAX_DISTANCE ), units ) );
+		log.log( String.format( "  - max frame gap: %d\n", ( int ) ls.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) ) );
+		log.log( String.format( "  - min time-point: %d\n", ( int ) ls.get( KEY_MIN_TIMEPOINT ) ) );
+		log.log( String.format( "  - max time-point: %d\n", ( int ) ls.get( KEY_MAX_TIMEPOINT ) ) );
 	}
 
 	@SuppressWarnings( { "rawtypes", "unchecked" } )

@@ -108,9 +108,9 @@ public class WizardPlugin extends AbstractContextual implements MastodonPlugin
 			final TrackMate trackmate = new TrackMate( settings, appModel.getModel() );
 			getContext().inject( trackmate );
 
-			final Wizard wizard = new Wizard( trackmate, windowManager );
-			getContext().inject( wizard );
-			wizard.show();
+			final Wizard wizard = new Wizard( windowManager.getContext() );
+			final DetectionSequence sequence = new DetectionSequence( trackmate, windowManager, wizard.getLogService().getPanel() );
+			wizard.show( sequence );
 		}
 	}
 
@@ -123,7 +123,8 @@ public class WizardPlugin extends AbstractContextual implements MastodonPlugin
 		new Context().inject( mastodon );
 		mastodon.run();
 
-		final MamutProject project = new MamutProjectIO().load( "/Users/pietzsch/Desktop/Mastodon/testdata/MaMut_Parhyale_demo" );
+//		final MamutProject project = new MamutProjectIO().load( "/Users/pietzsch/Desktop/Mastodon/testdata/MaMut_Parhyale_demo" );
+		final MamutProject project = new MamutProjectIO().load( "../TrackMate3/samples/mamutproject/" );
 		mastodon.openProject( project );
 	}
 }

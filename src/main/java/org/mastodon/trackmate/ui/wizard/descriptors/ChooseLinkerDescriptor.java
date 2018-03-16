@@ -18,23 +18,13 @@ import org.mastodon.trackmate.PluginProvider;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.WizardController;
-import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 import org.scijava.Context;
-import org.scijava.Contextual;
-import org.scijava.NullContextException;
-import org.scijava.plugin.Parameter;
 
-public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Contextual
+public class ChooseLinkerDescriptor extends WizardPanelDescriptor
 {
 
 	public static final String IDENTIFIER = "Linker selection";
-
-	@Parameter
-	private Context context;
-
-	@Parameter
-	private WizardLogService log;
 
 	private PluginProvider< SpotLinkerDescriptor > descriptorProvider;
 
@@ -46,32 +36,17 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Con
 
 	private List< Class< ? extends SpotLinkerOp > > classes;
 
-	private final WizardController controller;
-
-	private String nextDescriptorIdentifier = "Not null"; // FIXME
-
 	private final TrackMate trackmate;
-
-	private final WindowManager windowManager;
-
-	private SpotLinkerDescriptor previousLinkerPanel = null;
 
 	public ChooseLinkerDescriptor( final TrackMate trackmate, final WizardController controller, final WindowManager windowManager )
 	{
 		this.trackmate = trackmate;
-		this.controller = controller;
-		this.windowManager = windowManager;
 		this.model = new DefaultComboBoxModel<>();
 		this.targetPanel = new ChooseDetectorPanel();
 		this.panelIdentifier = IDENTIFIER;
-	}
-
-	@Override
-	public void setContext( final Context context )
-	{
-		context.inject( this );
 
 		final PluginProvider< SpotLinkerOp > linkerProvider = new PluginProvider<>( SpotLinkerOp.class );
+		final Context context = windowManager.getContext();
 		context.inject( linkerProvider );
 		this.names = linkerProvider.getVisibleNames();
 		this.descriptions = linkerProvider.getDescriptions();
@@ -88,11 +63,7 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Con
 		final Settings settings = trackmate.getSettings();
 		final Class< ? extends SpotLinkerOp > linkerClass = settings.values.getLinker();
 		if ( null != linkerClass )
-		{
 			indexOf = classes.indexOf( linkerClass );
-			if ( indexOf < -1 )
-				log.error( "Unkown linker class: " + linkerClass + '\n' );
-		}
 
 		model.removeAllElements();
 		for ( final String name : names )
@@ -108,41 +79,6 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Con
 		final Class< ? extends SpotLinkerOp > linkerClass = classes.get( names.indexOf( name ) );
 		final Settings settings = trackmate.getSettings();
 		settings.linker( linkerClass );
-		log.info( "Selected linker: " + name + " of class " + linkerClass.getSimpleName() + '\n' );
-
-		/*
-		 * Determine and register the next descriptor.
-		 */
-
-		final List< String > linkerPanelNames = descriptorProvider.getNames();
-		for ( final String key : linkerPanelNames )
-		{
-			final SpotLinkerDescriptor linkerPanel = descriptorProvider.getInstance( key );
-			if ( linkerPanel.getTargetClasses().contains( linkerClass ) )
-			{
-				if ( linkerPanel == previousLinkerPanel )
-					return;
-
-				previousLinkerPanel = linkerPanel;
-				if ( linkerPanel.getContext() == null )
-					context().inject( linkerPanel );
-				final Map< String, Object > defaultSettings = linkerPanel.getDefaultSettings();
-				settings.linkerSettings( defaultSettings );
-				linkerPanel.setTrackMate( trackmate );
-				linkerPanel.setWindowManager( windowManager );
-				linkerPanel.getPanelComponent().setSize( targetPanel.getSize() );
-				controller.registerWizardPanel( linkerPanel );
-				nextDescriptorIdentifier = linkerPanel.getPanelDescriptorIdentifier();
-				return;
-			}
-		}
-		throw new RuntimeException( "Could not find a descriptor that can configure " + linkerClass );
-	}
-
-	@Override
-	public String getNextPanelDescriptorIdentifier()
-	{
-		return nextDescriptorIdentifier;
 	}
 
 	private class ChooseDetectorPanel extends JPanel
@@ -196,21 +132,5 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor implements Con
 
 			comboBox.addActionListener( ( e ) -> lblInfo.setText( descriptions.get( model.getSelectedItem() ) ) );
 		}
-	}
-
-	// -- Contextual methods --
-
-	@Override
-	public Context context()
-	{
-		if ( context == null )
-			throw new NullContextException();
-		return context;
-	}
-
-	@Override
-	public Context getContext()
-	{
-		return context;
 	}
 }

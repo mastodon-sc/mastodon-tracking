@@ -17,24 +17,13 @@ import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.trackmate.PluginProvider;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
-import org.mastodon.trackmate.ui.wizard.WizardController;
-import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 import org.scijava.Context;
-import org.scijava.Contextual;
-import org.scijava.NullContextException;
-import org.scijava.plugin.Parameter;
 
-public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements Contextual
+public class ChooseDetectorDescriptor extends WizardPanelDescriptor
 {
 
 	public static final String IDENTIFIER = "Detector selection";
-
-	@Parameter
-	private Context context;
-
-	@Parameter
-	private WizardLogService log;
 
 	private PluginProvider< SpotDetectorDescriptor > descriptorProvider;
 
@@ -46,33 +35,18 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 
 	private List< Class< ? extends SpotDetectorOp > > classes;
 
-	private final WizardController controller;
-
-	private String nextDescriptorIdentifier = "Not null"; // FIXME
-
 	private final TrackMate trackmate;
 
-	private final WindowManager windowManager;
-
-	private SpotDetectorDescriptor previousDetectorPanel = null;
-
-	public ChooseDetectorDescriptor( final TrackMate trackmate, final WizardController controller, final WindowManager windowManager )
+	public ChooseDetectorDescriptor( final TrackMate trackmate, final WindowManager windowManager )
 	{
 		this.trackmate = trackmate;
-		this.controller = controller;
-		this.windowManager = windowManager;
 		this.model = new DefaultComboBoxModel<>();
 		this.targetPanel = new ChooseDetectorPanel();
 		this.panelIdentifier = IDENTIFIER;
-	}
-
-	@Override
-	public void setContext( final Context context )
-	{
-		context.inject( this );
 
 		final PluginProvider< SpotDetectorOp > detectorprovider = new PluginProvider<>( SpotDetectorOp.class );
-		context.inject( detectorprovider );
+		final Context context = windowManager.getContext();
+		context .inject( detectorprovider );
 		this.names = detectorprovider.getVisibleNames();
 		this.descriptions = detectorprovider.getDescriptions();
 		this.classes = detectorprovider.getClasses();
@@ -88,11 +62,7 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 		final Settings settings = trackmate.getSettings();
 		final Class< ? extends SpotDetectorOp > detectorClass = settings.values.getDetector();
 		if ( null != detectorClass )
-		{
 			indexOf = classes.indexOf( detectorClass );
-			if ( indexOf < -1 )
-				log.error( "Unkown detector class: " + detectorClass + '\n' );
-		}
 
 		model.removeAllElements();
 		for ( final String name : names )
@@ -108,41 +78,6 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 		final Class< ? extends SpotDetectorOp > detectorClass = classes.get( names.indexOf( name ) );
 		final Settings settings = trackmate.getSettings();
 		settings.detector( detectorClass );
-		log.info( "Selected detector: " + name + " of class " + detectorClass.getSimpleName() + '\n' );
-
-		/*
-		 * Determine and register the next descriptor.
-		 */
-
-		final List< String > linkerPanelNames = descriptorProvider.getNames();
-		for ( final String key : linkerPanelNames )
-		{
-			final SpotDetectorDescriptor detectorPanel = descriptorProvider.getInstance( key );
-			if ( detectorPanel.getTargetClasses().contains( detectorClass ) )
-			{
-				if ( detectorPanel == previousDetectorPanel )
-					return;
-
-				previousDetectorPanel = detectorPanel;
-				if ( detectorPanel.getContext() == null )
-					context().inject( detectorPanel );
-				final Map< String, Object > defaultSettings = detectorPanel.getDefaultSettings();
-				settings.linkerSettings( defaultSettings );
-				detectorPanel.setTrackMate( trackmate );
-				detectorPanel.setWindowManager( windowManager );
-				detectorPanel.getPanelComponent().setSize( targetPanel.getSize() );
-				controller.registerWizardPanel( detectorPanel );
-				nextDescriptorIdentifier = detectorPanel.getPanelDescriptorIdentifier();
-				return;
-			}
-		}
-		throw new RuntimeException( "Could not find a descriptor that can configure " + detectorClass );
-	}
-
-	@Override
-	public String getNextPanelDescriptorIdentifier()
-	{
-		return nextDescriptorIdentifier;
 	}
 
 	private class ChooseDetectorPanel extends JPanel
@@ -198,19 +133,4 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor implements C
 		}
 	}
 
-	// -- Contextual methods --
-
-	@Override
-	public Context context()
-	{
-		if ( context == null )
-			throw new NullContextException();
-		return context;
-	}
-
-	@Override
-	public Context getContext()
-	{
-		return context;
-	}
 }

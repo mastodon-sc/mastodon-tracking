@@ -52,9 +52,6 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 {
 	public static final String IDENTIFIER = "Setup bounding-box";
 
-	@Parameter
-	private WizardLogService log;
-
 	private final Settings settings;
 
 	private final WindowManager wm;
@@ -84,10 +81,13 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 
 	private MyBoundingBoxModel roi;
 
-	public BoundingBoxDescriptor( final Settings settings, final WindowManager wm )
+	private final WizardLogService log;
+
+	public BoundingBoxDescriptor( final Settings settings, final WindowManager wm, final WizardLogService log )
 	{
 		this.settings = settings;
 		this.wm = wm;
+		this.log = log;
 		this.panelIdentifier = IDENTIFIER;
 		final long[] a = Util.getArrayFromValue( 1000l, 3 );
 		this.roi = new MyBoundingBoxModel( new FinalInterval( a, a ), new FinalInterval( a, a ), new AffineTransform3D() );
@@ -165,7 +165,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			panel.maxT.setCurrentValue( ( int ) settings.values.getDetectorSettings().get( KEY_MAX_TIMEPOINT ) );
 		}
 
-		toggleBoundingBox( panel.useRoi.isSelected() );
+		toggleBoundingBoxVisibility( panel.useRoi.isSelected() );
 	}
 
 	@Override
@@ -187,16 +187,10 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		settings.values.getDetectorSettings().put( KEY_MIN_TIMEPOINT, panel.minT.getCurrentValue() );
 		settings.values.getDetectorSettings().put( KEY_MAX_TIMEPOINT, panel.maxT.getCurrentValue() );
 
-		toggleBoundingBox( false );
-		log.info( info );
-		log.info( String.format( "  - min time-point: %d\n", ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT ) ) );
-		log.info( String.format( "  - max time-point: %d\n", ( int ) settings.values.getDetectorSettings().get( KEY_MAX_TIMEPOINT ) ) );
-	}
-
-	@Override
-	public String getNextPanelDescriptorIdentifier()
-	{
-		return ChooseDetectorDescriptor.IDENTIFIER;
+		toggleBoundingBoxVisibility( false );
+		log.log( info );
+		log.log( String.format( "  - min time-point: %d\n", ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT ) ) );
+		log.log( String.format( "  - max time-point: %d\n", ( int ) settings.values.getDetectorSettings().get( KEY_MAX_TIMEPOINT ) ) );
 	}
 
 	private void setPanelEnabled( final JPanel panel, final boolean isEnabled )
@@ -254,8 +248,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		return new MyBoundingBoxModel( interval, maxInterval, sourceTransform );
 	}
 
-	// TODO rename
-	private void toggleBoundingBox( final boolean useRoi )
+	private void toggleBoundingBoxVisibility( final boolean useRoi )
 	{
 		final BoundingBoxPanel panel = ( BoundingBoxPanel ) targetPanel;
 		setPanelEnabled( panel.boundsPanel, useRoi );
@@ -345,7 +338,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			gbc.gridy++;
 			gbc.anchor = GridBagConstraints.CENTER;
 			this.useRoi = new JCheckBox( "Process only a ROI.", false );
-			useRoi.addActionListener( ( e ) -> toggleBoundingBox( useRoi.isSelected() ) );
+			useRoi.addActionListener( ( e ) -> toggleBoundingBoxVisibility( useRoi.isSelected() ) );
 			add( useRoi, gbc );
 
 			gbc.gridy++;

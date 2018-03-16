@@ -31,11 +31,6 @@ public class WizardPanelDescriptor
 		panelIdentifier = id;
 	}
 
-	public String getNextPanelDescriptorIdentifier()
-	{
-		return null;
-	}
-
 	public void aboutToHidePanel()
 	{}
 

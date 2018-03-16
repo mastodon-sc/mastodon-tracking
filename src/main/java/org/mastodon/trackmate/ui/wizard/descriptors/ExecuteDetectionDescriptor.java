@@ -19,12 +19,6 @@ public class ExecuteDetectionDescriptor extends WizardPanelDescriptor
 	}
 
 	@Override
-	public String getNextPanelDescriptorIdentifier()
-	{
-		return ChooseLinkerDescriptor.IDENTIFIER;
-	}
-
-	@Override
 	public Runnable getForwardRunnable()
 	{
 		return new Runnable()
@@ -46,5 +40,4 @@ public class ExecuteDetectionDescriptor extends WizardPanelDescriptor
 	{
 		return trackmate;
 	}
-
 }

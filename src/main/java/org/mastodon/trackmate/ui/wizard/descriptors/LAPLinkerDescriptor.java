@@ -45,12 +45,6 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 	}
 
 	@Override
-	public String getNextPanelDescriptorIdentifier()
-	{
-		return ExecuteLinkingDescriptor.IDENTIFIER;
-	}
-
-	@Override
 	public void aboutToDisplayPanel()
 	{
 		final LAPLinkerPanel panel = ( LAPLinkerPanel ) targetPanel;
@@ -76,10 +70,10 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 				? settings.values.getSpimData().getSequenceDescription()
 						.getViewSetups().get( setupID ).getVoxelSize().unit()
 				: "pixels";
-		log.info( "Configured LAP linker with the following parameters:\n" );
-		log.info( LAPLinkerConfigPanel.echoSettingsMap( ls, units ) );
-		log.info( String.format( "  - min time-point: %d\n", ( int ) ls.get( KEY_MIN_TIMEPOINT ) ) );
-		log.info( String.format( "  - max time-point: %d\n", ( int ) ls.get( KEY_MAX_TIMEPOINT ) ) );
+		log.log( "Configured LAP linker with the following parameters:\n" );
+		log.log( LAPLinkerConfigPanel.echoSettingsMap( ls, units ) );
+		log.log( String.format( "  - min time-point: %d\n", ( int ) ls.get( KEY_MIN_TIMEPOINT ) ) );
+		log.log( String.format( "  - max time-point: %d\n", ( int ) ls.get( KEY_MAX_TIMEPOINT ) ) );
 	}
 
 	@SuppressWarnings( { "rawtypes", "unchecked" } )

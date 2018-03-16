@@ -168,11 +168,13 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 			if ( viewFrame == null || !viewFrame.isShowing() )
 			{
 				// Is there a BDV open?
-				if (viewFrame == null || !viewFrame.isShowing() )
-					windowManager.forEachBdvView( (view) -> { viewFrame = ( ViewerFrameMamut ) view.getFrame(); } );
+				if ( viewFrame == null || !viewFrame.isShowing() )
+					windowManager.forEachBdvView( ( view ) -> {
+						viewFrame = ( ViewerFrameMamut ) view.getFrame();
+					} );
 
 				// Create one
-				if (viewFrame == null)
+				if ( viewFrame == null )
 					viewFrame = ( ViewerFrameMamut ) windowManager.createBigDataViewer().getFrame();
 
 				viewFrame.toFront();
@@ -195,8 +197,10 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 				{
 					/*
 					 * Delete spots from current time-point if we have some.
+					 * FIXME We should not do that if we want to add spots to
+					 * existing model. But I don't know how to preview then.
+					 * Maybe with another Model?
 					 */
-
 
 					SpatialIndex< Spot > spatialIndex;
 					model.getSpatioTemporalIndex().readLock().lock();
@@ -212,6 +216,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 						model.getSpatioTemporalIndex().readLock().unlock();
 					}
 
+					// FIXME should lock the graph for writing.
 					for ( final Spot spot : toRemove )
 						graph.remove( spot );
 
@@ -220,6 +225,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 					 */
 
 					final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
+					// Copy settings.
 					final Map< String, Object > detectorSettings = new HashMap<>( settings.values.getDetectorSettings() );
 					detectorSettings.put( KEY_MIN_TIMEPOINT, currentTimepoint );
 					detectorSettings.put( KEY_MAX_TIMEPOINT, currentTimepoint );
@@ -315,12 +321,6 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 		detectorSettings.put( KEY_RADIUS, ( ( Number ) panel.diameter.getValue() ).doubleValue() / 2. );
 		detectorSettings.put( KEY_THRESHOLD, ( ( Number ) panel.threshold.getValue() ).doubleValue() );
-	}
-
-	@Override
-	public String getNextPanelDescriptorIdentifier()
-	{
-		return ExecuteDetectionDescriptor.IDENTIFIER;
 	}
 
 	@SuppressWarnings( { "rawtypes", "unchecked" } )

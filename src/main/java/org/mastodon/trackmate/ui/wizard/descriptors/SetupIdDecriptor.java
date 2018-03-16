@@ -60,12 +60,6 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 	}
 
 	@Override
-	public String getNextPanelDescriptorIdentifier()
-	{
-		return BoundingBoxDescriptor.IDENTIFIER;
-	}
-
-	@Override
 	public void aboutToDisplayPanel()
 	{
 		final SpimDataMinimal spimData = settings.values.getSpimData();
@@ -115,8 +109,8 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 		detectorSettings.put( KEY_SETUP_ID, setupID );
 
-		log.info( String.format( "Selected setup ID %d for detection:\n", ( int ) setupID ) );
-		log.info( echoSetupIDInfo( setupID ) );
+		log.log( String.format( "Selected setup ID %d for detection:\n", ( int ) setupID ) );
+		log.log( echoSetupIDInfo( setupID ) );
 	}
 
 	private String echoSetupIDInfo( final int setupID )
