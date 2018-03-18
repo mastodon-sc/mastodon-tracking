@@ -1,7 +1,7 @@
 package org.mastodon.trackmate.ui.wizard;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.ListIterator;
 
 /**
  * A simple {@link WizardSequence} based on a {@link List}.
@@ -11,62 +11,67 @@ import java.util.ListIterator;
 public class ListWizardSequence implements WizardSequence
 {
 
-	private ListIterator< WizardPanelDescriptor > it;
+	/**
+	 * The list of {@link WizardPanelDescriptor}s iterated in this sequence.
+	 */
+	protected final List< WizardPanelDescriptor > list;
 
-	private WizardPanelDescriptor current;
+	/**
+	 * The current position in the sequence.
+	 */
+	protected int pos;
 
-	private final List< WizardPanelDescriptor > list;
-
+	/**
+	 * Instantiates a new sequence with a copy of the specified list.
+	 * 
+	 * @param list
+	 *            the list to iterate in this sequence.
+	 */
 	public ListWizardSequence( final List< WizardPanelDescriptor > list )
 	{
-		this.list = list;
-		assert !list.isEmpty(): "Sequence list is empty.";
+		this.list = Collections.unmodifiableList( list );
+		this.pos = 0;
 		init();
 	}
 
 	@Override
 	public WizardPanelDescriptor current()
 	{
-		return current;
+		return list.get( pos );
 	}
 
 	@Override
 	public WizardPanelDescriptor next()
 	{
-		if ( !it.hasNext() )
+		if ( pos >= list.size() - 1 )
 			return null;
-		current = it.next();
-		System.out.println( "Moving to next: " + current ); // DEBUG
-		return current;
+		return list.get( ++pos );
 	}
 
 	@Override
 	public boolean hasNext()
 	{
-		return it.hasNext();
+		return pos < list.size() - 1;
 	}
 
 	@Override
 	public WizardPanelDescriptor previous()
 	{
-		if ( !it.hasPrevious() )
+		if ( pos <= 0 )
 			return null;
-		current = it.previous();
-		System.out.println( "Moving to previous: " + current ); // DEBUG
-		return current;
+		return list.get( --pos );
 	}
 
 	@Override
 	public boolean hasPrevious()
 	{
-		return it.hasPrevious();
+		return pos > 0;
 	}
 
 	@Override
 	public WizardPanelDescriptor init()
 	{
-		it = list.listIterator();
-		current = it.next();
-		return current;
+		pos = 0;
+		return current();
 	}
 }
