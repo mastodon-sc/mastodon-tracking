@@ -3,6 +3,8 @@ package org.mastodon.trackmate.ui.wizard;
 import java.awt.Container;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 import javax.swing.Action;
 import javax.swing.JLabel;
@@ -13,7 +15,7 @@ import org.mastodon.trackmate.ui.wizard.util.EverythingDisablerAndReenabler;
 import org.scijava.Cancelable;
 import org.scijava.ui.behaviour.util.AbstractNamedAction;
 
-public class WizardController
+public class WizardController implements WindowListener
 {
 
 	private final WizardSequence sequence;
@@ -248,4 +250,38 @@ public class WizardController
 		cancelAction.putValue( Action.SMALL_ICON, WizardPanel.FINISH_ICON );
 		return cancelAction;
 	}
+
+	@Override
+	public void windowOpened( final WindowEvent e )
+	{}
+
+	@Override
+	public void windowClosing( final WindowEvent e )
+	{
+		final Cancelable cancelable = sequence.current().getCancelable();
+		if (null != cancelable)
+			cancelable.cancel( "User closed the wizard." );
+
+		finish();
+	}
+
+	@Override
+	public void windowClosed( final WindowEvent e )
+	{}
+
+	@Override
+	public void windowIconified( final WindowEvent e )
+	{}
+
+	@Override
+	public void windowDeiconified( final WindowEvent e )
+	{}
+
+	@Override
+	public void windowActivated( final WindowEvent e )
+	{}
+
+	@Override
+	public void windowDeactivated( final WindowEvent e )
+	{}
 }

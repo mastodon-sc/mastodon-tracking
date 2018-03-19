@@ -7,6 +7,7 @@ import java.util.Locale;
 import javax.swing.JFrame;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.WindowConstants;
 
 import org.mastodon.revised.mamut.MainWindow;
 import org.mastodon.revised.mamut.MamutProject;
@@ -46,6 +47,8 @@ public class Wizard
 		frame.setSize( 300, 600 );
 		frame.setTitle( title );
 		controller.init();
+		frame.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
+		frame.addWindowListener( controller );
 		frame.setVisible( true );
 	}
 
