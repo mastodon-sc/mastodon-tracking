@@ -46,7 +46,6 @@ import org.mastodon.linking.mamut.SpotLinkerOp;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
-import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.util.SelectOnFocusListener;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -66,9 +65,6 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 
 	@Parameter
 	private PluginService pluginService;
-
-	@Parameter
-	private WizardLogService log;
 
 	private Settings settings;
 

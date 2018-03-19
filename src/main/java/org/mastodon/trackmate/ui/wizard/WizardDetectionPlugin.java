@@ -36,6 +36,6 @@ public class WizardDetectionPlugin extends WizardPlugin
 		final TrackMate trackmate = new TrackMate( settings, appModel.getModel() );
 		getContext().inject( trackmate );
 
-		return new DetectionSequence( trackmate, windowManager, wizard.getLogService().getPanel() );
+		return new DetectionSequence( trackmate, windowManager, wizard.getLogService() );
 	}
 }

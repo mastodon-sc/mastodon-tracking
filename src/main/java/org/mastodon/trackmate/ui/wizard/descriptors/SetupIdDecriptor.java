@@ -44,16 +44,16 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 
 	public static final String IDENTIFIER = "Setup ID config";
 
-	@Parameter
-	private WizardLogService log;
+	private final WizardLogService log;
 
 	private final Map< String, Integer > idMap;
 
 	private final Settings settings;
 
-	public SetupIdDecriptor( final Settings settings )
+	public SetupIdDecriptor( final Settings settings, final WizardLogService logService )
 	{
 		this.settings = settings;
+		this.log = logService;
 		this.panelIdentifier = IDENTIFIER;
 		this.targetPanel = new SetupIdConfigPanel();
 		this.idMap = new HashMap<>();

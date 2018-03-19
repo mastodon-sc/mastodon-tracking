@@ -13,7 +13,6 @@ import org.mastodon.trackmate.PluginProvider;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.descriptors.ChooseLinkerDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.ExecuteLinkingDescriptor;
-import org.mastodon.trackmate.ui.wizard.descriptors.LogPanel;
 import org.mastodon.trackmate.ui.wizard.descriptors.SpotLinkerDescriptor;
 import org.scijava.Context;
 
@@ -42,13 +41,16 @@ public class LinkingSequence implements WizardSequence
 
 	private ExecuteLinkingDescriptor executeLinkingDescriptor;
 
-	public LinkingSequence( final TrackMate trackmate, final WindowManager windowManager, final LogPanel logPanel )
+	private final WizardLogService logService;
+
+	public LinkingSequence( final TrackMate trackmate, final WindowManager windowManager, final WizardLogService logService )
 	{
 		this.trackmate = trackmate;
 		this.windowManager = windowManager;
+		this.logService = logService;
 
 		this.chooseLinkerDescriptor = new ChooseLinkerDescriptor( trackmate, windowManager );
-		this.executeLinkingDescriptor = new ExecuteLinkingDescriptor( trackmate, logPanel );
+		this.executeLinkingDescriptor = new ExecuteLinkingDescriptor( trackmate, logService.getPanel() );
 
 		this.next = getForwardSequence();
 		this.previous = getBackwardSequence();
@@ -105,6 +107,7 @@ public class LinkingSequence implements WizardSequence
 				trackmate.getSettings().linkerSettings( defaultSettings );
 				linkerConfigDescriptor.setTrackMate( trackmate );
 				linkerConfigDescriptor.setWindowManager( windowManager );
+				linkerConfigDescriptor.setLog( logService );
 				linkerConfigDescriptor.getPanelComponent().setSize( chooseLinkerDescriptor.getPanelComponent().getSize() );
 				return linkerConfigDescriptor;
 			}

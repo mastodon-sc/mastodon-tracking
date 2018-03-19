@@ -16,7 +16,6 @@ import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.descriptors.BoundingBoxDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.ChooseDetectorDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.ExecuteDetectionDescriptor;
-import org.mastodon.trackmate.ui.wizard.descriptors.LogPanel;
 import org.mastodon.trackmate.ui.wizard.descriptors.SetupIdDecriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.SpotDetectorDescriptor;
 import org.scijava.Context;
@@ -50,17 +49,17 @@ public class DetectionSequence implements WizardSequence
 
 	private final PluginProvider< SpotDetectorDescriptor > descriptorProvider;
 
-	public DetectionSequence( final TrackMate trackmate, final WindowManager windowManager, final LogPanel logPanel )
+	public DetectionSequence( final TrackMate trackmate, final WindowManager windowManager, final WizardLogService logService )
 	{
 		this.trackmate = trackmate;
 		this.windowManager = windowManager;
 
-		this.setupIdDecriptor = new SetupIdDecriptor( trackmate.getSettings() );
+		this.setupIdDecriptor = new SetupIdDecriptor( trackmate.getSettings(), logService );
 		setupIdDecriptor.setContext( windowManager.getContext() );
-		this.boundingBoxDescriptor = new BoundingBoxDescriptor( trackmate.getSettings(), windowManager, windowManager.getContext().getService( WizardLogService.class ) );
+		this.boundingBoxDescriptor = new BoundingBoxDescriptor( trackmate.getSettings(), windowManager, logService );
 		boundingBoxDescriptor.setContext( windowManager.getContext() );
 		this.chooseDetectorDescriptor = new ChooseDetectorDescriptor( trackmate, windowManager );
-		this.executeDetectionDescriptor = new ExecuteDetectionDescriptor( trackmate, logPanel );
+		this.executeDetectionDescriptor = new ExecuteDetectionDescriptor( trackmate, logService.getPanel() );
 		this.current = init();
 
 		this.next = getForwardSequence();

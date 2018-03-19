@@ -55,6 +55,6 @@ public class WizardLinkingPlugin extends WizardPlugin
 		final TrackMate trackmate = new TrackMate( settings, appModel.getModel() );
 		getContext().inject( trackmate );
 
-		return new LinkingSequence( trackmate, windowManager, wizard.getLogService().getPanel() );
+		return new LinkingSequence( trackmate, windowManager, wizard.getLogService() );
 	}
 }

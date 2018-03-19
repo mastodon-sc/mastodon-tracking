@@ -29,7 +29,7 @@ public class Wizard
 	public Wizard( final Context context )
 	{
 		this.frame = new JFrame();
-		this.logService = context.getService( WizardLogService.class );
+		this.logService = new WizardLogService();
 	}
 
 	public WizardLogService getLogService()
@@ -91,7 +91,7 @@ public class Wizard
 		final Wizard wizard = new Wizard( windowManager.getContext() );
 		final TrackMate trackmate = new TrackMate( settings, windowManager.getAppModel().getModel() );
 		context.inject( trackmate );
-		final DetectionSequence sequence = new DetectionSequence( trackmate, windowManager, wizard.getLogService().getPanel() );
+		final DetectionSequence sequence = new DetectionSequence( trackmate, windowManager, wizard.getLogService() );
 		wizard.show( sequence, "TrackMate detection" );
 	}
 

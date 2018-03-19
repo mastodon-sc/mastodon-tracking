@@ -10,17 +10,9 @@ import java.awt.Color;
 
 import org.mastodon.trackmate.ui.wizard.descriptors.LogPanel;
 import org.scijava.log.LogLevel;
-import org.scijava.log.LogService;
-import org.scijava.plugin.Parameter;
-import org.scijava.plugin.Plugin;
-import org.scijava.service.AbstractService;
 
-@Plugin( type = WizardLogService.class )
-public class WizardLogService extends AbstractService
+public class WizardLogService
 {
-
-	@Parameter
-	private LogService log;
 
 	private final LogPanel panel;
 

@@ -22,8 +22,6 @@ import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
-import org.mastodon.trackmate.ui.wizard.WizardLogService;
-import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 @Plugin( type = SpotLinkerDescriptor.class, name = "LAP linker configuration descriptor" )
@@ -31,9 +29,6 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 {
 
 	public static final String IDENTIFIER = "Configure LAP linker";
-
-	@Parameter
-	private WizardLogService log;
 
 	private Settings settings;
 
