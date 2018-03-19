@@ -31,6 +31,8 @@ public class WizardPanel extends JPanel
 
 	static final ImageIcon CANCEL_ICON = new ImageIcon( WizardPanel.class.getResource( "cancel.png" ) );
 
+	static final ImageIcon FINISH_ICON = new ImageIcon( WizardPanel.class.getResource( "accept-icon.png" ) );
+
 	private final CardLayout cardLayout;
 
 	private final AnimatorPanel animatorPanel;
@@ -44,6 +46,8 @@ public class WizardPanel extends JPanel
 	final JButton btnNext;
 
 	final JButton btnCancel;
+
+	final JButton btnFinish;
 
 	final JPanel panelButtons;
 
@@ -74,6 +78,9 @@ public class WizardPanel extends JPanel
 
 		btnNext = new JButton();
 		panelButtons.add( btnNext );
+
+		btnFinish = new JButton();
+		panelButtons.add( btnFinish );
 
 		this.panelMain = new JPanel();
 		add( panelMain, BorderLayout.CENTER );

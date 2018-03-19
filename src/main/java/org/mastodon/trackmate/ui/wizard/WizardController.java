@@ -1,5 +1,7 @@
 package org.mastodon.trackmate.ui.wizard;
 
+import java.awt.Container;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 
 import javax.swing.Action;
@@ -30,6 +32,8 @@ public class WizardController
 		wizardPanel.btnPrevious.setAction( getPreviousAction() );
 		wizardPanel.btnCancel.setAction( getCancelAction() );
 		wizardPanel.btnCancel.setVisible( false );
+		wizardPanel.btnFinish.setAction( getFinishAction() );
+		wizardPanel.btnFinish.setVisible( false );
 		registerWizardPanel( logDescriptor );
 	}
 
@@ -107,6 +111,15 @@ public class WizardController
 			cancelable.cancel( "User pressed cancel button." );
 	}
 
+	protected void finish()
+	{
+		Container container = wizardPanel;
+		while ( !( container instanceof Frame ) )
+			container = container.getParent();
+
+		( ( Frame ) container ).dispose();
+	}
+
 	private void exec( final Runnable runnable )
 	{
 		System.out.println( "executing " + runnable ); // DEBUG
@@ -152,7 +165,9 @@ public class WizardController
 			return;
 
 		wizardPanel.btnPrevious.setEnabled( sequence.hasPrevious() );
-		wizardPanel.btnNext.setEnabled( sequence.hasNext() );
+//		wizardPanel.btnNext.setEnabled( sequence.hasNext() );
+		wizardPanel.btnNext.setVisible( sequence.hasNext() );
+		wizardPanel.btnFinish.setVisible( !sequence.hasNext() );
 		wizardPanel.transition( to, from, direction );
 	}
 
@@ -221,6 +236,23 @@ public class WizardController
 			}
 		};
 		cancelAction.putValue( Action.SMALL_ICON, WizardPanel.CANCEL_ICON );
+		return cancelAction;
+	}
+
+	private Action getFinishAction()
+	{
+		final AbstractNamedAction cancelAction = new AbstractNamedAction( "Finish" )
+		{
+
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				finish();
+			}
+		};
+		cancelAction.putValue( Action.SMALL_ICON, WizardPanel.FINISH_ICON );
 		return cancelAction;
 	}
 }
