@@ -49,7 +49,6 @@ public class WizardController
 
 	protected void log( final boolean show )
 	{
-		System.out.println( "log " + show ); // DEBUG
 		final WizardPanelDescriptor current = sequence.current();
 
 		if ( show )
@@ -66,7 +65,6 @@ public class WizardController
 
 	protected synchronized void previous()
 	{
-		System.out.println( "previous" ); // DEBUG
 		final WizardPanelDescriptor current = sequence.current();
 		if ( current == null )
 			return;
@@ -94,8 +92,6 @@ public class WizardController
 		if ( null == next)
 			return;
 
-		System.out.println( "next is " + next ); // DEBUG
-
 		next.targetPanel.setSize( current.targetPanel.getSize() );
 		next.aboutToDisplayPanel();
 		display( next, current, Direction.RIGHT );
@@ -106,7 +102,6 @@ public class WizardController
 	protected void cancel()
 	{
 		final Cancelable cancelable = sequence.current().getCancelable();
-		System.out.println( "canceling " + cancelable ); // DEBUG
 		if (null != cancelable)
 			cancelable.cancel( "User pressed cancel button." );
 	}
@@ -122,7 +117,6 @@ public class WizardController
 
 	private void exec( final Runnable runnable )
 	{
-		System.out.println( "executing " + runnable ); // DEBUG
 		if ( null == runnable )
 			return;
 
@@ -165,7 +159,6 @@ public class WizardController
 			return;
 
 		wizardPanel.btnPrevious.setEnabled( sequence.hasPrevious() );
-//		wizardPanel.btnNext.setEnabled( sequence.hasNext() );
 		wizardPanel.btnNext.setVisible( sequence.hasNext() );
 		wizardPanel.btnFinish.setVisible( !sequence.hasNext() );
 		wizardPanel.transition( to, from, direction );
