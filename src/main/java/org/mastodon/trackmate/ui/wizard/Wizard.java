@@ -28,7 +28,7 @@ public class Wizard
 
 	public Wizard( final Context context )
 	{
-		this.frame = new JFrame( "Mastodon Trackmate" );
+		this.frame = new JFrame();
 		this.logService = context.getService( WizardLogService.class );
 	}
 
@@ -37,13 +37,14 @@ public class Wizard
 		return logService;
 	}
 
-	public void show( final WizardSequence sequence )
+	public void show( final WizardSequence sequence, final String title )
 	{
 		final WizardController controller = new WizardController( sequence, new LogDescriptor( logService.getPanel() ) );
 		frame.getContentPane().removeAll();
 		frame.getContentPane().add( controller.getWizardPanel() );
 		frame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
 		frame.setSize( 300, 600 );
+		frame.setTitle( title );
 		controller.init();
 		frame.setVisible( true );
 	}
@@ -91,7 +92,7 @@ public class Wizard
 		final TrackMate trackmate = new TrackMate( settings, windowManager.getAppModel().getModel() );
 		context.inject( trackmate );
 		final DetectionSequence sequence = new DetectionSequence( trackmate, windowManager, wizard.getLogService().getPanel() );
-		wizard.show( sequence );
+		wizard.show( sequence, "TrackMate detection" );
 	}
 
 }

@@ -17,7 +17,6 @@ import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.trackmate.PluginProvider;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
-import org.mastodon.trackmate.ui.wizard.WizardController;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 import org.scijava.Context;
 
@@ -38,7 +37,7 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor
 
 	private final TrackMate trackmate;
 
-	public ChooseLinkerDescriptor( final TrackMate trackmate, final WizardController controller, final WindowManager windowManager )
+	public ChooseLinkerDescriptor( final TrackMate trackmate, final WindowManager windowManager )
 	{
 		this.trackmate = trackmate;
 		this.model = new DefaultComboBoxModel<>();

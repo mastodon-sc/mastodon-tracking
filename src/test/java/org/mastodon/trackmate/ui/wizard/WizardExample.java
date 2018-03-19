@@ -16,6 +16,6 @@ public class WizardExample
 		l.add( new Descriptor3() );
 		final ListWizardSequence sequence = new ListWizardSequence( l  );
 		final Wizard wizard = new Wizard( new Context() );
-		wizard.show( sequence );
+		wizard.show( sequence, "Simple example" );
 	}
 }
