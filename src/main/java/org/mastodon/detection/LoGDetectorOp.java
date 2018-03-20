@@ -8,6 +8,7 @@ import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
 import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 import static org.mastodon.detection.DogDetectorOp.MIN_SPOT_PIXEL_SIZE;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.mastodon.detection.DetectionCreatorFactory.DetectionCreator;
@@ -18,7 +19,6 @@ import org.scijava.thread.ThreadService;
 
 import bdv.spimdata.SpimDataMinimal;
 import bdv.util.Affine3DHelpers;
-import net.imagej.ops.special.function.Functions;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.Point;
@@ -27,6 +27,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealPoint;
 import net.imglib2.algorithm.Benchmark;
 import net.imglib2.algorithm.localextrema.RefinedPeak;
+import net.imglib2.algorithm.localextrema.SubpixelLocalization;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
@@ -179,12 +180,11 @@ public class LoGDetectorOp
 				final int maxNumMoves = 10;
 				final boolean allowMaximaTolerance = true;
 				final boolean returnInvalidPeaks = true;
-				@SuppressWarnings( { "rawtypes", "unchecked" } )
-				final SubpixelLocalization< Point, FloatType > subpixel =
-						( SubpixelLocalization ) Functions.binary( ops(), SubpixelLocalization.class,
-								List.class, output, peaks,
-								output, maxNumMoves, allowMaximaTolerance, returnInvalidPeaks );
-				final List< RefinedPeak< Point > > refined = subpixel.calculate( output, peaks );
+				final boolean[] allowedToMoveInDim = new boolean[ img.numDimensions() ];
+				Arrays.fill( allowedToMoveInDim, true );
+				final float maximaTolerance = 0.01f;
+				final List< RefinedPeak< Point > > refined = SubpixelLocalization.refinePeaks( peaks, output, output,
+						returnInvalidPeaks, maxNumMoves, allowMaximaTolerance, maximaTolerance , allowedToMoveInDim );
 
 				final RandomAccess< FloatType > ra = output.randomAccess();
 				final double[] pos = new double[ 3 ];
