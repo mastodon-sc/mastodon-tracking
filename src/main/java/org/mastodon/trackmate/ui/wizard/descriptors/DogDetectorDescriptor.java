@@ -34,6 +34,10 @@ import org.jfree.chart.axis.NumberTickUnitSource;
 import org.jfree.chart.axis.TickUnitSource;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.title.TextTitle;
+import org.mastodon.adapter.FocusModelAdapter;
+import org.mastodon.adapter.HighlightModelAdapter;
+import org.mastodon.adapter.RefBimap;
+import org.mastodon.adapter.SelectionModelAdapter;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
 import org.mastodon.detection.DetectionUtil;
@@ -42,12 +46,31 @@ import org.mastodon.detection.DogDetectorOp;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.LoGDetectorMamut;
 import org.mastodon.detection.mamut.SpotDetectorOp;
+import org.mastodon.graph.GraphIdBimap;
+import org.mastodon.grouping.GroupManager;
+import org.mastodon.model.DefaultFocusModel;
+import org.mastodon.model.DefaultHighlightModel;
+import org.mastodon.model.DefaultSelectionModel;
 import org.mastodon.properties.DoublePropertyMap;
+import org.mastodon.revised.bdv.BigDataViewerMamut;
+import org.mastodon.revised.bdv.NavigationActionsMamut;
+import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
+import org.mastodon.revised.bdv.ViewerPanelMamut;
+import org.mastodon.revised.bdv.overlay.OverlayGraphRenderer;
+import org.mastodon.revised.bdv.overlay.wrap.OverlayEdgeWrapper;
+import org.mastodon.revised.bdv.overlay.wrap.OverlayGraphWrapper;
+import org.mastodon.revised.bdv.overlay.wrap.OverlayVertexWrapper;
+import org.mastodon.revised.mamut.KeyConfigContexts;
 import org.mastodon.revised.mamut.WindowManager;
+import org.mastodon.revised.model.mamut.BoundingSphereRadiusStatistics;
+import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
+import org.mastodon.revised.model.mamut.ModelOverlayProperties;
 import org.mastodon.revised.model.mamut.Spot;
+import org.mastodon.revised.ui.keymap.Keymap;
+import org.mastodon.revised.ui.keymap.KeymapManager;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
@@ -56,9 +79,12 @@ import org.mastodon.trackmate.ui.wizard.util.HistogramUtil;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.behaviour.util.Actions;
+import org.scijava.ui.behaviour.util.Behaviours;
 
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
+import bdv.tools.InitializeViewerState;
 import bdv.util.Affine3DHelpers;
 import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
@@ -84,18 +110,23 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 	private Settings settings;
 
-	private Model model;
-
 	private WindowManager windowManager;
+
+	private ChartPanel chartPanel;
 
 	private ViewerFrameMamut viewFrame;
 
-	private ChartPanel chartPanel;
+	private final Model localModel;
 
 	public DogDetectorDescriptor()
 	{
 		this.panelIdentifier = IDENTIFIER;
 		this.targetPanel = new DogDetectorPanel();
+		/*
+		 * Use a separate model for the preview. We do not want to touch the
+		 * existing model.
+		 */
+		this.localModel = new Model();
 	}
 
 	@Override
@@ -150,42 +181,81 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 	private void preview()
 	{
+		if ( null == windowManager )
+			return;
+
 		grabSettings();
-		final ModelGraph graph = model.getGraph();
-		final SpimDataMinimal spimData = settings.values.getSpimData();
+
+		final SharedBigDataViewerData shared = windowManager.getAppModel().getSharedBdvData();
+		final SpimDataMinimal spimData = ( SpimDataMinimal ) shared.getSpimData();
 		if ( null == spimData )
 		{
-			log.error( "Cannot start detection: SpimData obect is null." );
+			log.error( "Cannot start detection preview: SpimData object is null." );
 			return;
 		}
 
-		/*
-		 * Get or show a viewer.
-		 */
-
-		final int currentTimepoint;
-		if ( null != windowManager )
+		final ModelGraph graph = localModel.getGraph();
+		if ( null == viewFrame || !viewFrame.isShowing() )
 		{
-			if ( viewFrame == null || !viewFrame.isShowing() )
-			{
-				// Is there a BDV open?
-				if ( viewFrame == null || !viewFrame.isShowing() )
-					windowManager.forEachBdvView( ( view ) -> {
-						viewFrame = ( ViewerFrameMamut ) view.getFrame();
-					} );
+			final GraphIdBimap< Spot, Link > graphIdBimap = localModel.getGraphIdBimap();
 
-				// Create one
-				if ( viewFrame == null )
-					viewFrame = ( ViewerFrameMamut ) windowManager.createBigDataViewer().getFrame();
+			/*
+			 * Create a viewer for the preview.
+			 */
 
-				viewFrame.toFront();
-			}
-			currentTimepoint = viewFrame.getViewerPanel().getState().getCurrentTimepoint();
+			final String[] keyConfigContexts = new String[] { KeyConfigContexts.BIGDATAVIEWER };
+			final Keymap keymap = new KeymapManager().getForwardDefaultKeymap();
+
+			final BigDataViewerMamut bdv = new BigDataViewerMamut( shared, "Preview detection", new GroupManager( 0 ).createGroupHandle() );
+			final ViewerPanelMamut viewer = bdv.getViewer();
+			InitializeViewerState.initTransform( viewer );
+			viewFrame = bdv.getViewerFrame();
+
+			final BoundingSphereRadiusStatistics radiusStats = new BoundingSphereRadiusStatistics( localModel );
+			final OverlayGraphWrapper< Spot, Link > viewGraph = new OverlayGraphWrapper< Spot, Link >(
+					graph,
+					graphIdBimap,
+					localModel.getSpatioTemporalIndex(),
+					graph.getLock(),
+					new ModelOverlayProperties( graph, radiusStats ) );
+			final RefBimap< Spot, OverlayVertexWrapper< Spot, Link > > vertexMap = viewGraph.getVertexMap();
+			final RefBimap< Link, OverlayEdgeWrapper< Spot, Link > > edgeMap = viewGraph.getEdgeMap();
+
+			final DefaultHighlightModel< Spot, Link > highlightModel = new DefaultHighlightModel<>( graphIdBimap );
+			final HighlightModelAdapter< Spot, Link, OverlayVertexWrapper< Spot, Link >, OverlayEdgeWrapper< Spot, Link > > highlightModelAdapter =
+					new HighlightModelAdapter<>( highlightModel, vertexMap, edgeMap );
+
+			final DefaultFocusModel< Spot, Link > focusModel = new DefaultFocusModel<>( graphIdBimap );
+			final FocusModelAdapter< Spot, Link, OverlayVertexWrapper< Spot, Link >, OverlayEdgeWrapper< Spot, Link > > focusModelAdapter =
+					new FocusModelAdapter<>( focusModel, vertexMap, edgeMap );
+
+			final DefaultSelectionModel< Spot, Link > selectionModel = new DefaultSelectionModel<>( graph, graphIdBimap );
+			final SelectionModelAdapter< Spot, Link, OverlayVertexWrapper< Spot, Link >, OverlayEdgeWrapper< Spot, Link > > selectionModelAdapter =
+					new SelectionModelAdapter<>( selectionModel, vertexMap, edgeMap );
+
+			final OverlayGraphRenderer< OverlayVertexWrapper< Spot, Link >, OverlayEdgeWrapper< Spot, Link > > tracksOverlay = new OverlayGraphRenderer<>(
+					viewGraph,
+					highlightModelAdapter,
+					focusModelAdapter,
+					selectionModelAdapter );
+			viewer.getDisplay().addOverlayRenderer( tracksOverlay );
+			viewer.addRenderTransformListener( tracksOverlay );
+			viewer.addTimePointListener( tracksOverlay );
+			graph.addGraphChangeListener( () -> viewer.getDisplay().repaint() );
+
+			final Actions viewActions = new Actions( keymap.getConfig(), keyConfigContexts );
+			viewActions.install( viewFrame.getKeybindings(), "view" );
+			final Behaviours viewBehaviours = new Behaviours( keymap.getConfig(), keyConfigContexts );
+			viewBehaviours.install( viewFrame.getTriggerbindings(), "view" );
+
+			NavigationActionsMamut.install( viewActions, viewer );
+			viewer.getTransformEventHandler().install( viewBehaviours );
+
+			viewFrame.setVisible( true );
 		}
-		else
-		{
-			currentTimepoint = spimData.getSequenceDescription().getTimePoints().getTimePointsOrdered().get( 0 ).getId();
-		}
+
+		final int currentTimepoint = viewFrame.getViewerPanel().getState().getCurrentTimepoint();
+		viewFrame.toFront();
 
 		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
 		panel.preview.setEnabled( false );
@@ -204,22 +274,29 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 					 */
 
 					SpatialIndex< Spot > spatialIndex;
-					model.getSpatioTemporalIndex().readLock().lock();
+					localModel.getSpatioTemporalIndex().readLock().lock();
 					final RefList< Spot > toRemove = RefCollections.createRefList( graph.vertices() );
 					try
 					{
-						spatialIndex = model.getSpatioTemporalIndex().getSpatialIndex( currentTimepoint );
+						spatialIndex = localModel.getSpatioTemporalIndex().getSpatialIndex( currentTimepoint );
 						for ( final Spot spot : spatialIndex )
 							toRemove.add( spot );
 					}
 					finally
 					{
-						model.getSpatioTemporalIndex().readLock().unlock();
+						localModel.getSpatioTemporalIndex().readLock().unlock();
 					}
 
-					// FIXME should lock the graph for writing.
-					for ( final Spot spot : toRemove )
-						graph.remove( spot );
+					graph.getLock().writeLock().lock();
+					try
+					{
+						for ( final Spot spot : toRemove )
+							graph.remove( spot );
+					}
+					finally
+					{
+						graph.getLock().writeLock().unlock();
+					}
 
 					/*
 					 * Tune settings for preview.
@@ -247,7 +324,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 						return;
 					}
 
-					model.getFeatureModel().declareFeature( detector.getQualityFeature() );
+					localModel.getFeatureModel().declareFeature( detector.getQualityFeature() );
 					graph.notifyGraphChanged();
 
 					int nSpots = 0;
@@ -348,8 +425,6 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
 
 		this.settings = trackmate.getSettings();
-		this.model = trackmate.getModel();
-		panel.preview.setEnabled( model != null );
 		if ( null == settings )
 			return;
 
