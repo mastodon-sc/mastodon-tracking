@@ -34,10 +34,6 @@ import org.jfree.chart.axis.NumberTickUnitSource;
 import org.jfree.chart.axis.TickUnitSource;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.title.TextTitle;
-import org.mastodon.adapter.FocusModelAdapter;
-import org.mastodon.adapter.HighlightModelAdapter;
-import org.mastodon.adapter.RefBimap;
-import org.mastodon.adapter.SelectionModelAdapter;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
 import org.mastodon.detection.DetectionUtil;
@@ -46,45 +42,25 @@ import org.mastodon.detection.DogDetectorOp;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.LoGDetectorMamut;
 import org.mastodon.detection.mamut.SpotDetectorOp;
-import org.mastodon.graph.GraphIdBimap;
-import org.mastodon.grouping.GroupManager;
-import org.mastodon.model.DefaultFocusModel;
-import org.mastodon.model.DefaultHighlightModel;
-import org.mastodon.model.DefaultSelectionModel;
 import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.bdv.BigDataViewerMamut;
-import org.mastodon.revised.bdv.NavigationActionsMamut;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
-import org.mastodon.revised.bdv.ViewerPanelMamut;
-import org.mastodon.revised.bdv.overlay.OverlayGraphRenderer;
-import org.mastodon.revised.bdv.overlay.wrap.OverlayEdgeWrapper;
-import org.mastodon.revised.bdv.overlay.wrap.OverlayGraphWrapper;
-import org.mastodon.revised.bdv.overlay.wrap.OverlayVertexWrapper;
-import org.mastodon.revised.mamut.KeyConfigContexts;
 import org.mastodon.revised.mamut.WindowManager;
-import org.mastodon.revised.model.mamut.BoundingSphereRadiusStatistics;
-import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
-import org.mastodon.revised.model.mamut.ModelOverlayProperties;
 import org.mastodon.revised.model.mamut.Spot;
-import org.mastodon.revised.ui.keymap.Keymap;
-import org.mastodon.revised.ui.keymap.KeymapManager;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.Wizard;
+import org.mastodon.trackmate.ui.wizard.WizardUtils;
 import org.mastodon.trackmate.ui.wizard.util.HistogramUtil;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.ui.behaviour.util.Actions;
-import org.scijava.ui.behaviour.util.Behaviours;
 
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
-import bdv.tools.InitializeViewerState;
 import bdv.util.Affine3DHelpers;
 import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
@@ -187,75 +163,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 		grabSettings();
 
 		final SharedBigDataViewerData shared = windowManager.getAppModel().getSharedBdvData();
-		final SpimDataMinimal spimData = ( SpimDataMinimal ) shared.getSpimData();
-		if ( null == spimData )
-		{
-			log.error( "Cannot start detection preview: SpimData object is null." );
-			return;
-		}
-
-		final ModelGraph graph = localModel.getGraph();
-		if ( null == viewFrame || !viewFrame.isShowing() )
-		{
-			final GraphIdBimap< Spot, Link > graphIdBimap = localModel.getGraphIdBimap();
-
-			/*
-			 * Create a viewer for the preview.
-			 */
-
-			final String[] keyConfigContexts = new String[] { KeyConfigContexts.BIGDATAVIEWER };
-			final Keymap keymap = new KeymapManager().getForwardDefaultKeymap();
-
-			final BigDataViewerMamut bdv = new BigDataViewerMamut( shared, "Preview detection", new GroupManager( 0 ).createGroupHandle() );
-			final ViewerPanelMamut viewer = bdv.getViewer();
-			InitializeViewerState.initTransform( viewer );
-			viewFrame = bdv.getViewerFrame();
-
-			final BoundingSphereRadiusStatistics radiusStats = new BoundingSphereRadiusStatistics( localModel );
-			final OverlayGraphWrapper< Spot, Link > viewGraph = new OverlayGraphWrapper< Spot, Link >(
-					graph,
-					graphIdBimap,
-					localModel.getSpatioTemporalIndex(),
-					graph.getLock(),
-					new ModelOverlayProperties( graph, radiusStats ) );
-			final RefBimap< Spot, OverlayVertexWrapper< Spot, Link > > vertexMap = viewGraph.getVertexMap();
-			final RefBimap< Link, OverlayEdgeWrapper< Spot, Link > > edgeMap = viewGraph.getEdgeMap();
-
-			final DefaultHighlightModel< Spot, Link > highlightModel = new DefaultHighlightModel<>( graphIdBimap );
-			final HighlightModelAdapter< Spot, Link, OverlayVertexWrapper< Spot, Link >, OverlayEdgeWrapper< Spot, Link > > highlightModelAdapter =
-					new HighlightModelAdapter<>( highlightModel, vertexMap, edgeMap );
-
-			final DefaultFocusModel< Spot, Link > focusModel = new DefaultFocusModel<>( graphIdBimap );
-			final FocusModelAdapter< Spot, Link, OverlayVertexWrapper< Spot, Link >, OverlayEdgeWrapper< Spot, Link > > focusModelAdapter =
-					new FocusModelAdapter<>( focusModel, vertexMap, edgeMap );
-
-			final DefaultSelectionModel< Spot, Link > selectionModel = new DefaultSelectionModel<>( graph, graphIdBimap );
-			final SelectionModelAdapter< Spot, Link, OverlayVertexWrapper< Spot, Link >, OverlayEdgeWrapper< Spot, Link > > selectionModelAdapter =
-					new SelectionModelAdapter<>( selectionModel, vertexMap, edgeMap );
-
-			final OverlayGraphRenderer< OverlayVertexWrapper< Spot, Link >, OverlayEdgeWrapper< Spot, Link > > tracksOverlay = new OverlayGraphRenderer<>(
-					viewGraph,
-					highlightModelAdapter,
-					focusModelAdapter,
-					selectionModelAdapter );
-			viewer.getDisplay().addOverlayRenderer( tracksOverlay );
-			viewer.addRenderTransformListener( tracksOverlay );
-			viewer.addTimePointListener( tracksOverlay );
-			graph.addGraphChangeListener( () -> viewer.getDisplay().repaint() );
-
-			final Actions viewActions = new Actions( keymap.getConfig(), keyConfigContexts );
-			viewActions.install( viewFrame.getKeybindings(), "view" );
-			final Behaviours viewBehaviours = new Behaviours( keymap.getConfig(), keyConfigContexts );
-			viewBehaviours.install( viewFrame.getTriggerbindings(), "view" );
-
-			NavigationActionsMamut.install( viewActions, viewer );
-			viewer.getTransformEventHandler().install( viewBehaviours );
-
-			viewFrame.setVisible( true );
-		}
-
-		final int currentTimepoint = viewFrame.getViewerPanel().getState().getCurrentTimepoint();
-		viewFrame.toFront();
+		viewFrame = WizardUtils.preview( viewFrame, shared, localModel );
 
 		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
 		panel.preview.setEnabled( false );
@@ -267,15 +175,13 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 				try
 				{
 					/*
-					 * Delete spots from current time-point if we have some.
-					 * FIXME We should not do that if we want to add spots to
-					 * existing model. But I don't know how to preview then.
-					 * Maybe with another Model?
+					 * Remove spots from current time point.
 					 */
-
 					SpatialIndex< Spot > spatialIndex;
-					localModel.getSpatioTemporalIndex().readLock().lock();
+					final ModelGraph graph = localModel.getGraph();
 					final RefList< Spot > toRemove = RefCollections.createRefList( graph.vertices() );
+					final int currentTimepoint = viewFrame.getViewerPanel().getState().getCurrentTimepoint();
+					localModel.getSpatioTemporalIndex().readLock().lock();
 					try
 					{
 						spatialIndex = localModel.getSpatioTemporalIndex().getSpatialIndex( currentTimepoint );
@@ -301,7 +207,6 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 					/*
 					 * Tune settings for preview.
 					 */
-
 					final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
 					// Copy settings.
 					final Map< String, Object > detectorSettings = new HashMap<>( settings.values.getDetectorSettings() );
@@ -311,7 +216,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 					/*
 					 * Execute preview.
 					 */
-
+					final SpimDataMinimal spimData = ( SpimDataMinimal ) shared.getSpimData();
 					final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl,
 							graph, spimData,
 							detectorSettings );
