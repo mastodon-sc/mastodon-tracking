@@ -44,25 +44,19 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 
 	public static final String IDENTIFIER = "Setup ID config";
 
-	@Parameter
-	private WizardLogService log;
+	private final WizardLogService log;
 
 	private final Map< String, Integer > idMap;
 
 	private final Settings settings;
 
-	public SetupIdDecriptor( final Settings settings )
+	public SetupIdDecriptor( final Settings settings, final WizardLogService logService )
 	{
 		this.settings = settings;
+		this.log = logService;
 		this.panelIdentifier = IDENTIFIER;
 		this.targetPanel = new SetupIdConfigPanel();
 		this.idMap = new HashMap<>();
-	}
-
-	@Override
-	public String getNextPanelDescriptorIdentifier()
-	{
-		return BoundingBoxDescriptor.IDENTIFIER;
 	}
 
 	@Override
@@ -115,8 +109,8 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 		detectorSettings.put( KEY_SETUP_ID, setupID );
 
-		log.info( String.format( "Selected setup ID %d for detection:\n", ( int ) setupID ) );
-		log.info( echoSetupIDInfo( setupID ) );
+		log.log( String.format( "Selected setup ID %d for detection:\n", ( int ) setupID ) );
+		log.log( echoSetupIDInfo( setupID ) );
 	}
 
 	private String echoSetupIDInfo( final int setupID )

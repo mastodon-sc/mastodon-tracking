@@ -1,6 +1,10 @@
 package org.mastodon.trackmate.ui.wizard;
 
+import java.awt.Container;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 import javax.swing.Action;
 import javax.swing.JLabel;
@@ -11,22 +15,28 @@ import org.mastodon.trackmate.ui.wizard.util.EverythingDisablerAndReenabler;
 import org.scijava.Cancelable;
 import org.scijava.ui.behaviour.util.AbstractNamedAction;
 
-public class WizardController
+public class WizardController implements WindowListener
 {
 
-	private final WizardModel wizardModel;
+	private final WizardSequence sequence;
 
 	private final WizardPanel wizardPanel;
 
-	public WizardController( final WizardModel wizardModel )
+	private final LogDescriptor logDescriptor;
+
+	public WizardController( final WizardSequence sequence, final LogDescriptor logDescriptor )
 	{
-		this.wizardModel = wizardModel;
+		this.sequence = sequence;
+		this.logDescriptor = logDescriptor;
 		this.wizardPanel = new WizardPanel();
 		wizardPanel.btnLog.setAction( getLogAction() );
 		wizardPanel.btnNext.setAction( getNextAction() );
 		wizardPanel.btnPrevious.setAction( getPreviousAction() );
 		wizardPanel.btnCancel.setAction( getCancelAction() );
 		wizardPanel.btnCancel.setVisible( false );
+		wizardPanel.btnFinish.setAction( getFinishAction() );
+		wizardPanel.btnFinish.setVisible( false );
+		registerWizardPanel( logDescriptor );
 	}
 
 	public WizardPanel getWizardPanel()
@@ -37,14 +47,11 @@ public class WizardController
 	public void registerWizardPanel( final WizardPanelDescriptor panel )
 	{
 		wizardPanel.panelMain.add( panel.getPanelComponent(), panel.getPanelDescriptorIdentifier() );
-		wizardModel.registerPanel( panel );
 	}
 
 	protected void log( final boolean show )
 	{
-		System.out.println( "log " + show ); // DEBUG
-		final WizardPanelDescriptor logDescriptor = wizardModel.getDescriptor( LogDescriptor.IDENTIFIER );
-		final WizardPanelDescriptor current = wizardModel.getCurrent();
+		final WizardPanelDescriptor current = sequence.current();
 
 		if ( show )
 		{
@@ -56,67 +63,62 @@ public class WizardController
 		{
 			display( current, logDescriptor, Direction.BOTTOM );
 		}
-
 	}
 
 	protected synchronized void previous()
 	{
-		System.out.println( "previous" ); // DEBUG
-		final WizardPanelDescriptor current = wizardModel.getCurrent();
+		final WizardPanelDescriptor current = sequence.current();
 		if ( current == null )
 			return;
 
 		current.aboutToHidePanel();
-		final String backId = wizardModel.popPreviousDescriptorId();
-		if ( null == backId )
-			return;
-
-		final WizardPanelDescriptor back = wizardModel.getDescriptor( backId );
+		final WizardPanelDescriptor back = sequence.previous();
 		if ( null == back )
 			return;
 
+		back.targetPanel.setSize( current.targetPanel.getSize() );
 		back.aboutToDisplayPanel();
 		display( back, current, Direction.LEFT );
 		back.displayingPanel();
-		wizardModel.setCurrent( back );
 		exec( back.getBackwardRunnable() );
 	}
 
 	protected synchronized void next()
 	{
-		final WizardPanelDescriptor current = wizardModel.getCurrent();
+		final WizardPanelDescriptor current = sequence.current();
 		if ( current == null )
 			return;
 
 		current.aboutToHidePanel();
-		if ( null == current.getNextPanelDescriptorIdentifier() )
+		final WizardPanelDescriptor next = sequence.next();
+		if ( null == next)
 			return;
 
-		final String nextId = current.getNextPanelDescriptorIdentifier();
-		final WizardPanelDescriptor next = wizardModel.getDescriptor( nextId );
-		System.out.println( "next is " + next ); // DEBUG
-		if ( null == next )
-			return;
-		wizardModel.pushDescriptorId( current.getPanelDescriptorIdentifier() );
-
+		next.targetPanel.setSize( current.targetPanel.getSize() );
 		next.aboutToDisplayPanel();
 		display( next, current, Direction.RIGHT );
 		next.displayingPanel();
-		wizardModel.setCurrent( next );
 		exec( next.getForwardRunnable() );
 	}
 
 	protected void cancel()
 	{
-		final Cancelable cancelable = wizardModel.getCurrent().getCancelable();
-		System.out.println( "canceling " + cancelable ); // DEBUG
+		final Cancelable cancelable = sequence.current().getCancelable();
 		if (null != cancelable)
 			cancelable.cancel( "User pressed cancel button." );
 	}
 
+	protected void finish()
+	{
+		Container container = wizardPanel;
+		while ( !( container instanceof Frame ) )
+			container = container.getParent();
+
+		( ( Frame ) container ).dispose();
+	}
+
 	private void exec( final Runnable runnable )
 	{
-		System.out.println( "executing " + runnable ); // DEBUG
 		if ( null == runnable )
 			return;
 
@@ -143,12 +145,12 @@ public class WizardController
 		}.start();
 	}
 
-	public void init( final WizardPanelDescriptor descriptor )
+	public void init()
 	{
-		wizardModel.setCurrent( descriptor );
-		wizardPanel.btnPrevious.setEnabled( wizardModel.hasPrevious() );
-		wizardPanel.btnNext.setEnabled( null != descriptor.getNextPanelDescriptorIdentifier() );
-		descriptor.aboutToDisplayPanel();
+		final WizardPanelDescriptor descriptor = sequence.init();
+		wizardPanel.btnPrevious.setEnabled( sequence.hasPrevious() );
+		wizardPanel.btnNext.setEnabled( sequence.hasNext() );
+		descriptor .aboutToDisplayPanel();
 		wizardPanel.display( descriptor );
 		descriptor.displayingPanel();
 	}
@@ -158,8 +160,9 @@ public class WizardController
 		if ( null == to )
 			return;
 
-		wizardPanel.btnPrevious.setEnabled( wizardModel.hasPrevious() );
-		wizardPanel.btnNext.setEnabled( null != to.getNextPanelDescriptorIdentifier() );
+		wizardPanel.btnPrevious.setEnabled( sequence.hasPrevious() );
+		wizardPanel.btnNext.setVisible( sequence.hasNext() );
+		wizardPanel.btnFinish.setVisible( !sequence.hasNext() );
 		wizardPanel.transition( to, from, direction );
 	}
 
@@ -230,4 +233,55 @@ public class WizardController
 		cancelAction.putValue( Action.SMALL_ICON, WizardPanel.CANCEL_ICON );
 		return cancelAction;
 	}
+
+	private Action getFinishAction()
+	{
+		final AbstractNamedAction cancelAction = new AbstractNamedAction( "Finish" )
+		{
+
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				finish();
+			}
+		};
+		cancelAction.putValue( Action.SMALL_ICON, WizardPanel.FINISH_ICON );
+		return cancelAction;
+	}
+
+	@Override
+	public void windowOpened( final WindowEvent e )
+	{}
+
+	@Override
+	public void windowClosing( final WindowEvent e )
+	{
+		final Cancelable cancelable = sequence.current().getCancelable();
+		if (null != cancelable)
+			cancelable.cancel( "User closed the wizard." );
+
+		finish();
+	}
+
+	@Override
+	public void windowClosed( final WindowEvent e )
+	{}
+
+	@Override
+	public void windowIconified( final WindowEvent e )
+	{}
+
+	@Override
+	public void windowDeiconified( final WindowEvent e )
+	{}
+
+	@Override
+	public void windowActivated( final WindowEvent e )
+	{}
+
+	@Override
+	public void windowDeactivated( final WindowEvent e )
+	{}
 }

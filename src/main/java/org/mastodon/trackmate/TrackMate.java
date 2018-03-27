@@ -33,7 +33,7 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 	private StatusService statusService;
 
 	@Parameter
-	LogService log;
+	private LogService log;
 
 	private final Settings settings;
 

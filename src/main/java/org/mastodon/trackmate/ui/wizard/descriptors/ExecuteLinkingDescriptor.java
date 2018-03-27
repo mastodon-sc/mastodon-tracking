@@ -19,12 +19,6 @@ public class ExecuteLinkingDescriptor extends WizardPanelDescriptor
 	}
 
 	@Override
-	public String getNextPanelDescriptorIdentifier()
-	{
-		return Descriptor1.ID;
-	}
-
-	@Override
 	public Runnable getForwardRunnable()
 	{
 		return new Runnable()
@@ -46,5 +40,4 @@ public class ExecuteLinkingDescriptor extends WizardPanelDescriptor
 	{
 		return trackmate;
 	}
-
 }

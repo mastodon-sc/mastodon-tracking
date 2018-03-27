@@ -9,16 +9,9 @@ import static org.mastodon.trackmate.ui.wizard.descriptors.LogPanel.WARN_COLOR;
 import java.awt.Color;
 
 import org.mastodon.trackmate.ui.wizard.descriptors.LogPanel;
-import org.scijava.app.StatusService;
-import org.scijava.app.event.StatusEvent;
-import org.scijava.log.AbstractLogService;
 import org.scijava.log.LogLevel;
-import org.scijava.log.LogMessage;
-import org.scijava.log.LogService;
-import org.scijava.plugin.Plugin;
 
-@Plugin( type = WizardLogService.class )
-public class WizardLogService extends AbstractLogService implements LogService, StatusService
+public class WizardLogService
 {
 
 	private final LogPanel panel;
@@ -33,7 +26,6 @@ public class WizardLogService extends AbstractLogService implements LogService, 
 		return panel;
 	}
 
-	@Override
 	public void log( final int level, final Object msg )
 	{
 		final Color color;
@@ -59,49 +51,43 @@ public class WizardLogService extends AbstractLogService implements LogService, 
 		panel.append( msg.toString(), color );
 	}
 
-	protected void log( final String msg )
+	public void log( final String msg )
 	{
 		log( LogLevel.INFO, msg );
 	}
 
-	protected void log( final Throwable t )
+	public void log( final Throwable t )
 	{
 		log( LogLevel.INFO, t.getStackTrace() );
 	}
 
-	@Override
 	public void showProgress( final int value, final int maximum )
 	{
 		panel.setProgress( ( double ) value / maximum );
 	}
 
-	@Override
 	public void showStatus( final String message )
 	{
 		panel.setStatus( message );
 	}
 
-	@Override
 	public void showStatus( final int progress, final int maximum, final String message )
 	{
 		showProgress( progress, maximum );
 		showStatus( message );
 	}
 
-	@Override
 	public void showStatus( final int progress, final int maximum, final String message, final boolean warn )
 	{
 		showProgress( progress, maximum );
 		panel.setStatus( message, warn ? WARN_COLOR : NORMAL_COLOR );
 	}
 
-	@Override
 	public void warn( final String message )
 	{
 		panel.setStatus( message, WARN_COLOR );
 	}
 
-	@Override
 	public void clearStatus()
 	{
 		panel.clearStatus();
@@ -110,19 +96,6 @@ public class WizardLogService extends AbstractLogService implements LogService, 
 	public void clearLog()
 	{
 		panel.clearLog();
-	}
-
-	@Override
-	public String getStatusMessage( final String appName, final StatusEvent statusEvent )
-	{
-		return null;
-	}
-
-	@Override
-	protected void messageLogged( final LogMessage message )
-	{
-		// TODO Auto-generated method stub
-
 	}
 
 }

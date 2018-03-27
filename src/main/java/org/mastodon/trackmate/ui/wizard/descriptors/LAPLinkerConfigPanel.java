@@ -31,9 +31,11 @@ import java.awt.event.MouseWheelListener;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.function.BinaryOperator;
@@ -704,7 +706,7 @@ public class LAPLinkerConfigPanel extends JPanel
 	private List< FeatureKey > getAvailableFeatureKeys()
 	{
 		final List< FeatureKey > featureKeys = new ArrayList<>();
-		final Set< Feature< ?, ? > > featureSet = featureModel.getFeatureSet( vertexClass );
+		final Set< Feature< ?, ? > > featureSet = Optional.ofNullable( featureModel.getFeatureSet( vertexClass ) ).orElse( Collections.emptySet() );
 		for ( final Feature< ?, ? > feature : featureSet )
 			for ( final String projectionKey : feature.getProjections().keySet() )
 				featureKeys.add( new FeatureKey( feature.getKey(), projectionKey ) );

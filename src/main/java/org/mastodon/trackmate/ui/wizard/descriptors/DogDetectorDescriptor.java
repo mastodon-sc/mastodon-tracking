@@ -268,6 +268,9 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 				{
 					/*
 					 * Delete spots from current time-point if we have some.
+					 * FIXME We should not do that if we want to add spots to
+					 * existing model. But I don't know how to preview then.
+					 * Maybe with another Model?
 					 */
 
 					SpatialIndex< Spot > spatialIndex;
@@ -300,6 +303,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 					 */
 
 					final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
+					// Copy settings.
 					final Map< String, Object > detectorSettings = new HashMap<>( settings.values.getDetectorSettings() );
 					detectorSettings.put( KEY_MIN_TIMEPOINT, currentTimepoint );
 					detectorSettings.put( KEY_MAX_TIMEPOINT, currentTimepoint );
@@ -395,12 +399,6 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 		detectorSettings.put( KEY_RADIUS, ( ( Number ) panel.diameter.getValue() ).doubleValue() / 2. );
 		detectorSettings.put( KEY_THRESHOLD, ( ( Number ) panel.threshold.getValue() ).doubleValue() );
-	}
-
-	@Override
-	public String getNextPanelDescriptorIdentifier()
-	{
-		return ExecuteDetectionDescriptor.IDENTIFIER;
 	}
 
 	@SuppressWarnings( { "rawtypes", "unchecked" } )
