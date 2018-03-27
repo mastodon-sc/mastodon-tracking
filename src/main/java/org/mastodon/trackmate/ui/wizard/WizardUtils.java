@@ -1,12 +1,23 @@
 package org.mastodon.trackmate.ui.wizard;
 
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
+
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.mastodon.adapter.FocusModelAdapter;
 import org.mastodon.adapter.HighlightModelAdapter;
 import org.mastodon.adapter.RefBimap;
 import org.mastodon.adapter.SelectionModelAdapter;
+import org.mastodon.collection.RefCollections;
+import org.mastodon.collection.RefList;
+import org.mastodon.detection.DetectionUtil;
+import org.mastodon.detection.DetectorKeys;
+import org.mastodon.detection.mamut.DoGDetectorMamut;
+import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.graph.GraphIdBimap;
 import org.mastodon.grouping.GroupManager;
 import org.mastodon.model.DefaultFocusModel;
@@ -32,13 +43,18 @@ import org.mastodon.revised.model.mamut.ModelOverlayProperties;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.revised.ui.keymap.Keymap;
 import org.mastodon.revised.ui.keymap.KeymapManager;
+import org.mastodon.spatial.SpatialIndex;
+import org.mastodon.trackmate.Settings;
 import org.scijava.Context;
 import org.scijava.log.LogService;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.behaviour.util.Behaviours;
 
+import bdv.spimdata.SpimDataMinimal;
 import bdv.tools.InitializeViewerState;
 import mpicbg.spim.data.SpimDataException;
+import net.imagej.ops.OpService;
+import net.imagej.ops.special.hybrid.Hybrids;
 
 /**
  * A collection of static utilities related to running Msatodon with the wizard
@@ -55,6 +71,85 @@ public class WizardUtils
 	 * method.
 	 */
 	public static String PREVIEW_DETECTION_FRAME_NAME = "Preview detection";
+
+	/**
+	 * Executes a detection preview with the detector set and configured in the
+	 * specified {@link Settings}, on the images it points to. The results are
+	 * added to the specified {@link Model}.
+	 * <p>
+	 * Only the specified time-point is processed, using the ROI specified in
+	 * the settings as well.
+	 * 
+	 * @param model
+	 *            the model to add preview results to.
+	 * @param settings
+	 *            the settings in which the detector is set and configured, and
+	 *            the image data is specified.
+	 * @param ops
+	 *            the OpService.
+	 * @param currentTimepoint
+	 *            the time-point in the data to run the preview on.
+	 * @return <code>true</code> if the preview ran successfully.
+	 */
+	public static final boolean executeDetectionPreview( final Model model, final Settings settings, final OpService ops, final int currentTimepoint )
+	{
+		/*
+		 * Remove spots from current time point.
+		 */
+		final ModelGraph graph = model.getGraph();
+		final RefList< Spot > toRemove = RefCollections.createRefList( graph.vertices() );
+		model.getSpatioTemporalIndex().readLock().lock();
+		try
+		{
+			final SpatialIndex< Spot > spatialIndex = model.getSpatioTemporalIndex().getSpatialIndex( currentTimepoint );
+			for ( final Spot spot : spatialIndex )
+				toRemove.add( spot );
+		}
+		finally
+		{
+			model.getSpatioTemporalIndex().readLock().unlock();
+		}
+
+		graph.getLock().writeLock().lock();
+		try
+		{
+			for ( final Spot spot : toRemove )
+				graph.remove( spot );
+		}
+		finally
+		{
+			graph.getLock().writeLock().unlock();
+		}
+
+		/*
+		 * Tune settings for preview.
+		 */
+		final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
+		// Copy settings.
+		final Map< String, Object > detectorSettings = new HashMap<>( settings.values.getDetectorSettings() );
+		detectorSettings.put( KEY_MIN_TIMEPOINT, currentTimepoint );
+		detectorSettings.put( KEY_MAX_TIMEPOINT, currentTimepoint );
+
+		/*
+		 * Execute preview.
+		 */
+		final SpimDataMinimal spimData = settings.values.getSpimData();
+		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl,
+				graph, spimData,
+				detectorSettings );
+		detector.compute( spimData, graph );
+
+		if ( !detector.isSuccessful() )
+		{
+			final LogService log = ops.getContext().getService( LogService.class );
+			log.error( "Detection failed:\n" + detector.getErrorMessage() );
+			return false;
+		}
+
+		model.getFeatureModel().declareFeature( detector.getQualityFeature() );
+		graph.notifyGraphChanged();
+		return true;
+	}
 
 	/**
 	 * Creates or shows a BDV window suitable to be used as a preview detection
@@ -74,7 +169,7 @@ public class WizardUtils
 	 * @return a new {@link ViewerFrameMamut} or the non-<code>null</code> one
 	 *         passed in argument.
 	 */
-	public static final ViewerFrameMamut preview( ViewerFrameMamut viewFrame, final SharedBigDataViewerData shared, final Model model )
+	public static final ViewerFrameMamut previewFrame( ViewerFrameMamut viewFrame, final SharedBigDataViewerData shared, final Model model )
 	{
 		if ( null == viewFrame || !viewFrame.isShowing() )
 		{
@@ -147,8 +242,16 @@ public class WizardUtils
 		windowManager.getProjectManager().open( project );
 
 		final Model model = new Model();
-		model.getGraph().addVertex().init( 0, new double[] { 50., 50., 50., }, 20. );
+		model.getGraph().addVertex().init( 1, new double[] { 50., 50., 50., }, 20. );
 
-		preview( null, windowManager.getAppModel().getSharedBdvData(), model );
+		previewFrame( null, windowManager.getAppModel().getSharedBdvData(), model );
+		final Map< String, Object > detectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
+		detectorSettings.put( DetectorKeys.KEY_THRESHOLD, 50. );
+		final Settings settings = new Settings()
+				.spimData( ( SpimDataMinimal ) windowManager.getAppModel().getSharedBdvData().getSpimData() )
+				.detector( DoGDetectorMamut.class )
+				.detectorSettings( detectorSettings );
+		final int currentTimepoint = 0;
+		executeDetectionPreview( model, settings, context.getService( OpService.class ), currentTimepoint );
 	}
 }

@@ -1,6 +1,5 @@
 package org.mastodon.trackmate.ui.wizard.descriptors;
 
-import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
 import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
@@ -18,7 +17,6 @@ import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.Icon;
@@ -34,8 +32,6 @@ import org.jfree.chart.axis.NumberTickUnitSource;
 import org.jfree.chart.axis.TickUnitSource;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.title.TextTitle;
-import org.mastodon.collection.RefCollections;
-import org.mastodon.collection.RefList;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorKeys;
 import org.mastodon.detection.DogDetectorOp;
@@ -46,8 +42,8 @@ import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
 import org.mastodon.revised.mamut.WindowManager;
+import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.Model;
-import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.trackmate.Settings;
@@ -65,7 +61,6 @@ import bdv.util.Affine3DHelpers;
 import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import net.imagej.ops.OpService;
-import net.imagej.ops.special.hybrid.Hybrids;
 import net.imglib2.realtransform.AffineTransform3D;
 
 @Plugin( type = SpotDetectorDescriptor.class, name = "DoG detector configuration descriptor" )
@@ -163,7 +158,8 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 		grabSettings();
 
 		final SharedBigDataViewerData shared = windowManager.getAppModel().getSharedBdvData();
-		viewFrame = WizardUtils.preview( viewFrame, shared, localModel );
+		viewFrame = WizardUtils.previewFrame( viewFrame, shared, localModel );
+		final int currentTimepoint = viewFrame.getViewerPanel().getState().getCurrentTimepoint();
 
 		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
 		panel.preview.setEnabled( false );
@@ -174,71 +170,22 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 			{
 				try
 				{
-					/*
-					 * Remove spots from current time point.
-					 */
-					SpatialIndex< Spot > spatialIndex;
-					final ModelGraph graph = localModel.getGraph();
-					final RefList< Spot > toRemove = RefCollections.createRefList( graph.vertices() );
-					final int currentTimepoint = viewFrame.getViewerPanel().getState().getCurrentTimepoint();
-					localModel.getSpatioTemporalIndex().readLock().lock();
-					try
-					{
-						spatialIndex = localModel.getSpatioTemporalIndex().getSpatialIndex( currentTimepoint );
-						for ( final Spot spot : spatialIndex )
-							toRemove.add( spot );
-					}
-					finally
-					{
-						localModel.getSpatioTemporalIndex().readLock().unlock();
-					}
-
-					graph.getLock().writeLock().lock();
-					try
-					{
-						for ( final Spot spot : toRemove )
-							graph.remove( spot );
-					}
-					finally
-					{
-						graph.getLock().writeLock().unlock();
-					}
-
-					/*
-					 * Tune settings for preview.
-					 */
-					final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
-					// Copy settings.
-					final Map< String, Object > detectorSettings = new HashMap<>( settings.values.getDetectorSettings() );
-					detectorSettings.put( KEY_MIN_TIMEPOINT, currentTimepoint );
-					detectorSettings.put( KEY_MAX_TIMEPOINT, currentTimepoint );
-
-					/*
-					 * Execute preview.
-					 */
-					final SpimDataMinimal spimData = ( SpimDataMinimal ) shared.getSpimData();
-					final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl,
-							graph, spimData,
-							detectorSettings );
-					panel.lblInfo.setText( "Previewing..." );
-					detector.compute( spimData, graph );
-
-					if ( !detector.isSuccessful() )
-					{
-						log.error( "Detection failed:\n" + detector.getErrorMessage() );
+					final boolean ok = WizardUtils.executeDetectionPreview( localModel, settings, ops, currentTimepoint );
+					if ( !ok )
 						return;
-					}
-
-					localModel.getFeatureModel().declareFeature( detector.getQualityFeature() );
-					graph.notifyGraphChanged();
 
 					int nSpots = 0;
+					final SpatialIndex< Spot > spatialIndex = localModel.getSpatioTemporalIndex().getSpatialIndex( currentTimepoint );
 					for ( @SuppressWarnings( "unused" )
 					final Spot spot : spatialIndex )
 						nSpots++;
 
 					panel.lblInfo.setText( "Found " + nSpots + " spots in time-point " + currentTimepoint );
-					plotQualityHistogram( detector.getQualityFeature().getPropertyMap() );
+					@SuppressWarnings( "unchecked" )
+					final Feature< Spot, DoublePropertyMap< Spot > > qFeature =
+							( Feature< Spot, DoublePropertyMap< Spot > > ) localModel.getFeatureModel().getFeature( DetectionUtil.QUALITY_FEATURE_NAME );
+					final DoublePropertyMap< Spot > pm = qFeature.getPropertyMap();
+					plotQualityHistogram( pm );
 				}
 				finally
 				{
