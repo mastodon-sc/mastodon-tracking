@@ -11,7 +11,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.awt.event.MouseListener;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -28,29 +27,20 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import org.jfree.chart.ChartPanel;
-import org.jfree.chart.axis.NumberTickUnitSource;
-import org.jfree.chart.axis.TickUnitSource;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.title.TextTitle;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorKeys;
 import org.mastodon.detection.DogDetectorOp;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.LoGDetectorMamut;
 import org.mastodon.detection.mamut.SpotDetectorOp;
-import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
 import org.mastodon.revised.mamut.WindowManager;
-import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.Model;
-import org.mastodon.revised.model.mamut.Spot;
-import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.Wizard;
 import org.mastodon.trackmate.ui.wizard.WizardUtils;
-import org.mastodon.trackmate.ui.wizard.util.HistogramUtil;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -67,11 +57,11 @@ import net.imglib2.realtransform.AffineTransform3D;
 public class DogDetectorDescriptor extends SpotDetectorDescriptor
 {
 
-	private static final NumberFormat FORMAT = new DecimalFormat( "0.0" );
-
 	public static final String IDENTIFIER = "Configure DoG detector";
 
 	private static final Icon PREVIEW_ICON = new ImageIcon( Wizard.class.getResource( "led-icon-eye-green.png" ) );
+
+	private static final NumberFormat FORMAT = new DecimalFormat( "0.0" );
 
 	@Parameter
 	private LogService log;
@@ -155,7 +145,6 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 		if ( null == windowManager )
 			return;
 
-		grabSettings();
 
 		final SharedBigDataViewerData shared = windowManager.getAppModel().getSharedBdvData();
 		viewFrame = WizardUtils.previewFrame( viewFrame, shared, localModel );
@@ -170,22 +159,14 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 			{
 				try
 				{
+					grabSettings();
 					final boolean ok = WizardUtils.executeDetectionPreview( localModel, settings, ops, currentTimepoint );
 					if ( !ok )
 						return;
 
-					int nSpots = 0;
-					final SpatialIndex< Spot > spatialIndex = localModel.getSpatioTemporalIndex().getSpatialIndex( currentTimepoint );
-					for ( @SuppressWarnings( "unused" )
-					final Spot spot : spatialIndex )
-						nSpots++;
-
+					final int nSpots = WizardUtils.countSpotsIn( localModel, currentTimepoint );
 					panel.lblInfo.setText( "Found " + nSpots + " spots in time-point " + currentTimepoint );
-					@SuppressWarnings( "unchecked" )
-					final Feature< Spot, DoublePropertyMap< Spot > > qFeature =
-							( Feature< Spot, DoublePropertyMap< Spot > > ) localModel.getFeatureModel().getFeature( DetectionUtil.QUALITY_FEATURE_NAME );
-					final DoublePropertyMap< Spot > pm = qFeature.getPropertyMap();
-					plotQualityHistogram( pm );
+					plotQualityHistogram();
 				}
 				finally
 				{
@@ -196,7 +177,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 	}
 
-	private void plotQualityHistogram( final DoublePropertyMap< Spot > qualities )
+	private void plotQualityHistogram()
 	{
 		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
 		if ( null != chartPanel )
@@ -204,28 +185,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 			panel.remove( chartPanel );
 			panel.repaint();
 		}
-
-		final double[] values = qualities.getMap().values();
-		if ( values.length == 0 )
-			return;
-
-		this.chartPanel = HistogramUtil.createHistogramPlot( values, false );
-		chartPanel.getChart().setTitle( new TextTitle( "Quality histogram", chartPanel.getFont() ) );
-
-		// Disable zoom.
-		for ( final MouseListener ml : chartPanel.getMouseListeners() )
-			chartPanel.removeMouseListener( ml );
-
-		// Re enable the X axis.
-		final XYPlot plot = chartPanel.getChart().getXYPlot();
-		plot.getDomainAxis().setVisible( true );
-		final TickUnitSource source = new NumberTickUnitSource( false, FORMAT );
-		plot.getDomainAxis().setStandardTickUnits( source );
-		final Font smallFont = chartPanel.getFont().deriveFont( chartPanel.getFont().getSize2D() - 2f );
-		plot.getDomainAxis().setTickLabelFont( smallFont );
-
-		// Transparent background.
-		chartPanel.getChart().setBackgroundPaint( null );
+		this.chartPanel = WizardUtils.createQualityHistogram( localModel );
 
 		final GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridy = 5;

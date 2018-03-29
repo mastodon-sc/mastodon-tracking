@@ -3,11 +3,20 @@ package org.mastodon.trackmate.ui.wizard;
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 
+import java.awt.Font;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.axis.NumberTickUnitSource;
+import org.jfree.chart.axis.TickUnitSource;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.title.TextTitle;
 import org.mastodon.adapter.FocusModelAdapter;
 import org.mastodon.adapter.HighlightModelAdapter;
 import org.mastodon.adapter.RefBimap;
@@ -23,6 +32,7 @@ import org.mastodon.grouping.GroupManager;
 import org.mastodon.model.DefaultFocusModel;
 import org.mastodon.model.DefaultHighlightModel;
 import org.mastodon.model.DefaultSelectionModel;
+import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.bdv.BigDataViewerMamut;
 import org.mastodon.revised.bdv.NavigationActionsMamut;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
@@ -35,6 +45,7 @@ import org.mastodon.revised.bdv.overlay.wrap.OverlayVertexWrapper;
 import org.mastodon.revised.mamut.KeyConfigContexts;
 import org.mastodon.revised.mamut.MamutProject;
 import org.mastodon.revised.mamut.WindowManager;
+import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.BoundingSphereRadiusStatistics;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
@@ -45,6 +56,7 @@ import org.mastodon.revised.ui.keymap.Keymap;
 import org.mastodon.revised.ui.keymap.KeymapManager;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.trackmate.Settings;
+import org.mastodon.trackmate.ui.wizard.util.HistogramUtil;
 import org.scijava.Context;
 import org.scijava.log.LogService;
 import org.scijava.ui.behaviour.util.Actions;
@@ -59,7 +71,7 @@ import net.imagej.ops.special.hybrid.Hybrids;
 /**
  * A collection of static utilities related to running Msatodon with the wizard
  * framework in this package.
- * 
+ *
  * @author Jean-Yves Tinevez
  */
 public class WizardUtils
@@ -72,6 +84,50 @@ public class WizardUtils
 	 */
 	public static String PREVIEW_DETECTION_FRAME_NAME = "Preview detection";
 
+	private static final NumberFormat FORMAT = new DecimalFormat( "0.0" );
+
+	public static final int countSpotsIn(final Model model, final int timepoint)
+	{
+		int nSpots = 0;
+		final SpatialIndex< Spot > spatialIndex = model.getSpatioTemporalIndex().getSpatialIndex( timepoint );
+		for ( @SuppressWarnings( "unused" )
+		final Spot spot : spatialIndex )
+			nSpots++;
+
+		return nSpots;
+	}
+
+	public static final ChartPanel createQualityHistogram(final Model model)
+	{
+		@SuppressWarnings( "unchecked" )
+		final Feature< Spot, DoublePropertyMap< Spot > > qFeature =
+				( Feature< Spot, DoublePropertyMap< Spot > > ) model.getFeatureModel().getFeature( DetectionUtil.QUALITY_FEATURE_NAME );
+		final DoublePropertyMap< Spot > pm = qFeature.getPropertyMap();
+		final double[] values = pm.getMap().values();
+		if ( values.length == 0 )
+			return null;
+
+		final ChartPanel chartPanel = HistogramUtil.createHistogramPlot( values, false );
+		chartPanel.getChart().setTitle( new TextTitle( "Quality histogram", chartPanel.getFont() ) );
+
+		// Disable zoom.
+		for ( final MouseListener ml : chartPanel.getMouseListeners() )
+			chartPanel.removeMouseListener( ml );
+
+		// Re enable the X axis.
+		final XYPlot plot = chartPanel.getChart().getXYPlot();
+		plot.getDomainAxis().setVisible( true );
+		final TickUnitSource source = new NumberTickUnitSource( false, FORMAT );
+		plot.getDomainAxis().setStandardTickUnits( source );
+		final Font smallFont = chartPanel.getFont().deriveFont( chartPanel.getFont().getSize2D() - 2f );
+		plot.getDomainAxis().setTickLabelFont( smallFont );
+
+		// Transparent background.
+		chartPanel.getChart().setBackgroundPaint( null );
+
+		return chartPanel;
+	}
+
 	/**
 	 * Executes a detection preview with the detector set and configured in the
 	 * specified {@link Settings}, on the images it points to. The results are
@@ -79,7 +135,7 @@ public class WizardUtils
 	 * <p>
 	 * Only the specified time-point is processed, using the ROI specified in
 	 * the settings as well.
-	 * 
+	 *
 	 * @param model
 	 *            the model to add preview results to.
 	 * @param settings
@@ -154,7 +210,7 @@ public class WizardUtils
 	/**
 	 * Creates or shows a BDV window suitable to be used as a preview detection
 	 * frame.
-	 * 
+	 *
 	 * @param viewFrame
 	 *            the viewer frame, potentially created from a previous call to
 	 *            this method. If <code>null</code> a new one will be created
