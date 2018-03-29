@@ -93,8 +93,10 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 	@Override
 	public void aboutToHidePanel()
 	{
-		grabSettings();
+		viewFrame.dispose();
+		viewFrame = null;
 
+		grabSettings();
 		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
 		final String units = ( null != setupID && null != settings.values.getSpimData() )
 				? settings.values.getSpimData().getSequenceDescription()
