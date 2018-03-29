@@ -1,4 +1,4 @@
-package org.mastodon.trackmate.ui.wizard;
+package org.mastodon.trackmate.ui.wizard.util;
 
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
@@ -56,7 +56,6 @@ import org.mastodon.revised.ui.keymap.Keymap;
 import org.mastodon.revised.ui.keymap.KeymapManager;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.trackmate.Settings;
-import org.mastodon.trackmate.ui.wizard.util.HistogramUtil;
 import org.scijava.Context;
 import org.scijava.log.LogService;
 import org.scijava.ui.behaviour.util.Actions;

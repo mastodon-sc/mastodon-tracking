@@ -40,7 +40,7 @@ import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.Wizard;
-import org.mastodon.trackmate.ui.wizard.WizardUtils;
+import org.mastodon.trackmate.ui.wizard.util.WizardUtils;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -144,7 +144,6 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 	{
 		if ( null == windowManager )
 			return;
-
 
 		final SharedBigDataViewerData shared = windowManager.getAppModel().getSharedBdvData();
 		viewFrame = WizardUtils.previewFrame( viewFrame, shared, localModel );
