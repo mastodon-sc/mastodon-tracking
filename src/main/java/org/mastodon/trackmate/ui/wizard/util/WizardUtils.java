@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.jfree.chart.ChartPanel;
@@ -26,7 +25,6 @@ import org.mastodon.collection.RefList;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorKeys;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
-import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.graph.GraphIdBimap;
 import org.mastodon.grouping.GroupManager;
 import org.mastodon.model.DefaultFocusModel;
@@ -56,6 +54,7 @@ import org.mastodon.revised.ui.keymap.Keymap;
 import org.mastodon.revised.ui.keymap.KeymapManager;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.trackmate.Settings;
+import org.mastodon.trackmate.TrackMate;
 import org.scijava.Context;
 import org.scijava.log.LogService;
 import org.scijava.ui.behaviour.util.Actions;
@@ -65,7 +64,6 @@ import bdv.spimdata.SpimDataMinimal;
 import bdv.tools.InitializeViewerState;
 import mpicbg.spim.data.SpimDataException;
 import net.imagej.ops.OpService;
-import net.imagej.ops.special.hybrid.Hybrids;
 
 /**
  * A collection of static utilities related to running Msatodon with the wizard
@@ -78,7 +76,7 @@ public class WizardUtils
 
 	/**
 	 * The name used as frame title for the detection preview frame created by
-	 * {@link #preview(WindowManager, ViewerFrameMamut, Model, LogService)}
+	 * {@link #previewFrame(ViewerFrameMamut, SharedBigDataViewerData, Model)}
 	 * method.
 	 */
 	public static String PREVIEW_DETECTION_FRAME_NAME = "Preview detection";
@@ -179,30 +177,26 @@ public class WizardUtils
 		/*
 		 * Tune settings for preview.
 		 */
-		final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
+
 		// Copy settings.
-		final Map< String, Object > detectorSettings = new HashMap<>( settings.values.getDetectorSettings() );
+		final Settings localSettings = settings.copy();
+		final Map< String, Object > detectorSettings = localSettings.values.getDetectorSettings();
 		detectorSettings.put( KEY_MIN_TIMEPOINT, currentTimepoint );
 		detectorSettings.put( KEY_MAX_TIMEPOINT, currentTimepoint );
 
 		/*
 		 * Execute preview.
 		 */
-		final SpimDataMinimal spimData = settings.values.getSpimData();
-		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl,
-				graph, spimData,
-				detectorSettings );
-		detector.compute( spimData, graph );
+		final TrackMate trackmate = new TrackMate( localSettings, model );
+		trackmate.setContext( ops.context() );
+		final boolean ok = trackmate.execDetection();
 
-		if ( !detector.isSuccessful() )
+		if ( !ok )
 		{
 			final LogService log = ops.getContext().getService( LogService.class );
-			log.error( "Detection failed:\n" + detector.getErrorMessage() );
+			log.error( "Detection failed:\n" + trackmate.getErrorMessage() );
 			return false;
 		}
-
-		model.getFeatureModel().declareFeature( detector.getQualityFeature() );
-		graph.notifyGraphChanged();
 		return true;
 	}
 
@@ -239,7 +233,7 @@ public class WizardUtils
 			viewFrame = bdv.getViewerFrame();
 
 			final BoundingSphereRadiusStatistics radiusStats = new BoundingSphereRadiusStatistics( model );
-			final OverlayGraphWrapper< Spot, Link > viewGraph = new OverlayGraphWrapper< Spot, Link >(
+			final OverlayGraphWrapper< Spot, Link > viewGraph = new OverlayGraphWrapper< >(
 					graph,
 					graphIdBimap,
 					model.getSpatioTemporalIndex(),
