@@ -1,14 +1,19 @@
 package org.mastodon.detection.mamut;
 
+import static org.mastodon.detection.DetectorKeys.KEY_ADD_BEHAVIOR;
+import static org.mastodon.detection.DetectorKeys.KEY_ROI;
+
 import java.util.Map;
 
 import org.mastodon.detection.DetectionCreatorFactory;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorOp;
+import org.mastodon.detection.mamut.MamutDetectionCreatorFactories.DetectionBehavior;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
+import org.mastodon.spatial.SpatioTemporalIndex;
 import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
@@ -17,6 +22,7 @@ import org.scijava.thread.ThreadService;
 import bdv.spimdata.SpimDataMinimal;
 import net.imagej.ops.special.hybrid.AbstractUnaryHybridCF;
 import net.imagej.ops.special.inplace.Inplaces;
+import net.imglib2.Interval;
 import net.imglib2.algorithm.Benchmark;
 
 public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGraph > implements SpotDetectorOp, Benchmark
@@ -30,6 +36,9 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 
 	@Parameter( type = ItemIO.INPUT )
 	private Map< String, Object > settings;
+
+	@Parameter( type = ItemIO.INPUT )
+	private SpatioTemporalIndex< Spot > sti;
 
 	@Parameter( type = ItemIO.OUTPUT )
 	protected String errorMessage;
@@ -52,7 +61,30 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 		final DoublePropertyMap< Spot > pm = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
 		qualityFeature = DetectionUtil.getQualityFeature( pm, Spot.class );
 
-		final DetectionCreatorFactory detectionCreator = detectionCreator( graph, pm );
+		/*
+		 * Resolve add detection behavior.
+		 */
+		final DetectionCreatorFactory detectionCreator;
+		if ( null == sti )
+		{
+			detectionCreator = MamutDetectionCreatorFactories.getAddDetectionCreatorFactory( graph, pm );
+		}
+		else
+		{
+			DetectionBehavior detectionBehavior = DetectionBehavior.ADD;
+			final String addBehavior = ( String ) settings.get( KEY_ADD_BEHAVIOR );
+			if ( null != addBehavior )
+			{
+				try
+				{
+					detectionBehavior = MamutDetectionCreatorFactories.DetectionBehavior.valueOf( addBehavior );
+				}
+				catch ( final IllegalArgumentException e )
+				{}
+			}
+			final Interval roi = ( Interval ) settings.get( KEY_ROI );
+			detectionCreator = detectionBehavior.getFactory( graph, pm, sti, roi );
+		}
 
 		this.detector = ( DetectorOp ) Inplaces.binary1( ops(), cl,
 				detectionCreator, spimData, settings );
@@ -65,75 +97,6 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 			errorMessage = detector.getErrorMessage();
 
 		this.detector = null;
-	}
-
-	protected DetectionCreatorFactory detectionCreator( final ModelGraph graph, final DoublePropertyMap< Spot > pm )
-	{
-		return new MyDetectionCreatorFactory( graph, pm );
-	}
-
-	/**
-	 * Default detection creator suitable to create {@link Spot} vertices in a
-	 * {@link ModelGraph} from the detection returned by the detector. Takes
-	 * care of acquiring the writing lock before adding all the detections of a
-	 * time-point and returning it after. Also resets and feeds the quality
-	 * value to a quality feature.
-	 *
-	 * @author Jean-Yves Tinevez
-	 *
-	 */
-	private static class MyDetectionCreatorFactory implements DetectionCreatorFactory
-	{
-
-		private final DoublePropertyMap< Spot > pm;
-
-		private final ModelGraph graph;
-
-		public MyDetectionCreatorFactory( final ModelGraph graph, final DoublePropertyMap< Spot > pm )
-		{
-			this.graph = graph;
-			this.pm = pm;
-		}
-
-		@Override
-		public DetectionCreator create( final int timepoint )
-		{
-			return new MyDetectionCreator( timepoint );
-		}
-
-		private class MyDetectionCreator implements DetectionCreator
-		{
-
-			private final Spot ref;
-			private final int timepoint;
-
-			public MyDetectionCreator(final int timepoint)
-			{
-				this.timepoint = timepoint;
-				this.ref = graph.vertexRef();
-			}
-
-			@Override
-			public void preAddition()
-			{
-				graph.getLock().writeLock().lock();
-			}
-
-			@Override
-			public void postAddition()
-			{
-				graph.getLock().writeLock().unlock();
-			}
-
-			@Override
-			public void createDetection( final double[] pos, final double radius, final double quality )
-			{
-				final Spot spot = graph.addVertex( ref ).init( timepoint, pos, radius );
-				pm.set( spot, quality );
-			}
-
-		}
-
 	}
 
 	@Override
