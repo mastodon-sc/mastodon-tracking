@@ -3,9 +3,12 @@ package org.mastodon.detection.mamut;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.mastodon.collection.RefCollections;
+import org.mastodon.collection.RefList;
 import org.mastodon.detection.DetectionCreatorFactory;
 import org.mastodon.detection.DetectionCreatorFactory.DetectionCreator;
 import org.mastodon.kdtree.ClipConvexPolytope;
+import org.mastodon.kdtree.IncrementalNearestNeighborSearch;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
@@ -42,22 +45,30 @@ public class MamutDetectionCreatorFactories
 	 */
 	public static enum DetectionBehavior
 	{
-		ADD( "Add spot even if an existing one is found." ),
-		REPLACE( "Replace existing spots found close." ),
-		DONTADD( "Do not add if an existing spot is found close." ),
-		REMOVEALL( "Remove all spots in ROI prior to detection." );
+		ADD( "Add", "Add a new spot even if an existing one is found within its radius." ),
+		REPLACE( "Replace", "Replace existing spots found within radius of the new one." ),
+		DONTADD( "Don't add", "Do not add a new spot if an existing spot is found within radius." ),
+		REMOVEALL( "Remove all", "Remove all spots in ROI prior to detection." );
 
 		private final String name;
 
-		private DetectionBehavior( final String name )
+		private final String info;
+
+		private DetectionBehavior( final String name, final String info )
 		{
 			this.name = name;
+			this.info = info;
 		}
 
 		@Override
 		public String toString()
 		{
 			return name;
+		}
+
+		public String info()
+		{
+			return info;
 		}
 
 		public DetectionCreatorFactory getFactory( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final SpatioTemporalIndex< Spot > sti, final Interval roi )
@@ -224,15 +235,20 @@ public class MamutDetectionCreatorFactories
 		@Override
 		public void preAddition()
 		{
-			graph.getLock().writeLock().lock();
+			graph.getLock().readLock().lock();
+			final RefList< Spot > toRemove = RefCollections.createRefList( graph.vertices() );
 			if ( null == roi )
 			{
 				// Remove all in time-point.
 				for ( final Spot spot : spatialIndex )
-					graph.remove( spot );
+					toRemove.add( spot );
 			}
 			else
 			{
+				/*
+				 * FIXME Does not work. Maybe the normal are not with the right orientation?
+				 */
+
 				// Remove spots in the ROI.
 				final double[][] normals = new double[][] {
 						new double[] { +1., 0., 0. }, // X min plane.
@@ -257,8 +273,13 @@ public class MamutDetectionCreatorFactories
 				final ClipConvexPolytope< Spot > clip = spatialIndex.getClipConvexPolytope();
 				clip.clip( cp );
 				for ( final Spot spot : clip.getInsideValues() )
-					graph.remove( spot );
+					toRemove.add( spot );
 			}
+
+			graph.getLock().readLock().unlock();
+			graph.getLock().writeLock().lock();
+			for ( final Spot spot : toRemove )
+				graph.remove( spot );
 		}
 
 		@Override
@@ -294,16 +315,16 @@ public class MamutDetectionCreatorFactories
 		@Override
 		public DetectionCreator create( final int timepoint )
 		{
-			return new ReplaceDetectionCreator( graph, pm, sti.getSpatialIndex( timepoint ).getNearestNeighborSearch(), timepoint );
+			return new ReplaceDetectionCreator( graph, pm, sti.getSpatialIndex( timepoint ).getIncrementalNearestNeighborSearch(), timepoint );
 		}
 	}
 
 	private static class ReplaceDetectionCreator extends AddDetectionCreator
 	{
 
-		private final NearestNeighborSearch< Spot > search;
+		private final IncrementalNearestNeighborSearch< Spot > search;
 
-		private ReplaceDetectionCreator( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final NearestNeighborSearch< Spot > search, final int timepoint )
+		private ReplaceDetectionCreator( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final IncrementalNearestNeighborSearch< Spot > search, final int timepoint )
 		{
 			super( graph, pm, timepoint );
 			this.search = search;
@@ -316,9 +337,23 @@ public class MamutDetectionCreatorFactories
 			pm.set( spot, quality );
 
 			search.search( spot );
-			if ( search.getSquareDistance() < radius * radius )
-				graph.remove( search.getSampler().get() );
-			// Remove the closest one.
+			while ( search.hasNext() )
+			{
+				final Spot next = search.next();
+				if (search.getSquareDistance() > radius * radius )
+					break;
+				graph.remove( next );
+			}
+
+			/*
+			 * TODO This is imperfect. There might be large existing spots that are further
+			 * than the radius and still encompasses the new spot. We do not act on these.
+			 * 
+			 * To fix this, we need to know the max radius in a time-point, and therefore to
+			 * access the BoundingSphereRadiusStatistics. But the instance is part of the
+			 * app model and creating a new one might be costly. Maybe pre-compute the max
+			 * radius of this time point "by hand" in the #preAddition method?
+			 */
 		}
 	}
 
@@ -368,6 +403,16 @@ public class MamutDetectionCreatorFactories
 			// If yes, don't add.
 			if ( search.getSquareDistance() < radius * radius )
 				return;
+
+			/*
+			 * TODO This is imperfect. There might be large existing spots that are further
+			 * than the radius and still encompasses the new spot. We do not act on these.
+			 * 
+			 * To fix this, we need to know the max radius in a time-point, and therefore to
+			 * access the BoundingSphereRadiusStatistics. But the instance is part of the
+			 * app model and creating a new one might be costly. Maybe pre-compute the max
+			 * radius of this time point "by hand" in the #preAddition method?
+			 */
 
 			final Spot spot = graph.addVertex( ref ).init( timepoint, pos, radius );
 			pm.set( spot, quality );
