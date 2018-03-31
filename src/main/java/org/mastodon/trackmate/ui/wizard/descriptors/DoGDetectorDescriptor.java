@@ -54,7 +54,7 @@ import net.imagej.ops.OpService;
 import net.imglib2.realtransform.AffineTransform3D;
 
 @Plugin( type = SpotDetectorDescriptor.class, name = "DoG detector configuration descriptor" )
-public class DogDetectorDescriptor extends SpotDetectorDescriptor
+public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 {
 
 	public static final String IDENTIFIER = "Configure DoG detector";
@@ -79,7 +79,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 	private final Model localModel;
 
-	public DogDetectorDescriptor()
+	public DoGDetectorDescriptor()
 	{
 		this.panelIdentifier = IDENTIFIER;
 		this.targetPanel = new DogDetectorPanel();
@@ -93,7 +93,8 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 	@Override
 	public void aboutToHidePanel()
 	{
-		viewFrame.dispose();
+		if ( null != viewFrame )
+			viewFrame.dispose();
 		viewFrame = null;
 
 		grabSettings();
@@ -187,6 +188,8 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 			panel.repaint();
 		}
 		this.chartPanel = WizardUtils.createQualityHistogram( localModel );
+		if ( null == chartPanel )
+			return;
 
 		final GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridy = 5;
