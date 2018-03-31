@@ -1,5 +1,6 @@
 package org.mastodon.trackmate;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.mastodon.detection.DetectionUtil;
@@ -14,7 +15,17 @@ import bdv.spimdata.SpimDataMinimal;
 public class Settings
 {
 
-	public final Values values = new Values();
+	public final Values values;
+
+	public Settings()
+	{
+		this( new Values() );
+	}
+
+	private Settings( final Values values )
+	{
+		this.values = values;
+	}
 
 	public Settings detector( final Class< ? extends SpotDetectorOp > detector )
 	{
@@ -46,6 +57,16 @@ public class Settings
 		return this;
 	}
 
+	/**
+	 * Returns a copy of this settings instance.
+	 * 
+	 * @return a copy of this settings instance.
+	 */
+	public Settings copy()
+	{
+		return new Settings( this.values.copy() );
+	}
+
 	public static class Values
 	{
 		private SpimDataMinimal spimData = null;
@@ -61,6 +82,17 @@ public class Settings
 		public Class< ? extends SpotDetectorOp > getDetector()
 		{
 			return detector;
+		}
+
+		public Values copy()
+		{
+			final Values v = new Values();
+			v.spimData = spimData;
+			v.detector = detector;
+			v.detectorSettings = new HashMap<>( detectorSettings );
+			v.linker = linker;
+			v.linkerSettings = new HashMap<>( linkerSettings );
+			return v;
 		}
 
 		public Map< String, Object > getDetectorSettings()
