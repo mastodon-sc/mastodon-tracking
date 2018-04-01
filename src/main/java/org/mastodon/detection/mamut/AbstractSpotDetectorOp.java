@@ -1,7 +1,6 @@
 package org.mastodon.detection.mamut;
 
 import static org.mastodon.detection.DetectorKeys.KEY_ADD_BEHAVIOR;
-import static org.mastodon.detection.DetectorKeys.KEY_ROI;
 
 import java.util.Map;
 
@@ -22,7 +21,6 @@ import org.scijava.thread.ThreadService;
 import bdv.spimdata.SpimDataMinimal;
 import net.imagej.ops.special.hybrid.AbstractUnaryHybridCF;
 import net.imagej.ops.special.inplace.Inplaces;
-import net.imglib2.Interval;
 import net.imglib2.algorithm.Benchmark;
 
 public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGraph > implements SpotDetectorOp, Benchmark
@@ -82,8 +80,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 				catch ( final IllegalArgumentException e )
 				{}
 			}
-			final Interval roi = ( Interval ) settings.get( KEY_ROI );
-			detectionCreator = detectionBehavior.getFactory( graph, pm, sti, roi );
+			detectionCreator = detectionBehavior.getFactory( graph, pm, sti );
 		}
 
 		this.detector = ( DetectorOp ) Inplaces.binary1( ops(), cl,
