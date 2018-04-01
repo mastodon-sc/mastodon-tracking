@@ -1,5 +1,6 @@
 package org.mastodon.trackmate.ui.wizard.util;
 
+import static org.mastodon.detection.DetectorKeys.KEY_ADD_BEHAVIOR;
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 
@@ -25,6 +26,7 @@ import org.mastodon.collection.RefList;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorKeys;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
+import org.mastodon.detection.mamut.MamutDetectionCreatorFactories.DetectionBehavior;
 import org.mastodon.graph.GraphIdBimap;
 import org.mastodon.grouping.GroupManager;
 import org.mastodon.model.DefaultFocusModel;
@@ -183,6 +185,7 @@ public class WizardUtils
 		final Map< String, Object > detectorSettings = localSettings.values.getDetectorSettings();
 		detectorSettings.put( KEY_MIN_TIMEPOINT, currentTimepoint );
 		detectorSettings.put( KEY_MAX_TIMEPOINT, currentTimepoint );
+		detectorSettings.put( KEY_ADD_BEHAVIOR, DetectionBehavior.REMOVEALL.name() );
 
 		/*
 		 * Execute preview.

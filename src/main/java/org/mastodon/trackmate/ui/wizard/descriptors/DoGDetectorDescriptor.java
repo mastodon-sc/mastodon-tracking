@@ -1,5 +1,6 @@
 package org.mastodon.trackmate.ui.wizard.descriptors;
 
+import static org.mastodon.detection.DetectorKeys.KEY_ADD_BEHAVIOR;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
 import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
@@ -32,6 +33,7 @@ import org.mastodon.detection.DetectorKeys;
 import org.mastodon.detection.DogDetectorOp;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.LoGDetectorMamut;
+import org.mastodon.detection.mamut.MamutDetectionCreatorFactories;
 import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
@@ -215,6 +217,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 		detectorSettings.put( KEY_RADIUS, ( ( Number ) panel.diameter.getValue() ).doubleValue() / 2. );
 		detectorSettings.put( KEY_THRESHOLD, ( ( Number ) panel.threshold.getValue() ).doubleValue() );
+		detectorSettings.put( KEY_ADD_BEHAVIOR, MamutDetectionCreatorFactories.DetectionBehavior.REMOVEALL.name() );
 	}
 
 	@SuppressWarnings( { "rawtypes", "unchecked" } )
