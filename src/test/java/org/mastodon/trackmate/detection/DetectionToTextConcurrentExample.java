@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.mastodon.detection.DetectionCreatorFactory;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorOp;
-import org.mastodon.detection.DogDetectorOp;
+import org.mastodon.detection.DoGDetectorOp;
 import org.scijava.Context;
 
 import bdv.spimdata.SpimDataMinimal;
@@ -150,7 +150,7 @@ public class DetectionToTextConcurrentExample
 		detectorSettings1.put( KEY_THRESHOLD, Double.valueOf( 100. ) );
 		detectorSettings1.put( KEY_MIN_TIMEPOINT, t1a );
 		detectorSettings1.put( KEY_MAX_TIMEPOINT, t1b );
-		final DetectorOp detector1 = ( DetectorOp ) Inplaces.binary1( ops, DogDetectorOp.class,
+		final DetectorOp detector1 = ( DetectorOp ) Inplaces.binary1( ops, DoGDetectorOp.class,
 				detectionCreator, spimData, detectorSettings1 );
 
 		/*
@@ -159,7 +159,7 @@ public class DetectionToTextConcurrentExample
 		final Map< String, Object > detectorSettings2 = new HashMap<>( detectorSettings1 );
 		detectorSettings2.put( KEY_MIN_TIMEPOINT, t2a );
 		detectorSettings2.put( KEY_MAX_TIMEPOINT, t2b );
-		final DetectorOp detector2 = ( DetectorOp ) Inplaces.binary1( ops, DogDetectorOp.class,
+		final DetectorOp detector2 = ( DetectorOp ) Inplaces.binary1( ops, DoGDetectorOp.class,
 				detectionCreator, spimData, detectorSettings2 );
 
 		/*

@@ -30,7 +30,7 @@ import javax.swing.SwingUtilities;
 import org.jfree.chart.ChartPanel;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorKeys;
-import org.mastodon.detection.DogDetectorOp;
+import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.LoGDetectorMamut;
 import org.mastodon.detection.mamut.MamutDetectionCreatorFactories;
@@ -84,7 +84,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 	public DoGDetectorDescriptor()
 	{
 		this.panelIdentifier = IDENTIFIER;
-		this.targetPanel = new DogDetectorPanel();
+		this.targetPanel = new DoGDetectorPanel();
 		/*
 		 * Use a separate model for the preview. We do not want to touch the
 		 * existing model.
@@ -108,7 +108,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 
 		final SpimDataMinimal spimData = settings.values.getSpimData();
 		final double radius = ( double ) settings.values.getDetectorSettings().get( KEY_RADIUS );
-		final double minSizePixel = DogDetectorOp.MIN_SPOT_PIXEL_SIZE / 2.;
+		final double minSizePixel = DoGDetectorOp.MIN_SPOT_PIXEL_SIZE / 2.;
 		final int timepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT );
 		final int level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, minSizePixel, timepoint, setupID );
 		final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( spimData, timepoint, setupID, level );
@@ -154,7 +154,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 		viewFrame = WizardUtils.previewFrame( viewFrame, shared, localModel );
 		final int currentTimepoint = viewFrame.getViewerPanel().getState().getCurrentTimepoint();
 
-		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
+		final DoGDetectorPanel panel = ( DoGDetectorPanel ) targetPanel;
 		panel.preview.setEnabled( false );
 		new Thread( "DogDetectorPanel preview thread" )
 		{
@@ -183,7 +183,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 
 	private void plotQualityHistogram()
 	{
-		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
+		final DoGDetectorPanel panel = ( DoGDetectorPanel ) targetPanel;
 		if ( null != chartPanel )
 		{
 			panel.remove( chartPanel );
@@ -213,7 +213,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 		if ( null == settings )
 			return;
 
-		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
+		final DoGDetectorPanel panel = ( DoGDetectorPanel ) targetPanel;
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 		detectorSettings.put( KEY_RADIUS, ( ( Number ) panel.diameter.getValue() ).doubleValue() / 2. );
 		detectorSettings.put( KEY_THRESHOLD, ( ( Number ) panel.threshold.getValue() ).doubleValue() );
@@ -241,7 +241,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 	@Override
 	public void setTrackMate( final TrackMate trackmate )
 	{
-		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
+		final DoGDetectorPanel panel = ( DoGDetectorPanel ) targetPanel;
 
 		this.settings = trackmate.getSettings();
 		if ( null == settings )
@@ -277,7 +277,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 		this.windowManager = windowManager;
 	}
 
-	private class DogDetectorPanel extends JPanel
+	private class DoGDetectorPanel extends JPanel
 	{
 
 		private static final long serialVersionUID = 1L;
@@ -292,7 +292,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 
 		private final JLabel lblInfo;
 
-		public DogDetectorPanel()
+		public DoGDetectorPanel()
 		{
 			final GridBagLayout layout = new GridBagLayout();
 			layout.columnWidths = new int[] { 80, 80, 40 };

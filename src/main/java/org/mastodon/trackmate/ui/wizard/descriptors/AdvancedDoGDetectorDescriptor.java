@@ -32,7 +32,7 @@ import javax.swing.SwingUtilities;
 import org.jfree.chart.ChartPanel;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorKeys;
-import org.mastodon.detection.DogDetectorOp;
+import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.detection.mamut.AdvancedDoGDetectorMamut;
 import org.mastodon.detection.mamut.MamutDetectionCreatorFactories;
 import org.mastodon.detection.mamut.MamutDetectionCreatorFactories.DetectionBehavior;
@@ -137,7 +137,7 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 
 		final SpimDataMinimal spimData = settings.values.getSpimData();
 		final double radius = ( double ) settings.values.getDetectorSettings().get( KEY_RADIUS );
-		final double minSizePixel = DogDetectorOp.MIN_SPOT_PIXEL_SIZE / 2.;
+		final double minSizePixel = DoGDetectorOp.MIN_SPOT_PIXEL_SIZE / 2.;
 		final int timepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT );
 		final int level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, minSizePixel, timepoint, setupID );
 		final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( spimData, timepoint, setupID, level );
