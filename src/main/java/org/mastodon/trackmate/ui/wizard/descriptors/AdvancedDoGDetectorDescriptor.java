@@ -24,7 +24,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFormattedTextField;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
@@ -264,7 +263,6 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 		else
 			threshold = ( double ) objThreshold;
 
-
 		DetectionBehavior detectionBehavior = DetectionBehavior.ADD;
 		final String addBehavior = ( String ) detectorSettings.get( KEY_ADD_BEHAVIOR );
 		if ( null != addBehavior )
@@ -423,16 +421,5 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 		{
 			SwingUtilities.invokeLater( () -> textField.selectAll() );
 		}
-	}
-
-	public static void main( final String[] args )
-	{
-		final AdvancedDoGDetectorDescriptor desc = new AdvancedDoGDetectorDescriptor();
-
-		final JFrame frame = new JFrame( "Test" );
-		frame.getContentPane().add( desc.targetPanel );
-		frame.setSize( 300, 600 );
-		desc.aboutToDisplayPanel();
-		frame.setVisible( true );
 	}
 }
