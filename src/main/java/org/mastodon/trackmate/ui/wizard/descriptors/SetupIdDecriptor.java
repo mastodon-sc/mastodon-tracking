@@ -1,5 +1,7 @@
 package org.mastodon.trackmate.ui.wizard.descriptors;
 
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
 
 import java.awt.Font;
@@ -105,9 +107,13 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 	{
 		final SetupIdConfigPanel panel = ( SetupIdConfigPanel ) targetPanel;
 		final Object obj = panel.comboBox.getSelectedItem();
-		final Integer setupID = idMap.get( obj );
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
+		final Integer setupID = idMap.get( obj );
 		detectorSettings.put( KEY_SETUP_ID, setupID );
+		final SpimDataMinimal spimData = settings.values.getSpimData();
+		final int nTimePoints = spimData.getSequenceDescription().getTimePoints().getTimePoints().size();
+		detectorSettings.put( KEY_MIN_TIMEPOINT, Integer.valueOf( 0 ) );
+		detectorSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( nTimePoints - 1 ) );
 
 		log.log( String.format( "Selected setup ID %d for detection:\n", ( int ) setupID ) );
 		log.log( echoSetupIDInfo( setupID ) );

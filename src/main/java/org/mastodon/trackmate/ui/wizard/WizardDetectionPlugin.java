@@ -16,6 +16,8 @@ public class WizardDetectionPlugin extends WizardPlugin
 
 	private static final String[] RUN_WIZARD_KEYS = new String[] { "not mapped" };
 
+	private static final Settings settings = new Settings();
+
 	public WizardDetectionPlugin()
 	{
 		super( RUN_WIZARD, "Detection...", "Plugins > TrackMate", RUN_WIZARD_KEYS );
@@ -32,10 +34,9 @@ public class WizardDetectionPlugin extends WizardPlugin
 		 * work, but requires additional casting when instantiation ops.
 		 */
 		final SpimDataMinimal spimData = ( SpimDataMinimal ) appModel.getSharedBdvData().getSpimData();
-		final Settings settings = new Settings().spimData( spimData );
+		settings.spimData( spimData );
 		final TrackMate trackmate = new TrackMate( settings, appModel.getModel() );
 		getContext().inject( trackmate );
-
 		return new DetectionSequence( trackmate, windowManager, wizard.getLogService() );
 	}
 }

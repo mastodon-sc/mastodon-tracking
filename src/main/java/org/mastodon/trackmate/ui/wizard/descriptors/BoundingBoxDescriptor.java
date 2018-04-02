@@ -94,7 +94,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		this.targetPanel = new BoundingBoxPanel();
 	}
 
-	private int previousSetupID = -1;
+	private static int previousSetupID = -1;
 
 	@Override
 	public void aboutToDisplayPanel()
@@ -111,60 +111,62 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
 		if ( setupID != previousSetupID )
 		{
-			// Remove old overlay.
-			if ( boundingBoxEditor != null )
-				boundingBoxEditor.uninstall();
-			viewFrame = null;
-
-			/*
-			 * Change ROI source and overlay.
-			 */
-			roi = getBoundingBoxModel();
-			roi.intervalChangedListeners().add( () -> {
-				panel.boxSelectionPanel.updateSliders( roi.getInterval() );
-				if ( viewFrame != null )
-					viewFrame.getViewerPanel().getDisplay().repaint();
-			} );
-
-			/*
-			 * We also have to recreate the selection panel linked to the new
-			 * ROI.
-			 */
-			panel.boxSelectionPanel = new BoxSelectionPanel( roi, roi.getMaxInterval() );
-
-			/*
-			 * We reset time bounds.
-			 */
-
-			final int nTimepoints = wm.getAppModel().getMaxTimepoint() - wm.getAppModel().getMinTimepoint();
-
-			panel.minT = new BoundedValue( 0, nTimepoints, 0 );
-			final SliderPanel tMinPanel = new SliderPanel( "t min", panel.minT, 1 );
-			tMinPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
-
-			panel.maxT = new BoundedValue( 0, nTimepoints, nTimepoints );
-			final SliderPanel tMaxPanel = new SliderPanel( "t max", panel.maxT, 1 );
-			tMaxPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
-
-			panel.boundsPanel.removeAll();
-			panel.boundsPanel.add( panel.boxSelectionPanel );
-			panel.boundsPanel.add( tMinPanel );
-			panel.boundsPanel.add( tMaxPanel );
-
-			setPanelEnabled( panel.boundsPanel, panel.useRoi.isSelected() );
-			setPanelEnabled( panel.boxModePanel, panel.useRoi.isSelected() );
-
-			panel.boxSelectionPanel.setBoundsInterval( roi.getMaxInterval() );
-			panel.boxSelectionPanel.updateSliders( roi.getInterval() );
-
-			previousSetupID = setupID;
+			settings.values.getDetectorSettings().put( KEY_ROI, null );
+			panel.useRoi.setSelected( false );
 		}
 		else
 		{
-			panel.minT.setCurrentValue( ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT ) );
-			panel.maxT.setCurrentValue( ( int ) settings.values.getDetectorSettings().get( KEY_MAX_TIMEPOINT ) );
+			panel.useRoi.setSelected( null != settings.values.getDetectorSettings().get( KEY_ROI ) );
 		}
 
+		// Remove old overlay.
+		if ( boundingBoxEditor != null )
+			boundingBoxEditor.uninstall();
+		viewFrame = null;
+
+		/*
+		 * We force a reset of the ROI source and overlay.
+		 */
+		roi = getBoundingBoxModel();
+		roi.intervalChangedListeners().add( () -> {
+			panel.boxSelectionPanel.updateSliders( roi.getInterval() );
+			if ( viewFrame != null )
+				viewFrame.getViewerPanel().getDisplay().repaint();
+		} );
+
+		/*
+		 * We also have to recreate the selection panel linked to the new ROI.
+		 */
+		panel.boxSelectionPanel = new BoxSelectionPanel( roi, roi.getMaxInterval() );
+
+		/*
+		 * We reset time bounds.
+		 */
+
+		final int nTimepoints = wm.getAppModel().getMaxTimepoint() - wm.getAppModel().getMinTimepoint();
+
+		panel.minT = new BoundedValue( 0, nTimepoints, 0 );
+		final SliderPanel tMinPanel = new SliderPanel( "t min", panel.minT, 1 );
+		tMinPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
+
+		panel.maxT = new BoundedValue( 0, nTimepoints, nTimepoints );
+		final SliderPanel tMaxPanel = new SliderPanel( "t max", panel.maxT, 1 );
+		tMaxPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
+
+		panel.boundsPanel.removeAll();
+		panel.boundsPanel.add( panel.boxSelectionPanel );
+		panel.boundsPanel.add( tMinPanel );
+		panel.boundsPanel.add( tMaxPanel );
+
+		setPanelEnabled( panel.boundsPanel, panel.useRoi.isSelected() );
+		setPanelEnabled( panel.boxModePanel, panel.useRoi.isSelected() );
+
+		panel.boxSelectionPanel.setBoundsInterval( roi.getMaxInterval() );
+		panel.boxSelectionPanel.updateSliders( roi.getInterval() );
+
+		previousSetupID = setupID;
+		panel.minT.setCurrentValue( ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT ) );
+		panel.maxT.setCurrentValue( ( int ) settings.values.getDetectorSettings().get( KEY_MAX_TIMEPOINT ) );
 		toggleBoundingBoxVisibility( panel.useRoi.isSelected() );
 	}
 

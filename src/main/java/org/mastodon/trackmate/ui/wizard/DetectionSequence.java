@@ -1,10 +1,5 @@
 package org.mastodon.trackmate.ui.wizard;
 
-import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
-import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
-import static org.mastodon.detection.DetectorKeys.KEY_ROI;
-import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +92,8 @@ public class DetectionSequence implements WizardSequence
 	private SpotDetectorDescriptor getConfigDescriptor()
 	{
 		final Class< ? extends SpotDetectorOp > detectorClass = trackmate.getSettings().values.getDetector();
+
+
 		final List< String > linkerPanelNames = descriptorProvider.getNames();
 		for ( final String key : linkerPanelNames )
 		{
@@ -109,16 +106,16 @@ public class DetectionSequence implements WizardSequence
 				previousDetectorPanel = detectorConfigDescriptor;
 				if ( detectorConfigDescriptor.getContext() == null )
 					windowManager.getContext().inject( detectorConfigDescriptor );
+
+				/*
+				 * Copy as much settings as we can to the potentially new config descriptor.
+				 */
+				final Map< String, Object > oldSettings = new HashMap<>( trackmate.getSettings().values.getDetectorSettings() );
 				final Map< String, Object > defaultSettings = detectorConfigDescriptor.getDefaultSettings();
-
-				// Pass the old ROI to the new settings.
-				final Map< String, Object > oldSettings = trackmate.getSettings().values.getDetectorSettings();
-				defaultSettings.put( KEY_MAX_TIMEPOINT, oldSettings.get( KEY_MAX_TIMEPOINT ) );
-				defaultSettings.put( KEY_MIN_TIMEPOINT, oldSettings.get( KEY_MIN_TIMEPOINT ) );
-				defaultSettings.put( KEY_ROI, oldSettings.get( KEY_ROI ) );
-				defaultSettings.put( KEY_SETUP_ID, oldSettings.get( KEY_SETUP_ID ) );
-
+				for ( final String skey : defaultSettings.keySet() )
+					defaultSettings.put( skey, oldSettings.get( skey ) );
 				trackmate.getSettings().detectorSettings( defaultSettings );
+
 				detectorConfigDescriptor.setTrackMate( trackmate );
 				detectorConfigDescriptor.setWindowManager( windowManager );
 				detectorConfigDescriptor.getPanelComponent().setSize( chooseDetectorDescriptor.getPanelComponent().getSize() );
