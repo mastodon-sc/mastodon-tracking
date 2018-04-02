@@ -241,23 +241,23 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 			// Panel settings.
 			// Frame to frame linking
 			ls.put( KEY_LINKING_MAX_DISTANCE, ( ( Number ) maxLinkingDistance.getValue() ).doubleValue() );
-			ls.put( KEY_LINKING_FEATURE_PENALTIES, null );
+			ls.put( KEY_LINKING_FEATURE_PENALTIES, new HashMap<>() );
 
 			// Gap-closing.
 			ls.put( KEY_ALLOW_GAP_CLOSING, true );
 			ls.put( KEY_GAP_CLOSING_MAX_DISTANCE, ( ( Number ) maxGapClosingDistance.getValue() ).doubleValue() );
 			ls.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, ( ( Number ) maxFrameGap.getValue() ).intValue() );
-			ls.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, null );
+			ls.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, new HashMap<>() );
 
 			// Track splitting.
 			ls.put( KEY_ALLOW_TRACK_SPLITTING, false );
 			ls.put( KEY_SPLITTING_MAX_DISTANCE, DEFAULT_SPLITTING_MAX_DISTANCE );
-			ls.put( KEY_SPLITTING_FEATURE_PENALTIES, null );
+			ls.put( KEY_SPLITTING_FEATURE_PENALTIES, new HashMap<>() );
 
 			// Track merging.
 			ls.put( KEY_ALLOW_TRACK_MERGING, false );
 			ls.put( KEY_MERGING_MAX_DISTANCE, DEFAULT_MERGING_MAX_DISTANCE );
-			ls.put( KEY_MERGING_FEATURE_PENALTIES, null );
+			ls.put( KEY_MERGING_FEATURE_PENALTIES, new HashMap<>() );
 
 			// Other - use defaults.
 			ls.put( KEY_BLOCKING_VALUE, DEFAULT_BLOCKING_VALUE );

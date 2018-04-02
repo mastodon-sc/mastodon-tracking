@@ -1,8 +1,5 @@
 package org.mastodon.trackmate.ui.wizard;
 
-import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
-import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,10 +96,14 @@ public class LinkingSequence implements WizardSequence
 					windowManager.getContext().inject( linkerConfigDescriptor );
 				final Map< String, Object > defaultSettings = linkerConfigDescriptor.getDefaultSettings();
 
-				// Pass the old ROI to the new settings.
+				// Pass as much parameter as we can from the old settings.
 				final Map< String, Object > oldSettings = trackmate.getSettings().values.getLinkerSettings();
-				defaultSettings.put( KEY_MAX_TIMEPOINT, oldSettings.get( KEY_MAX_TIMEPOINT ) );
-				defaultSettings.put( KEY_MIN_TIMEPOINT, oldSettings.get( KEY_MIN_TIMEPOINT ) );
+				for ( final String pkey : defaultSettings.keySet() )
+				{
+					if ( !oldSettings.containsKey( pkey ) )
+						continue;
+					defaultSettings.put( pkey, oldSettings.get( pkey ) );
+				}
 
 				trackmate.getSettings().linkerSettings( defaultSettings );
 				linkerConfigDescriptor.setTrackMate( trackmate );
