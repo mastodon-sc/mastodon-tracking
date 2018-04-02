@@ -67,6 +67,23 @@ public class Settings
 		return new Settings( this.values.copy() );
 	}
 
+	@Override
+	public String toString()
+	{
+		final StringBuffer str = new StringBuffer( super.toString() + ":\n" );
+		str.append( " - spimData: " + values.spimData + "\n" );
+		str.append( " - detector: " + values.detector + "\n" );
+		str.append( " - detector settings: @" + values.detectorSettings.hashCode() + "\n" );
+		for ( final String key : values.detectorSettings.keySet() )
+			str.append( "    - " + key + " = " + values.detectorSettings.get( key ) + "\n" );
+		str.append( " - linker: " + values.linker + "\n" );
+		str.append( " - linker settings: @" + values.linkerSettings.hashCode() + "\n" );
+		for ( final String key : values.linkerSettings.keySet() )
+			str.append( "    - " + key + " = " + values.linkerSettings.get( key ) + "\n" );
+
+		return str.toString();
+	}
+
 	public static class Values
 	{
 		private SpimDataMinimal spimData = null;
