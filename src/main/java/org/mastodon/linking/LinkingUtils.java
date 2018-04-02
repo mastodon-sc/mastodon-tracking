@@ -10,6 +10,7 @@ import static org.mastodon.linking.LinkerKeys.DEFAULT_ALLOW_TRACK_SPLITTING;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_ALTERNATIVE_LINKING_COST_FACTOR;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_BLOCKING_VALUE;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_CUTOFF_PERCENTILE;
+import static org.mastodon.linking.LinkerKeys.DEFAULT_DO_LINK_SELECTION;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_GAP_CLOSING_FEATURE_PENALTIES;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_GAP_CLOSING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_GAP_CLOSING_MAX_FRAME_GAP;
@@ -25,6 +26,7 @@ import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_SPLITTING;
 import static org.mastodon.linking.LinkerKeys.KEY_ALTERNATIVE_LINKING_COST_FACTOR;
 import static org.mastodon.linking.LinkerKeys.KEY_BLOCKING_VALUE;
 import static org.mastodon.linking.LinkerKeys.KEY_CUTOFF_PERCENTILE;
+import static org.mastodon.linking.LinkerKeys.KEY_DO_LINK_SELECTION;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_FEATURE_PENALTIES;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
@@ -86,7 +88,7 @@ public class LinkingUtils
 	{
 		final CostFunction< V, V > costFunction;
 		if ( null == featurePenalties || featurePenalties.isEmpty() )
-			costFunction = new SquareDistCostFunction< V >();
+			costFunction = new SquareDistCostFunction< >();
 		else
 			costFunction = new FeaturePenaltiesCostFunction<>( featurePenalties, featureModel, vertexClass );
 		return costFunction;
@@ -124,6 +126,7 @@ public class LinkingUtils
 		final Map< String, Object > settings = new HashMap<>();
 		settings.put( KEY_MIN_TIMEPOINT, DEFAULT_MIN_TIMEPOINT );
 		settings.put( KEY_MAX_TIMEPOINT, DEFAULT_MAX_TIMEPOINT );
+		settings.put( KEY_DO_LINK_SELECTION, DEFAULT_DO_LINK_SELECTION );
 		// Linking
 		settings.put( KEY_LINKING_MAX_DISTANCE, DEFAULT_LINKING_MAX_DISTANCE );
 		settings.put( KEY_LINKING_FEATURE_PENALTIES, new HashMap<>( DEFAULT_LINKING_FEATURE_PENALTIES ) );
