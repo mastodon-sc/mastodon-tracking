@@ -190,7 +190,7 @@ public class WizardUtils
 		/*
 		 * Execute preview.
 		 */
-		final TrackMate trackmate = new TrackMate( localSettings, model );
+		final TrackMate trackmate = new TrackMate( localSettings, model, new DefaultSelectionModel<>( model.getGraph(), model.getGraphIdBimap() ) );
 		trackmate.setContext( ops.context() );
 		final boolean ok = trackmate.execDetection();
 

@@ -228,7 +228,7 @@ public class LinkingTargetDescriptor extends WizardPanelDescriptor
 		mw.setVisible( true );
 
 		final Settings settings = new Settings();
-		final TrackMate trackmate = new TrackMate( settings, windowManager.getAppModel().getModel() );
+		final TrackMate trackmate = new TrackMate( settings, windowManager.getAppModel().getModel(), windowManager.getAppModel().getSelectionModel() );
 		final LinkingTargetDescriptor desc = new LinkingTargetDescriptor( trackmate, windowManager );
 
 		final JFrame frame = new JFrame( "Test" );

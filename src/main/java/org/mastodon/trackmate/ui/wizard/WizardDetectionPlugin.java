@@ -35,7 +35,7 @@ public class WizardDetectionPlugin extends WizardPlugin
 		 */
 		final SpimDataMinimal spimData = ( SpimDataMinimal ) appModel.getSharedBdvData().getSpimData();
 		settings.spimData( spimData );
-		final TrackMate trackmate = new TrackMate( settings, appModel.getModel() );
+		final TrackMate trackmate = new TrackMate( settings, appModel.getModel(), appModel.getSelectionModel() );
 		getContext().inject( trackmate );
 		return new DetectionSequence( trackmate, windowManager, wizard.getLogService() );
 	}

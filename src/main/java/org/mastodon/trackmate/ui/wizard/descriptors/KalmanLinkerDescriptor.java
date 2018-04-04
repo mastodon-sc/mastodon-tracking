@@ -29,6 +29,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import org.mastodon.detection.DetectorKeys;
 import org.mastodon.linking.mamut.KalmanLinkerMamut;
 import org.mastodon.linking.mamut.SpotLinkerOp;
+import org.mastodon.model.DefaultSelectionModel;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.trackmate.Settings;
@@ -134,11 +135,11 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 
 		private static final long serialVersionUID = 1L;
 
-		private JFormattedTextField searchRadius;
+		private final JFormattedTextField searchRadius;
 
-		private JFormattedTextField maxFrameGap;
+		private final JFormattedTextField maxFrameGap;
 
-		private JFormattedTextField initialSearchRadius;
+		private final JFormattedTextField initialSearchRadius;
 
 		public KalmanLinkerPanel()
 		{
@@ -248,7 +249,7 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 		final Settings settings = new Settings();
 		settings.linkerSettings( KalmanLinkerMamut.getDefaultSettingsMap() );
 
-		final TrackMate trackmate = new TrackMate( settings, model );
+		final TrackMate trackmate = new TrackMate( settings, model, new DefaultSelectionModel<>( model.getGraph(), model.getGraphIdBimap() ) );
 		context.inject( trackmate );
 
 		final JFrame frame = new JFrame( "Kalman linker config panel test" );

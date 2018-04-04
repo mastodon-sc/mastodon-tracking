@@ -13,6 +13,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.linking.FeatureKey;
 import org.mastodon.linking.ProgressListeners;
+import org.mastodon.model.DefaultSelectionModel;
 import org.mastodon.revised.mamut.feature.DefaultMamutFeatureComputerService;
 import org.mastodon.revised.model.feature.FeatureComputer;
 import org.mastodon.revised.model.mamut.Model;
@@ -41,7 +42,7 @@ public class LAPConfigPanelExample
 		final Map< FeatureKey, Double > linkingPenalties = ( Map< FeatureKey, Double > ) settings.values.getLinkerSettings().get( KEY_LINKING_FEATURE_PENALTIES );
 		linkingPenalties.put( new FeatureKey( "Spot N links" ), 36.9 );
 
-		final TrackMate trackmate = new TrackMate( settings, model );
+		final TrackMate trackmate = new TrackMate( settings, model, new DefaultSelectionModel<>( model.getGraph(), model.getGraphIdBimap() ) );
 		context.inject( trackmate );
 
 		final DefaultMamutFeatureComputerService featureComputerService = new DefaultMamutFeatureComputerService();

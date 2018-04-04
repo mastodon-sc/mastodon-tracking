@@ -58,7 +58,7 @@ public class WizardLinkingPlugin extends WizardPlugin
 		detectorSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( tmax ) );
 
 		settings.spimData( spimData );
-		final TrackMate trackmate = new TrackMate( settings, appModel.getModel() );
+		final TrackMate trackmate = new TrackMate( settings, appModel.getModel(), appModel.getSelectionModel() );
 		getContext().inject( trackmate );
 
 		return new LinkingSequence( trackmate, windowManager, wizard.getLogService() );

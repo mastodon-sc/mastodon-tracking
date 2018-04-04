@@ -1,14 +1,20 @@
 package org.mastodon.trackmate;
 
+import static org.mastodon.linking.LinkerKeys.KEY_DO_LINK_SELECTION;
+
 import java.util.Map;
 
 import org.mastodon.HasErrorMessage;
 import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.graph.algorithm.RootFinder;
 import org.mastodon.linking.mamut.SpotLinkerOp;
+import org.mastodon.model.SelectionModel;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
+import org.mastodon.revised.model.mamut.Spot;
+import org.mastodon.spatial.SpatioTemporalIndex;
+import org.mastodon.spatial.SpatioTemporalIndexSelection;
 import org.scijava.Cancelable;
 import org.scijava.app.StatusService;
 import org.scijava.command.ContextCommand;
@@ -37,27 +43,19 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 
 	private final Model model;
 
+	private final SelectionModel< Spot, Link > selectionModel;
+
 	private Op currentOp;
 
 	private boolean succesful;
 
 	private String errorMessage;
 
-	public TrackMate( final Settings settings )
-	{
-		this.settings = settings;
-		this.model = createModel();
-	}
-
-	public TrackMate( final Settings settings, final Model model )
+	public TrackMate( final Settings settings, final Model model, final SelectionModel< Spot, Link > selectionModel )
 	{
 		this.settings = settings;
 		this.model = model;
-	}
-
-	protected Model createModel()
-	{
-		return new Model();
+		this.selectionModel = selectionModel;
 	}
 
 	public Model getModel()
@@ -68,6 +66,11 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 	public Settings getSettings()
 	{
 		return settings;
+	}
+
+	public SelectionModel< Spot, Link > getSelectionModel()
+	{
+		return selectionModel;
 	}
 
 	public boolean execDetection()
@@ -128,12 +131,34 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		if ( isCanceled() )
 			return true;
 
+		final Map< String, Object > linkerSettings = settings.values.getLinkerSettings();
+
+		/*
+		 * Operate on all spots or just the selection?
+		 */
+
+		final SpatioTemporalIndex< Spot > target;
+		final boolean doLinkSelection = ( boolean ) linkerSettings.get( KEY_DO_LINK_SELECTION );
+		if ( doLinkSelection )
+			target = new SpatioTemporalIndexSelection<>( model.getGraph(), selectionModel, model.getGraph().vertices().getRefPool() );
+		else
+			target = model.getSpatioTemporalIndex();
+
 		/*
 		 * Clear previous content.
 		 */
 
-		for ( final Link link : model.getGraph().edges() )
-			model.getGraph().remove( link );
+		model.getGraph().getLock().writeLock().lock();
+		try
+		{
+			for ( final Spot spot : target )
+				for ( final Link link : spot.edges() )
+					model.getGraph().remove( link );
+		}
+		finally
+		{
+			model.getGraph().getLock().writeLock().unlock();
+		}
 
 		/*
 		 * Exec particle linking.
@@ -141,10 +166,9 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 
 		final long start = System.currentTimeMillis();
 		final Class< ? extends SpotLinkerOp > linkerCl = settings.values.getLinker();
-		final Map< String, Object > linkerSettings = settings.values.getLinkerSettings();
 
 		final SpotLinkerOp linker =
-				( SpotLinkerOp ) Inplaces.binary1( ops, linkerCl, model.getGraph(), model.getSpatioTemporalIndex(),
+				( SpotLinkerOp ) Inplaces.binary1( ops, linkerCl, model.getGraph(), target,
 						linkerSettings, model.getFeatureModel() );
 
 		log.info( "Particle-linking with " + linkerCl.getSimpleName() + '\n' );
