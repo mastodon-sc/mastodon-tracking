@@ -10,49 +10,46 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.io.IOException;
-import java.util.Locale;
 import java.util.Map;
 
 import javax.swing.ButtonGroup;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.model.SelectionListener;
 import org.mastodon.model.SelectionModel;
-import org.mastodon.revised.mamut.MainWindow;
-import org.mastodon.revised.mamut.MamutProject;
-import org.mastodon.revised.mamut.MamutProjectIO;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
+import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
-import org.scijava.Context;
 
 import bdv.tools.brightness.SliderPanel;
 import bdv.util.BoundedValue;
-import mpicbg.spim.data.SpimDataException;
 
 public class LinkingTargetDescriptor extends WizardPanelDescriptor
 {
+
+	private static final String IDENTIFIER = "Linking target";
 
 	private final TrackMate trackmate;
 
 	private final SelectionModel< Spot, Link > selectionModel;
 
-	public LinkingTargetDescriptor( final TrackMate trackmate, final WindowManager windowManager )
+	private final WizardLogService log;
+
+	public LinkingTargetDescriptor( final TrackMate trackmate, final WindowManager windowManager, final WizardLogService logService )
 	{
 		this.trackmate = trackmate;
+		this.log = logService;
 		this.selectionModel = windowManager.getAppModel().getSelectionModel();
 		final int nTimepoints = windowManager.getAppModel().getMaxTimepoint() - windowManager.getAppModel().getMinTimepoint();
 		this.targetPanel = new LinkingTargetPanel( nTimepoints );
+		this.panelIdentifier = IDENTIFIER;
 	}
 
 	@Override
@@ -81,8 +78,21 @@ public class LinkingTargetDescriptor extends WizardPanelDescriptor
 		final Settings settings = trackmate.getSettings();
 		final Map< String, Object > linkerSettings = settings.values.getLinkerSettings();
 		linkerSettings.put( KEY_DO_LINK_SELECTION, !panel.btnAllSpots.isSelected() );
-		linkerSettings.put( KEY_MIN_TIMEPOINT, panel.minT.getCurrentValue() );
-		linkerSettings.put( KEY_MAX_TIMEPOINT, panel.maxT.getCurrentValue() );
+		if ( !panel.btnAllSpots.isSelected() )
+		{
+			final int[] tminmax = getSelectionTMinMax( selectionModel );
+			linkerSettings.put( KEY_MIN_TIMEPOINT, tminmax[ 0 ] );
+			linkerSettings.put( KEY_MAX_TIMEPOINT, tminmax[ 1 ] );
+		}
+		else
+		{
+			linkerSettings.put( KEY_MIN_TIMEPOINT, panel.minT.getCurrentValue() );
+			linkerSettings.put( KEY_MAX_TIMEPOINT, panel.maxT.getCurrentValue() );
+		}
+		log.log( "Configured linking target as follow:\n" );
+		log.log( String.format( "  - target: %s\n", ( boolean ) linkerSettings.get( KEY_DO_LINK_SELECTION ) ? "selection only." : "all detections." ) );
+		log.log( String.format( "  - min time-point: %d\n", ( int ) linkerSettings.get( KEY_MIN_TIMEPOINT ) ) );
+		log.log( String.format( "  - max time-point: %d\n", ( int ) linkerSettings.get( KEY_MAX_TIMEPOINT ) ) );
 	}
 
 	private class LinkingTargetPanel extends JPanel implements SelectionListener
@@ -180,23 +190,27 @@ public class LinkingTargetDescriptor extends WizardPanelDescriptor
 							SwingUtilities.invokeLater( () -> lblInfo.setText( "Selection is empty." ) );
 							return;
 						}
-						int tmin = Integer.MAX_VALUE;
-						int tmax = Integer.MIN_VALUE;
-						for ( final Spot spot : selectionModel.getSelectedVertices() )
-						{
-							if ( spot.getTimepoint() > tmax )
-								tmax = spot.getTimepoint();
-							if ( spot.getTimepoint() < tmin )
-								tmin = spot.getTimepoint();
-						}
-						final int tmin2 = tmin;
-						final int tmax2 = tmax;
+						final int[] tminmax = getSelectionTMinMax( selectionModel );
 						SwingUtilities.invokeLater( () -> lblInfo.setText( "Selection has " + nSpots
-								+ " spots, from t = " + tmin2 + " to t = " + tmax2 + "." ) );
+								+ " spots, from t = " + tminmax[ 0 ] + " to t = " + tminmax[ 1 ] + "." ) );
 					}
 				}.start();
 			}
 		}
+	}
+
+	private static int[] getSelectionTMinMax(final SelectionModel< Spot, Link > selectionModel)
+	{
+		int tmin = Integer.MAX_VALUE;
+		int tmax = Integer.MIN_VALUE;
+		for ( final Spot spot : selectionModel.getSelectedVertices() )
+		{
+			if ( spot.getTimepoint() > tmax )
+				tmax = spot.getTimepoint();
+			if ( spot.getTimepoint() < tmin )
+				tmin = spot.getTimepoint();
+		}
+		return new int[] { tmin, tmax };
 	}
 
 	private static void setEnabled( final Component component, final boolean enabled )
@@ -209,32 +223,5 @@ public class LinkingTargetDescriptor extends WizardPanelDescriptor
 				setEnabled( child, enabled );
 			}
 		}
-	}
-
-	public static void main( final String[] args ) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException, IOException, SpimDataException
-	{
-		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
-		Locale.setDefault( Locale.ROOT );
-		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-		final Context context = new Context();
-		final String projectFile = "../TrackMate3/samples/mamutproject";
-
-		final WindowManager windowManager = new WindowManager( context );
-		final MainWindow mw = new MainWindow( windowManager );
-
-		final MamutProject project = new MamutProjectIO().load( projectFile );
-		windowManager.getProjectManager().open( project );
-
-		mw.setVisible( true );
-
-		final Settings settings = new Settings();
-		final TrackMate trackmate = new TrackMate( settings, windowManager.getAppModel().getModel(), windowManager.getAppModel().getSelectionModel() );
-		final LinkingTargetDescriptor desc = new LinkingTargetDescriptor( trackmate, windowManager );
-
-		final JFrame frame = new JFrame( "Test" );
-		frame.getContentPane().add( desc.targetPanel );
-		frame.setSize( 300, 600 );
-		desc.aboutToDisplayPanel();
-		frame.setVisible( true );
 	}
 }
