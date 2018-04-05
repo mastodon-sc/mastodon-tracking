@@ -150,7 +150,7 @@ public class WizardController implements WindowListener
 		final WizardPanelDescriptor descriptor = sequence.init();
 		wizardPanel.btnPrevious.setEnabled( sequence.hasPrevious() );
 		wizardPanel.btnNext.setEnabled( sequence.hasNext() );
-		descriptor .aboutToDisplayPanel();
+		descriptor.aboutToDisplayPanel();
 		wizardPanel.display( descriptor );
 		descriptor.displayingPanel();
 	}
