@@ -2,6 +2,7 @@ package org.mastodon.trackmate.ui.wizard.descriptors;
 
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
+import static org.mastodon.linking.LinkerKeys.KEY_DO_LINK_SELECTION;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -51,13 +52,7 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 	{
 		// Panel settings.
 		final LAPLinkerPanel panel = ( LAPLinkerPanel ) targetPanel;
-		final Map< String, Object > ls = panel.configPanel.getSettings();
-
-		// Timepoints - copy from detection step.
-		final Map< String, Object > ds = settings.values.getDetectorSettings();
-		ls.put( KEY_MIN_TIMEPOINT, ds.get( KEY_MIN_TIMEPOINT ) );
-		ls.put( KEY_MAX_TIMEPOINT, ds.get( KEY_MAX_TIMEPOINT ) );
-
+		final Map< String, Object > ls = panel.configPanel.getSettings( settings.values.getLinkerSettings() );
 		settings.linkerSettings( ls );
 
 		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
@@ -67,6 +62,7 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 				: "pixels";
 		log.log( "Configured LAP linker with the following parameters:\n" );
 		log.log( LAPLinkerConfigPanel.echoSettingsMap( ls, units ) );
+		log.log( String.format( "  - target: %s\n", ( boolean ) ls.get( KEY_DO_LINK_SELECTION ) ? "selection only." : "all detections." ) );
 		log.log( String.format( "  - min time-point: %d\n", ( int ) ls.get( KEY_MIN_TIMEPOINT ) ) );
 		log.log( String.format( "  - max time-point: %d\n", ( int ) ls.get( KEY_MAX_TIMEPOINT ) ) );
 	}

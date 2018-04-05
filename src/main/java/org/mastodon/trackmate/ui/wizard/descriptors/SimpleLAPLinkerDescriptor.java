@@ -266,11 +266,6 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 			ls.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, DEFAULT_ALTERNATIVE_LINKING_COST_FACTOR );
 			ls.put( KEY_CUTOFF_PERCENTILE, DEFAULT_CUTOFF_PERCENTILE );
 
-			// Timepoints - copy from detection step.
-			final Map< String, Object > ds = settings.values.getDetectorSettings();
-			ls.put( KEY_MIN_TIMEPOINT, ds.get( KEY_MIN_TIMEPOINT ) );
-			ls.put( KEY_MAX_TIMEPOINT, ds.get( KEY_MAX_TIMEPOINT ) );
-
 			return ls;
 		}
 

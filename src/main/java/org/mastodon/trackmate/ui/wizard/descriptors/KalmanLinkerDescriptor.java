@@ -2,6 +2,7 @@ package org.mastodon.trackmate.ui.wizard.descriptors;
 
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
+import static org.mastodon.linking.LinkerKeys.KEY_DO_LINK_SELECTION;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.linking.LinkerKeys.KEY_KALMAN_SEARCH_RADIUS;
 import static org.mastodon.linking.LinkerKeys.KEY_LINKING_MAX_DISTANCE;
@@ -76,17 +77,11 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 	public void aboutToHidePanel()
 	{
 		// Panel settings.
-		final Map< String, Object > ls = new HashMap<>();
+		final Map< String, Object > ls = new HashMap<>( settings.values.getLinkerSettings() );
 		final KalmanLinkerPanel panel = ( KalmanLinkerPanel ) targetPanel;
 		ls.put( KEY_KALMAN_SEARCH_RADIUS, ( ( Number ) panel.searchRadius.getValue() ).doubleValue() );
 		ls.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, ( ( Number ) panel.maxFrameGap.getValue() ).intValue() );
 		ls.put( KEY_LINKING_MAX_DISTANCE, ( ( Number ) panel.initialSearchRadius.getValue() ).doubleValue() );
-
-		// Timepoints - copy from detection step.
-		final Map< String, Object > ds = settings.values.getDetectorSettings();
-		ls.put( KEY_MIN_TIMEPOINT, ds.get( KEY_MIN_TIMEPOINT ) );
-		ls.put( KEY_MAX_TIMEPOINT, ds.get( KEY_MAX_TIMEPOINT ) );
-
 		settings.linkerSettings( ls );
 
 		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
@@ -98,6 +93,7 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 		log.log( String.format( "  - initial search radius: %.1f %s\n", ( double ) ls.get( KEY_LINKING_MAX_DISTANCE ), units ) );
 		log.log( String.format( "  - search radius: %.1f %s\n", ( double ) ls.get( KEY_KALMAN_SEARCH_RADIUS ), units ) );
 		log.log( String.format( "  - max frame gap: %d\n", ( int ) ls.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) ) );
+		log.log( String.format( "  - target: %s\n", ( boolean ) ls.get( KEY_DO_LINK_SELECTION ) ? "selection only." : "all detections." ) );
 		log.log( String.format( "  - min time-point: %d\n", ( int ) ls.get( KEY_MIN_TIMEPOINT ) ) );
 		log.log( String.format( "  - max time-point: %d\n", ( int ) ls.get( KEY_MAX_TIMEPOINT ) ) );
 	}
