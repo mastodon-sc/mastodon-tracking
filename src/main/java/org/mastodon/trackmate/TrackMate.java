@@ -1,5 +1,7 @@
 package org.mastodon.trackmate;
 
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.linking.LinkerKeys.KEY_DO_LINK_SELECTION;
 
 import java.util.Map;
@@ -138,22 +140,56 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		 */
 
 		final SpatioTemporalIndex< Spot > target;
-		final boolean doLinkSelection = ( boolean ) linkerSettings.get( KEY_DO_LINK_SELECTION );
+		final Object dls = linkerSettings.get( KEY_DO_LINK_SELECTION );
+		final boolean doLinkSelection = ( null == dls) ? false : (boolean) dls;
 		if ( doLinkSelection )
 			target = new SpatioTemporalIndexSelection<>( model.getGraph(), selectionModel, model.getGraph().vertices().getRefPool() );
 		else
 			target = model.getSpatioTemporalIndex();
 
 		/*
-		 * Clear previous content.
+		 * Clear previous content. We do not remove links that are incoming in
+		 * the spots belonging to the first time-point, not the links that are
+		 * outgoing of the spots in the last time-point.
 		 */
+		final int minT;
+		final int maxT;
+		if ( doLinkSelection && !selectionModel.isEmpty() )
+		{
+			int t1 = Integer.MAX_VALUE;
+			int t2 = Integer.MIN_VALUE;
+			for ( final Spot spot : selectionModel.getSelectedVertices() )
+			{
+				final int t = spot.getTimepoint();
+				if ( t > t2 )
+					t2 = t;
+				if ( t < t1 )
+					t1 = t;
+			}
+			minT = t1;
+			maxT = t2;
+		}
+		else
+		{
+			minT = ( int ) linkerSettings.get( KEY_MIN_TIMEPOINT );
+			maxT = ( int ) linkerSettings.get( KEY_MAX_TIMEPOINT );
+		}
 
 		model.getGraph().getLock().writeLock().lock();
 		try
 		{
-			for ( final Spot spot : target )
-				for ( final Link link : spot.edges() )
+			for ( final Spot spot : target.getSpatialIndex( minT ) )
+				for ( final Link link : spot.outgoingEdges() )
 					model.getGraph().remove( link );
+
+			for ( final Spot spot : target.getSpatialIndex( maxT ) )
+				for ( final Link link : spot.incomingEdges() )
+					model.getGraph().remove( link );
+
+			for ( int t = minT + 1; t < maxT; t++ )
+				for ( final Spot spot : target.getSpatialIndex( t ) )
+					for ( final Link link : spot.edges() )
+						model.getGraph().remove( link );
 		}
 		finally
 		{
