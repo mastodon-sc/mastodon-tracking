@@ -261,7 +261,6 @@ public class SparseLAPFrameToFrameLinker< V extends HasTimepoint & RealLocalizab
 		boolean ok = true;
 		ok = ok & checkParameter( settings, KEY_MIN_TIMEPOINT, Integer.class, str );
 		ok = ok & checkParameter( settings, KEY_MAX_TIMEPOINT, Integer.class, str );
-		ok = ok & checkParameter( settings, KEY_DO_LINK_SELECTION, Boolean.class, str );
 
 		// Linking
 		ok = ok & checkParameter( settings, KEY_LINKING_MAX_DISTANCE, Double.class, str );
@@ -277,6 +276,7 @@ public class SparseLAPFrameToFrameLinker< V extends HasTimepoint & RealLocalizab
 		mandatoryKeys.add( KEY_ALTERNATIVE_LINKING_COST_FACTOR );
 		final List< String > optionalKeys = new ArrayList< >();
 		optionalKeys.add( KEY_LINKING_FEATURE_PENALTIES );
+		optionalKeys.add( KEY_DO_LINK_SELECTION );
 		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, str );
 
 		return ok;

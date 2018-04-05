@@ -8,6 +8,7 @@ import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_SPLITTING;
 import static org.mastodon.linking.LinkerKeys.KEY_ALTERNATIVE_LINKING_COST_FACTOR;
 import static org.mastodon.linking.LinkerKeys.KEY_BLOCKING_VALUE;
 import static org.mastodon.linking.LinkerKeys.KEY_CUTOFF_PERCENTILE;
+import static org.mastodon.linking.LinkerKeys.KEY_DO_LINK_SELECTION;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_FEATURE_PENALTIES;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
@@ -48,7 +49,7 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 		extends AbstractGraphParticleLinkerOp< V, E >
 		implements Benchmark
 {
-	private final static String BASE_ERROR_MESSAGE = "[SparseLAPTracker] ";
+	private final static String BASE_ERROR_MESSAGE = "[SparseLAPLinker] ";
 
 	@Parameter( type = ItemIO.OUTPUT )
 	private long processingTime;
@@ -237,6 +238,7 @@ public class SparseLAPLinker< V extends Vertex< E > & HasTimepoint & RealLocaliz
 		optionalKeys.add( KEY_SPLITTING_FEATURE_PENALTIES );
 		optionalKeys.add( KEY_MERGING_FEATURE_PENALTIES );
 		optionalKeys.add( KEY_BLOCKING_VALUE );
+		optionalKeys.add( KEY_DO_LINK_SELECTION );
 		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, str );
 
 		// Check min & max time-point
