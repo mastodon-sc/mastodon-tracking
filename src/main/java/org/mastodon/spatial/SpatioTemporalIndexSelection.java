@@ -1,6 +1,8 @@
 package org.mastodon.spatial;
 
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -11,6 +13,7 @@ import org.mastodon.graph.Edge;
 import org.mastodon.graph.GraphListener;
 import org.mastodon.graph.ListenableReadOnlyGraph;
 import org.mastodon.graph.Vertex;
+import org.mastodon.graph.algorithm.Assigner;
 import org.mastodon.model.SelectionModel;
 
 import gnu.trove.iterator.TIntObjectIterator;
@@ -99,8 +102,7 @@ public class SpatioTemporalIndexSelection< V extends Vertex< E > & RealLocalizab
 	@Override
 	public Iterator< V > iterator()
 	{
-		// TODO Auto-generated method stub
-		return null;
+		return new SpatioTemporalIndexIterator();
 	}
 
 	@Override
@@ -188,5 +190,67 @@ public class SpatioTemporalIndexSelection< V extends Vertex< E > & RealLocalizab
 			timepointToSpatialIndex.put( timepoint, index );
 		}
 		return index;
+	}
+
+	private class SpatioTemporalIndexIterator implements Iterator< V >
+	{
+
+		private final OfInt timeIterator;
+
+		private Iterator< V > valueIterator;
+
+		private boolean hasNext;
+
+		private final Assigner< V > assigner;
+
+		private V next;
+
+		private V current;
+
+		public SpatioTemporalIndexIterator()
+		{
+			final int[] keys = timepointToSpatialIndex.keys();
+			Arrays.sort( keys );
+			this.timeIterator = Arrays.stream( keys ).iterator();
+			this.current = vertexPool.createRef();
+			this.assigner = Assigner.getFor( current );
+			hasNext = timeIterator.hasNext();
+			if ( hasNext )
+			{
+				valueIterator = timepointToSpatialIndex.get( timeIterator.nextInt() ).iterator();
+				prefetch();
+			}
+		}
+
+		private void prefetch()
+		{
+			if ( valueIterator.hasNext() )
+			{
+				next = valueIterator.next();
+				return;
+			}
+			if ( timeIterator.hasNext() )
+			{
+				valueIterator = timepointToSpatialIndex.get( timeIterator.nextInt() ).iterator();
+				prefetch();
+				return;
+			}
+			hasNext = false;
+			next = null;
+		}
+
+		@Override
+		public boolean hasNext()
+		{
+			return hasNext;
+		}
+
+		@Override
+		public V next()
+		{
+			current = assigner.assign( next, current );
+			prefetch();
+			return current;
+		}
 	}
 }
