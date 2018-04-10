@@ -11,35 +11,24 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import javax.swing.ComboBoxModel;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
+import org.mastodon.trackmate.ui.wizard.util.SetupIDComboBox;
 import org.scijava.Context;
 import org.scijava.Contextual;
 import org.scijava.NullContextException;
 import org.scijava.plugin.Parameter;
 
 import bdv.spimdata.SpimDataMinimal;
-import bdv.util.Affine3DHelpers;
-import mpicbg.spim.data.generic.base.Entity;
-import mpicbg.spim.data.generic.base.NamedEntity;
-import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
-import mpicbg.spim.data.generic.sequence.BasicMultiResolutionSetupImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
-import mpicbg.spim.data.sequence.VoxelDimensions;
-import net.imglib2.Dimensions;
-import net.imglib2.realtransform.AffineTransform3D;
 
 public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionListener, Contextual
 {
@@ -48,8 +37,6 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 
 	private final WizardLogService log;
 
-	private final Map< String, Integer > idMap;
-
 	private final Settings settings;
 
 	public SetupIdDecriptor( final Settings settings, final WizardLogService logService )
@@ -57,8 +44,8 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 		this.settings = settings;
 		this.log = logService;
 		this.panelIdentifier = IDENTIFIER;
-		this.targetPanel = new SetupIdConfigPanel();
-		this.idMap = new HashMap<>();
+		final SpimDataMinimal spimData = settings.values.getSpimData();
+		this.targetPanel = new SetupIdConfigPanel( spimData );
 	}
 
 	@Override
@@ -68,8 +55,7 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 		final SetupIdConfigPanel panel = ( SetupIdConfigPanel ) targetPanel;
 
 		final String dataName = spimData.getBasePath().getAbsolutePath();
-		panel.lblDataName.setText(
-				"<html>"
+		panel.lblDataName.setText( "<html>"
 						+ dataName.replaceAll( Pattern.quote( File.separator ), " / " )
 						+ "</html>" );
 
@@ -77,116 +63,32 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 		final int nSetups = setups.size();
 		panel.lblNSetups.setText( nSetups == 1 ? "1 setup" : "" + nSetups + " setups" );
 
-		final Map< Integer, String > strMap = new HashMap<>( nSetups );
-		final String[] items = new String[ nSetups ];
-		int i = 0;
-		for ( final BasicViewSetup setup : setups )
-		{
-			final int setupID = setup.getId();
-			final String name = setup.getName();
-			final Dimensions size = setup.getSize();
-
-			final String str = ( null == name )
-					? setupID + "  -  " + size.dimension( 0 ) + " x " + size.dimension( 1 ) + " x " + size.dimension( 2 )
-					: setupID + "  -  " + name;
-			items[ i++ ] = str;
-			idMap.put( str, setupID );
-			strMap.put( setupID, str );
-		}
-
-		final ComboBoxModel< String > aModel = new DefaultComboBoxModel<>( items );
-		panel.comboBox.setModel( aModel );
-
 		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
 		if ( null != setupID )
-			panel.comboBox.setSelectedItem( strMap.get( setupID ) );
+			panel.comboBox.setSelectedSetupID( setupID );
 	}
 
 	@Override
 	public void aboutToHidePanel()
 	{
 		final SetupIdConfigPanel panel = ( SetupIdConfigPanel ) targetPanel;
-		final Object obj = panel.comboBox.getSelectedItem();
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
-		final Integer setupID = idMap.get( obj );
-		detectorSettings.put( KEY_SETUP_ID, setupID );
+		final int setupID = panel.comboBox.getSelectedSetupID();
+		detectorSettings.put( KEY_SETUP_ID, Integer.valueOf( setupID ) );
 		final SpimDataMinimal spimData = settings.values.getSpimData();
 		final int nTimePoints = spimData.getSequenceDescription().getTimePoints().getTimePoints().size();
 		detectorSettings.put( KEY_MIN_TIMEPOINT, Integer.valueOf( 0 ) );
 		detectorSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( nTimePoints - 1 ) );
 
-		log.log( String.format( "Selected setup ID %d for detection:\n", ( int ) setupID ) );
-		log.log( echoSetupIDInfo( setupID ) );
-	}
-
-	private String echoSetupIDInfo( final int setupID )
-	{
-		final BasicViewSetup setup = settings.values.getSpimData().getSequenceDescription().getViewSetups().get( setupID );
-		if ( null == setup )
-			return "";
-
-		final StringBuilder str = new StringBuilder();
-
-		final Dimensions size = setup.getSize();
-		str.append( "  - size: " + size.dimension( 0 ) + " x " + size.dimension( 1 ) + " x " + size.dimension( 2 ) + "\n" );
-
-		final VoxelDimensions voxelSize = setup.getVoxelSize();
-		str.append( "  - voxel size: " + voxelSize.dimension( 0 ) + " x " + voxelSize.dimension( 1 ) + " x "
-				+ voxelSize.dimension( 2 ) + " " + voxelSize.unit() + "\n" );
-
-		final Map< String, Entity > attributes = setup.getAttributes();
-		for ( final String key : attributes.keySet() )
-		{
-			final Entity entity = attributes.get( key );
-			if ( entity instanceof NamedEntity )
-			{
-				final NamedEntity ne = ( NamedEntity ) entity;
-				str.append( "  - " + key + ": " + ne.getName() + "\n" );
-			}
-		}
-
-		final SpimDataMinimal spimData = settings.values.getSpimData();
-		if ( spimData.getSequenceDescription().getImgLoader() instanceof BasicMultiResolutionImgLoader )
-		{
-			final BasicMultiResolutionSetupImgLoader< ? > loader =
-					( ( BasicMultiResolutionImgLoader ) spimData.getSequenceDescription().getImgLoader() )
-							.getSetupImgLoader( setupID );
-
-			final int numMipmapLevels = loader.numMipmapLevels();
-
-			if ( numMipmapLevels > 1 )
-			{
-				final AffineTransform3D[] mipmapTransforms = loader.getMipmapTransforms();
-				str.append( String.format( "  - multi-resolution image with %d levels:\n", numMipmapLevels ) );
-				for ( int level = 0; level < mipmapTransforms.length; level++ )
-				{
-					final double sx = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 0 );
-					final double sy = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 1 );
-					final double sz = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 2 );
-					str.append( String.format( "     - level %d: %.0f x %.0f x %.0f\n", level, sx, sy, sz ) );
-				}
-			}
-			else
-			{
-				str.append( " - single-resolution image.\n" );
-			}
-		}
-		else
-		{
-			str.append( " - single-resolution image.\n" );
-		}
-
-		return str.toString();
+		log.log( String.format( "Selected setup ID %d for detection:\n", setupID ) );
+		log.log( panel.comboBox.echoSetupIDInfo() );
 	}
 
 	@Override
 	public void actionPerformed( final ActionEvent e )
 	{
 		final SetupIdConfigPanel panel = ( SetupIdConfigPanel ) targetPanel;
-		final Object obj = panel.comboBox.getSelectedItem();
-		final Integer setupID = idMap.get( obj );
-
-		String info = echoSetupIDInfo( setupID );
+		String info = panel.comboBox.echoSetupIDInfo();
 		// HTMLize the info
 		info = "<html>" + info + "</html>";
 		info = info.replace( "\n", "<br>" );
@@ -198,15 +100,15 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 	{
 		private static final long serialVersionUID = 1L;
 
-		private JComboBox< String > comboBox;
+		private final SetupIDComboBox comboBox;
 
-		private JLabel lblDataName;
+		private final JLabel lblDataName;
 
-		private JLabel lblNSetups;
+		private final JLabel lblNSetups;
 
-		private JLabel lblFill;
+		private final JLabel lblFill;
 
-		public SetupIdConfigPanel()
+		public SetupIdConfigPanel( final SpimDataMinimal spimData )
 		{
 
 			final GridBagLayout layout = new GridBagLayout();
@@ -267,7 +169,7 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 			gbc_lblSetup.gridy = 4;
 			add( lblSetup, gbc_lblSetup );
 
-			this.comboBox = new JComboBox<>();
+			this.comboBox = new SetupIDComboBox( spimData );
 			comboBox.addActionListener( SetupIdDecriptor.this );
 			final GridBagConstraints gbc_comboBox = new GridBagConstraints();
 			gbc_comboBox.gridwidth = 2;
