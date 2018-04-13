@@ -14,11 +14,14 @@ import javax.swing.UIManager;
 import org.mastodon.app.ui.ViewMenuBuilder;
 import org.mastodon.plugin.MastodonPlugin;
 import org.mastodon.plugin.MastodonPluginAppModel;
+import org.mastodon.revised.mamut.KeyConfigContexts;
 import org.mastodon.revised.mamut.MamutAppModel;
 import org.mastodon.revised.mamut.MamutProject;
 import org.mastodon.revised.mamut.MamutProjectIO;
 import org.mastodon.revised.mamut.Mastodon;
 import org.mastodon.revised.mamut.WindowManager;
+import org.mastodon.revised.ui.keymap.CommandDescriptionProvider;
+import org.mastodon.revised.ui.keymap.CommandDescriptions;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.scijava.AbstractContextual;
@@ -36,6 +39,24 @@ public class WizardPlugin extends AbstractContextual implements MastodonPlugin
 	private static final String RUN_WIZARD = "[trackmate] run wizard";
 
 	private static final String[] RUN_WIZARD_KEYS = new String[] { "not mapped" };
+
+	/*
+	 * Command descriptions for all provided commands
+	 */
+	@Plugin( type = Descriptions.class )
+	public static class Descriptions extends CommandDescriptionProvider
+	{
+		public Descriptions()
+		{
+			super( KeyConfigContexts.MASTODON );
+		}
+
+		@Override
+		public void getCommandDescriptions( final CommandDescriptions descriptions )
+		{
+			descriptions.add( RUN_WIZARD, RUN_WIZARD_KEYS, "Run TrackMate wizard." );
+		}
+	}
 
 	private static Map< String, String > menuTexts = new HashMap<>();
 
