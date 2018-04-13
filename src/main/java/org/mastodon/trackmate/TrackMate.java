@@ -135,6 +135,8 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		log.info( "Found " + graph.vertices().size() + " spots.\n" );
 
 		graph.notifyGraphChanged();
+		model.setUndoPoint();
+
 		return true;
 	}
 
