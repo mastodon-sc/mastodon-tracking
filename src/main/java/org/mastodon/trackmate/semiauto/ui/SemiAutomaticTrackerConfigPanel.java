@@ -1,13 +1,18 @@
 package org.mastodon.trackmate.semiauto.ui;
 
+import static org.mastodon.app.ui.settings.StyleElements.doubleElement;
+import static org.mastodon.app.ui.settings.StyleElements.intElement;
+
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ItemListener;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -15,6 +20,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.SwingConstants;
 
+import org.mastodon.trackmate.semiauto.ui.SemiAutomaticTrackerSettings.UpdateListener;
 import org.mastodon.trackmate.ui.wizard.util.SetupIDComboBox;
 
 import bdv.spimdata.SpimDataMinimal;
@@ -74,7 +80,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 			+ "target spots. "
 			+ "</p></html>";
 
-	public SemiAutomaticTrackerConfigPanel( final SpimDataMinimal spimData )
+	public SemiAutomaticTrackerConfigPanel( final SpimDataMinimal spimData, final SemiAutomaticTrackerSettings editedSettings )
 	{
 		final int nTimePoints = ( null == spimData )
 				? 100
@@ -82,19 +88,10 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 
 		final GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] { 0, 0, 0 };
-		gridBagLayout.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		gridBagLayout.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		gridBagLayout.columnWeights = new double[] { 0.0, 1.0, Double.MIN_VALUE };
-		gridBagLayout.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, Double.MIN_VALUE };
+		gridBagLayout.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, Double.MIN_VALUE };
 		setLayout( gridBagLayout );
-
-		final JLabel lblTitle = new JLabel( "Configure semi-automatic tracker." );
-		lblTitle.setFont( lblTitle.getFont().deriveFont( lblTitle.getFont().getSize() + 5f ) );
-		final GridBagConstraints gbc_lblTitle = new GridBagConstraints();
-		gbc_lblTitle.gridwidth = 2;
-		gbc_lblTitle.insets = new Insets( 5, 5, 5, 0 );
-		gbc_lblTitle.gridx = 0;
-		gbc_lblTitle.gridy = 0;
-		add( lblTitle, gbc_lblTitle );
 
 		final JLabel lblDetection = new JLabel( "Detection." );
 		lblDetection.setFont( lblDetection.getFont().deriveFont( lblDetection.getFont().getStyle() | Font.BOLD ) );
@@ -102,7 +99,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_lblDetection.gridwidth = 2;
 		gbc_lblDetection.insets = new Insets( 5, 5, 5, 0 );
 		gbc_lblDetection.gridx = 0;
-		gbc_lblDetection.gridy = 1;
+		gbc_lblDetection.gridy = 0;
 		add( lblDetection, gbc_lblDetection );
 
 		final JLabel lblSetupId = new JLabel( "Setup ID:" );
@@ -110,15 +107,16 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_lblSetupId.anchor = GridBagConstraints.EAST;
 		gbc_lblSetupId.insets = new Insets( 0, 5, 5, 5 );
 		gbc_lblSetupId.gridx = 0;
-		gbc_lblSetupId.gridy = 2;
+		gbc_lblSetupId.gridy = 1;
 		add( lblSetupId, gbc_lblSetupId );
 
 		final SetupIDComboBox comboBox = new SetupIDComboBox( spimData );
+		comboBox.addItemListener( ( e ) -> editedSettings.setSetupID( comboBox.getSelectedSetupID() ) );
 		final GridBagConstraints gbc_comboBox = new GridBagConstraints();
-		gbc_comboBox.insets = new Insets( 5, 5, 5, 5 );
+		gbc_comboBox.insets = new Insets( 5, 5, 5, 0 );
 		gbc_comboBox.fill = GridBagConstraints.HORIZONTAL;
 		gbc_comboBox.gridx = 1;
-		gbc_comboBox.gridy = 2;
+		gbc_comboBox.gridy = 1;
 		add( comboBox, gbc_comboBox );
 
 		final JLabel lblQualityFactor = new JLabel( "Quality factor:" );
@@ -127,18 +125,19 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_lblQualityFactor.anchor = GridBagConstraints.EAST;
 		gbc_lblQualityFactor.insets = new Insets( 0, 0, 5, 5 );
 		gbc_lblQualityFactor.gridx = 0;
-		gbc_lblQualityFactor.gridy = 3;
+		gbc_lblQualityFactor.gridy = 2;
 		add( lblQualityFactor, gbc_lblQualityFactor );
 
-		final BoundedValueDouble qualityFactor = new BoundedValueDouble( 0., 5., 1.2 );
+		final BoundedValueDouble qualityFactor = doubleElement( "Quality factor", 0., 5., editedSettings::getQualityFactor, editedSettings::setQualityFactor )
+				.getValue();
 		final SliderPanelDouble qualityFactorSlider = new SliderPanelDouble( "", qualityFactor, 0.2 );
 		qualityFactorSlider.setToolTipText( QUALITY_FACTOR_TOOLTIP );
 		qualityFactorSlider.setNumColummns( 3 );
 		final GridBagConstraints gbc_lblQualityFactorSlider = new GridBagConstraints();
 		gbc_lblQualityFactorSlider.fill = GridBagConstraints.HORIZONTAL;
-		gbc_lblQualityFactorSlider.insets = new Insets( 0, 0, 5, 5 );
+		gbc_lblQualityFactorSlider.insets = new Insets( 0, 0, 5, 0 );
 		gbc_lblQualityFactorSlider.gridx = 1;
-		gbc_lblQualityFactorSlider.gridy = 3;
+		gbc_lblQualityFactorSlider.gridy = 2;
 		add( qualityFactorSlider, gbc_lblQualityFactorSlider );
 
 		final JLabel lblDistanceFactor = new JLabel( "Distance factor:" );
@@ -147,18 +146,19 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_lblDistanceFactor.anchor = GridBagConstraints.EAST;
 		gbc_lblDistanceFactor.insets = new Insets( 0, 5, 5, 5 );
 		gbc_lblDistanceFactor.gridx = 0;
-		gbc_lblDistanceFactor.gridy = 4;
+		gbc_lblDistanceFactor.gridy = 3;
 		add( lblDistanceFactor, gbc_lblDistanceFactor );
 
-		final BoundedValueDouble distanceFactor = new BoundedValueDouble( 0., 5., 1.2 );
+		final BoundedValueDouble distanceFactor = doubleElement( "Distance factor", 0., 5., editedSettings::getDistanceFactor, editedSettings::setDistanceFactor )
+				.getValue();
 		final SliderPanelDouble distanceFactorSlider = new SliderPanelDouble( "", distanceFactor, 0.2 );
 		distanceFactorSlider.setNumColummns( 3 );
 		distanceFactorSlider.setToolTipText( DISTANCE_FACTOR_TOOLTIP );
 		final GridBagConstraints gbc_lblDistanceFactorSlider = new GridBagConstraints();
 		gbc_lblDistanceFactorSlider.fill = GridBagConstraints.HORIZONTAL;
-		gbc_lblDistanceFactorSlider.insets = new Insets( 0, 0, 5, 5 );
+		gbc_lblDistanceFactorSlider.insets = new Insets( 0, 0, 5, 0 );
 		gbc_lblDistanceFactorSlider.gridx = 1;
-		gbc_lblDistanceFactorSlider.gridy = 4;
+		gbc_lblDistanceFactorSlider.gridy = 3;
 		add( distanceFactorSlider, gbc_lblDistanceFactorSlider );
 
 		final JLabel lblNTimepoints = new JLabel( "N time-points:" );
@@ -167,18 +167,19 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_lblNTimepoints.anchor = GridBagConstraints.EAST;
 		gbc_lblNTimepoints.insets = new Insets( 0, 0, 5, 5 );
 		gbc_lblNTimepoints.gridx = 0;
-		gbc_lblNTimepoints.gridy = 5;
+		gbc_lblNTimepoints.gridy = 4;
 		add( lblNTimepoints, gbc_lblNTimepoints );
 
-		final BoundedValue nTimepoints = new BoundedValue( 1, nTimePoints, 20 );
+		final BoundedValue nTimepoints = intElement( "N time-points", 1, nTimePoints, editedSettings::getnTimepoints, editedSettings::setNTimepoints )
+				.getValue();
 		final SliderPanel nTimepointsSlider = new SliderPanel( "", nTimepoints, 1 );
 		nTimepointsSlider.setNumColummns( 3 );
 		nTimepointsSlider.setToolTipText( N_TIMEPOINTS_TOOLTIP );
 		final GridBagConstraints gbc_lblNTimepointsSlider = new GridBagConstraints();
 		gbc_lblNTimepointsSlider.fill = GridBagConstraints.HORIZONTAL;
-		gbc_lblNTimepointsSlider.insets = new Insets( 0, 0, 5, 5 );
+		gbc_lblNTimepointsSlider.insets = new Insets( 0, 0, 5, 0 );
 		gbc_lblNTimepointsSlider.gridx = 1;
-		gbc_lblNTimepointsSlider.gridy = 5;
+		gbc_lblNTimepointsSlider.gridy = 4;
 		add( nTimepointsSlider, gbc_lblNTimepointsSlider );
 
 		final JLabel lblTrackingDirection = new JLabel( "Tracking direction." );
@@ -187,7 +188,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_lblTrackingDirection.gridwidth = 2;
 		gbc_lblTrackingDirection.insets = new Insets( 5, 5, 5, 0 );
 		gbc_lblTrackingDirection.gridx = 0;
-		gbc_lblTrackingDirection.gridy = 6;
+		gbc_lblTrackingDirection.gridy = 5;
 		add( lblTrackingDirection, gbc_lblTrackingDirection );
 
 		final JPanel panelTrackingDirection = new JPanel();
@@ -196,14 +197,20 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_panelTrackingDirection.gridwidth = 2;
 		gbc_panelTrackingDirection.fill = GridBagConstraints.VERTICAL;
 		gbc_panelTrackingDirection.gridx = 0;
-		gbc_panelTrackingDirection.gridy = 7;
+		gbc_panelTrackingDirection.gridy = 6;
 		add( panelTrackingDirection, gbc_panelTrackingDirection );
 
 		final JRadioButton rdbtnForward = new JRadioButton( "Forward in time." );
+		rdbtnForward.addItemListener( ( e ) -> editedSettings.setForwardInTime( rdbtnForward.isSelected() ) );
 		panelTrackingDirection.add( rdbtnForward );
 
 		final JRadioButton rdbtnBackward = new JRadioButton( "Backward in time." );
+		rdbtnBackward.addItemListener( ( e ) -> editedSettings.setForwardInTime( rdbtnForward.isSelected() ) );
 		panelTrackingDirection.add( rdbtnBackward );
+
+		final ButtonGroup buttonGroup = new ButtonGroup();
+		buttonGroup.add( rdbtnForward );
+		buttonGroup.add( rdbtnBackward );
 
 		final JLabel lblDealWithExisting = new JLabel( "Existing spots." );
 		lblDealWithExisting.setFont( lblDealWithExisting.getFont().deriveFont( lblDealWithExisting.getFont().getStyle() | Font.BOLD ) );
@@ -211,36 +218,39 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_lblDealWithExisting.gridwidth = 2;
 		gbc_lblDealWithExisting.insets = new Insets( 5, 5, 5, 0 );
 		gbc_lblDealWithExisting.gridx = 0;
-		gbc_lblDealWithExisting.gridy = 8;
+		gbc_lblDealWithExisting.gridy = 7;
 		add( lblDealWithExisting, gbc_lblDealWithExisting );
 
 		final JCheckBox chckbxAllowLinkingIf = new JCheckBox( "Allow linking to an existing spot?" );
 		chckbxAllowLinkingIf.setToolTipText( ALLOW_LINKING_TO_EXISTING_TOOLTIP );
+		chckbxAllowLinkingIf.addItemListener( ( e ) -> editedSettings.setAllowLinkingToExisting( chckbxAllowLinkingIf.isSelected() ) );
 		final GridBagConstraints gbc_lblAllowLinkingIf = new GridBagConstraints();
 		gbc_lblAllowLinkingIf.gridwidth = 2;
 		gbc_lblAllowLinkingIf.anchor = GridBagConstraints.WEST;
 		gbc_lblAllowLinkingIf.fill = GridBagConstraints.VERTICAL;
 		gbc_lblAllowLinkingIf.insets = new Insets( 5, 5, 5, 0 );
 		gbc_lblAllowLinkingIf.gridx = 0;
-		gbc_lblAllowLinkingIf.gridy = 9;
+		gbc_lblAllowLinkingIf.gridy = 8;
 		add( chckbxAllowLinkingIf, gbc_lblAllowLinkingIf );
 
 		final JCheckBox chckbxLinkIncoming = new JCheckBox( "Link even if target has incoming links." );
 		chckbxLinkIncoming.setToolTipText( ALLOW_LINKING_IF_INCOMING_TOOLTIP );
+		chckbxLinkIncoming.addItemListener( ( e ) -> editedSettings.setAllowIfIncomingLinks( chckbxLinkIncoming.isSelected() ) );
 		final GridBagConstraints gbc_chckbxLinkIncoming = new GridBagConstraints();
 		gbc_chckbxLinkIncoming.insets = new Insets( 5, 5, 5, 0 );
 		gbc_chckbxLinkIncoming.anchor = GridBagConstraints.WEST;
 		gbc_chckbxLinkIncoming.gridx = 1;
-		gbc_chckbxLinkIncoming.gridy = 10;
+		gbc_chckbxLinkIncoming.gridy = 9;
 		add( chckbxLinkIncoming, gbc_chckbxLinkIncoming );
 
 		final JCheckBox chckbxLinkOutgoing = new JCheckBox( "Link even if target has outgoing links." );
 		chckbxLinkOutgoing.setToolTipText( ALLOW_LINKING_IF_OUTGOING_TOOLTIP );
+		chckbxLinkOutgoing.addItemListener( ( e ) -> editedSettings.setAllowIfOutgoingLinks( chckbxLinkOutgoing.isSelected() ) );
 		final GridBagConstraints gbc_chckbxLinkOutgoing = new GridBagConstraints();
 		gbc_chckbxLinkOutgoing.insets = new Insets( 5, 5, 5, 0 );
 		gbc_chckbxLinkOutgoing.anchor = GridBagConstraints.WEST;
 		gbc_chckbxLinkOutgoing.gridx = 1;
-		gbc_chckbxLinkOutgoing.gridy = 11;
+		gbc_chckbxLinkOutgoing.gridy = 10;
 		add( chckbxLinkOutgoing, gbc_chckbxLinkOutgoing );
 
 		final JCheckBox chckbxContinueTracking = new JCheckBox( "<html>"
@@ -248,19 +258,14 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		chckbxContinueTracking.setVerticalTextPosition( SwingConstants.TOP );
 		chckbxContinueTracking.setVerticalAlignment( SwingConstants.TOP );
 		chckbxContinueTracking.setToolTipText( CONTINUE_LINKING_TOOLTIP );
+		chckbxContinueTracking.addItemListener( ( e ) -> editedSettings.setContinueIfLinked( chckbxContinueTracking.isSelected() ) );
 		final GridBagConstraints gbc_chckbxContinueTracking = new GridBagConstraints();
 		gbc_chckbxContinueTracking.anchor = GridBagConstraints.NORTHWEST;
 		gbc_chckbxContinueTracking.fill = GridBagConstraints.BOTH;
 		gbc_chckbxContinueTracking.insets = new Insets( 5, 5, 5, 0 );
 		gbc_chckbxContinueTracking.gridx = 1;
-		gbc_chckbxContinueTracking.gridy = 12;
+		gbc_chckbxContinueTracking.gridy = 11;
 		add( chckbxContinueTracking, gbc_chckbxContinueTracking );
-
-		chckbxAllowLinkingIf.addItemListener( ( e ) -> {
-			chckbxLinkIncoming.setEnabled( chckbxAllowLinkingIf.isSelected() );
-			chckbxLinkOutgoing.setEnabled( chckbxAllowLinkingIf.isSelected() );
-			chckbxContinueTracking.setEnabled( chckbxAllowLinkingIf.isSelected() );
-		} );
 
 		final JPanel panelButtons = new JPanel();
 		final GridBagConstraints gbc_panelButtons = new GridBagConstraints();
@@ -269,18 +274,39 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_panelButtons.insets = new Insets( 5, 5, 0, 0 );
 		gbc_panelButtons.fill = GridBagConstraints.HORIZONTAL;
 		gbc_panelButtons.gridx = 0;
-		gbc_panelButtons.gridy = 13;
+		gbc_panelButtons.gridy = 12;
 		add( panelButtons, gbc_panelButtons );
 		panelButtons.setLayout( new BoxLayout( panelButtons, BoxLayout.X_AXIS ) );
-
-		final JButton btnDefaults = new JButton( "Defaults" );
-		panelButtons.add( btnDefaults );
 
 		final Component horizontalGlue = Box.createHorizontalGlue();
 		panelButtons.add( horizontalGlue );
 
 		final JButton btnTrack = new JButton( "Track" );
 		panelButtons.add( btnTrack );
+
+		final UpdateListener refresher = () -> {
+			comboBox.setSelectedSetupID( editedSettings.getSetupID() );
+			qualityFactor.setCurrentValue( editedSettings.getQualityFactor() );
+			distanceFactor.setCurrentValue( editedSettings.getDistanceFactor() );
+			nTimepoints.setCurrentValue( editedSettings.getnTimepoints() );
+			rdbtnForward.setSelected( editedSettings.isForwardInTime() );
+			rdbtnBackward.setSelected( !editedSettings.isForwardInTime() );
+			chckbxAllowLinkingIf.setSelected( editedSettings.allowLinkingToExisting() );
+			chckbxLinkIncoming.setSelected( editedSettings.allowIfIncomingLinks() );
+			chckbxLinkOutgoing.setSelected( editedSettings.allowIfOutgoingLinks() );
+			chckbxContinueTracking.setSelected( editedSettings.continueIfLinked() );
+			repaint();
+		};
+		final ItemListener disabler = ( e ) -> {
+			chckbxLinkIncoming.setEnabled( chckbxAllowLinkingIf.isSelected() );
+			chckbxLinkOutgoing.setEnabled( chckbxAllowLinkingIf.isSelected() );
+			chckbxContinueTracking.setEnabled( chckbxAllowLinkingIf.isSelected() );
+		};
+
+		refresher.settingsChanged();
+		disabler.itemStateChanged( null );
+		editedSettings.updateListeners().add( refresher );
+		chckbxAllowLinkingIf.addItemListener( disabler );
 	}
 
 	private static final long serialVersionUID = 1L;
