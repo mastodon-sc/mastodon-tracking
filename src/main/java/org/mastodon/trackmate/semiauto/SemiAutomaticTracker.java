@@ -23,6 +23,7 @@ import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.linking.LinkingUtils;
 import org.mastodon.properties.DoublePropertyMap;
+import org.mastodon.revised.bdv.overlay.util.JamaEigenvalueDecomposition;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
@@ -55,6 +56,7 @@ import net.imglib2.position.transform.Round;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
+import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 
 @Plugin( type = SemiAutomaticTracker.class )
@@ -63,7 +65,7 @@ public class SemiAutomaticTracker
 		implements HasErrorMessage, Cancelable
 {
 
-	private LogService log = new StderrLogService();
+	private final LogService log = new StderrLogService();
 
 	@Parameter
 	private ThreadService threadService;
@@ -81,6 +83,8 @@ public class SemiAutomaticTracker
 	protected boolean ok;
 
 	private final Comparator< RefinedPeak< ? > > refinedPeakComparator = new RefinedPeakComparator();
+
+	private final JamaEigenvalueDecomposition eig = new JamaEigenvalueDecomposition( 3 );
 
 	@Override
 	public void compute( final Collection< Spot > input, final Map< String, Object > settings, final Model model )
@@ -147,6 +151,7 @@ public class SemiAutomaticTracker
 		 * Loop over each spot input.
 		 */
 
+		final double[][] cov = new double[3][3];
 INPUT: 	for ( final Spot first : input )
 		{
 			final int firstTimepoint = first.getTimepoint();
@@ -171,7 +176,15 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				 * Determine optimal level for detection.
 				 */
 
-				final double radius = Math.sqrt( source.getBoundingSphereRadiusSquared() );
+				// Best radius is smallest radius of ellipse.
+				source.getCovariance( cov );
+				eig.decomposeSymmetric( cov );
+				final double[] eigVals = eig.getRealEigenvalues();
+				double minEig = Double.POSITIVE_INFINITY;
+				for ( int k = 0; k < eigVals.length; k++ )
+					minEig = Math.min( minEig, eigVals[ k ] );
+				final double radius = Math.sqrt( minEig );
+
 				final int nResolutionLevels = DetectionUtil.getNResolutionLevels( spimData, setup );
 				final int level;
 				if ( resolutionLevel < 0 )
@@ -295,7 +308,8 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				if ( !found )
 				{
 					log.info( "Suitable spot found, but outside the tolerance radius. "
-							+ "Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
+							+ "Stopping semi-automatic tracking for spot " + first.getLabel() + ". "
+									+ "Refused to link from " + Util.printCoordinates( source ) + " to " + Util.printCoordinates( p3d ) );
 					continue INPUT;
 				}
 
@@ -326,7 +340,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 					 * We have an existing spot close to our candidate.
 					 */
 
-					log.info( "Found an exising spot close to candidate: " + target.getLabel() + "." );
+					log.info( "Found an exising spot close to candidate: " + target.getLabel() + " @" + Util.printCoordinates( target ) + "." );
 					if ( !allowLinkingToExisting )
 					{
 						log.info( "Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
@@ -361,7 +375,8 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 							edge = graph.addEdge( target, source, eref ).init();
 
 						final double cost = distance * distance;
-						log.info( "Linking spot " + source.getLabel() + " to spot " + target.getLabel() + " with linking cost " + cost );
+						log.info( "Linking spot " + source.getLabel() + " to spot " + target.getLabel() + " with linking cost " + cost + ". "
+								 + Util.printCoordinates( source ) + " -> " + Util.printCoordinates( target ) );
 						linkCostFeature.getPropertyMap().set( edge, cost );
 					}
 					else
@@ -401,7 +416,8 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 						cost += dx * dx;
 					}
 					final double quality = -candidate.getValue() * normalization;
-					log.info( "Linking spot " + source.getLabel() + " to new spot " + target.getLabel() + " with linking cost " + cost );
+					log.info( "Linking spot " + source.getLabel() + " to new spot " + target.getLabel() + " with linking cost " + cost + "."
+							+ " " + Util.printCoordinates( source ) + " -> " + Util.printCoordinates( target ) );
 					linkCostFeature.getPropertyMap().set( edge, cost );
 					qualityFeature.getPropertyMap().set( target, quality );
 
