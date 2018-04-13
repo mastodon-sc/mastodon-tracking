@@ -1,4 +1,4 @@
-package org.mastodon.trackmate.semiauto;
+package org.mastodon.trackmate.semiauto.ui;
 
 import java.awt.Component;
 import java.awt.Font;
