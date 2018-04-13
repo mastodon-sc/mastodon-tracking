@@ -31,6 +31,7 @@ import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.spatial.SpatioTemporalIndex;
+import org.mastodon.util.EllipsoidInsideTest;
 import org.scijava.Cancelable;
 import org.scijava.ItemIO;
 import org.scijava.log.LogService;
@@ -152,6 +153,8 @@ public class SemiAutomaticTracker
 		 */
 
 		final double[][] cov = new double[3][3];
+		final EllipsoidInsideTest test = new EllipsoidInsideTest();
+
 INPUT: 	for ( final Spot first : input )
 		{
 			final int firstTimepoint = first.getTimepoint();
@@ -333,7 +336,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 					spatioTemporalIndex.readLock().unlock();
 				}
 
-				if ( target != null && distance < radius )
+				if ( target != null && ( test.isPointInside( pos, target ) || test.isCenterWithin( target, pos, radius ) ) )
 				{
 
 					/*
