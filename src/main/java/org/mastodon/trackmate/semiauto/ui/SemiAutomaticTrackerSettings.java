@@ -256,7 +256,7 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 	}
 
 	@Override
-	public SemiAutomaticTrackerSettings copy( final String newName )
+	public SemiAutomaticTrackerSettings copy( final String name )
 	{
 		final SemiAutomaticTrackerSettings sats = new SemiAutomaticTrackerSettings();
 		sats.set( this );
