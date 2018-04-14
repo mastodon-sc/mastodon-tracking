@@ -19,7 +19,10 @@ import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_FORWA
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_N_TIMEPOINTS;
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_QUALITY_FACTOR;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -69,12 +72,37 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 		defSats.allowIfIncomingLinks = DEFAULT_ALLOW_LINKING_IF_HAS_INCOMING;
 		defSats.allowIfOutgoingLinks = DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING;
 		defSats.continueIfLinked = DEFAULT_CONTINUE_IF_LINK_EXISTS;
-		defSats.name = "Default";
+		defSats.name = "Forward";
+	}
+
+	private static final SemiAutomaticTrackerSettings backSats;
+	static
+	{
+		backSats = new SemiAutomaticTrackerSettings();
+		backSats.setupID = DEFAULT_SETUP_ID;
+		backSats.qualityFactor = DEFAULT_QUALITY_FACTOR;
+		backSats.distanceFactor = DEFAULT_DISTANCE_FACTOR;
+		backSats.nTimepoints = 100 * DEFAULT_N_TIMEPOINTS;
+		backSats.forwardInTime = Boolean.valueOf( false );
+		backSats.allowLinkingToExisting = Boolean.valueOf( true );
+		backSats.allowIfIncomingLinks = Boolean.valueOf( true );
+		backSats.allowIfOutgoingLinks = Boolean.valueOf( true );
+		backSats.continueIfLinked = Boolean.valueOf( false );
+		backSats.name = "Backtracking";
 	}
 
 	public static SemiAutomaticTrackerSettings defaultSettings()
 	{
 		return defSats;
+	}
+
+
+	public static List< SemiAutomaticTrackerSettings > defaults()
+	{
+		final List< SemiAutomaticTrackerSettings > df = new ArrayList<>( 2 );
+		df.add( defSats );
+		df.add( backSats );
+		return Collections.unmodifiableList( df );
 	}
 
 	private SemiAutomaticTrackerSettings()
@@ -280,5 +308,4 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 			notifyListeners();
 		}
 	}
-
 }

@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -38,8 +37,10 @@ public class SemiAutomaticTrackerSettingsManager extends AbstractStyleManager< S
 	}
 
 	/**
-	 * Returns a final {@link SemiAutomaticTrackerSettings} instance that always has the same
-	 * properties as the default style.
+	 * Returns a final {@link SemiAutomaticTrackerSettings} instance that always has
+	 * the same properties as the default style.
+	 * 
+	 * @return the forward settings.
 	 */
 	public SemiAutomaticTrackerSettings getForwardDefaultStyle()
 	{
@@ -125,6 +126,6 @@ public class SemiAutomaticTrackerSettingsManager extends AbstractStyleManager< S
 	@Override
 	protected List< SemiAutomaticTrackerSettings > loadBuiltinStyles()
 	{
-		return Arrays.asList( new SemiAutomaticTrackerSettings[] { SemiAutomaticTrackerSettings.defaultSettings() } );
+		return SemiAutomaticTrackerSettings.defaults();
 	}
 }
