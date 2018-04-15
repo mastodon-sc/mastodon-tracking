@@ -22,10 +22,13 @@ import org.mastodon.model.NavigationHandler;
 import org.mastodon.model.SelectionModel;
 import org.mastodon.plugin.MastodonPlugin;
 import org.mastodon.plugin.MastodonPluginAppModel;
+import org.mastodon.revised.mamut.KeyConfigContexts;
 import org.mastodon.revised.mamut.MamutMenuBuilder;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.Spot;
+import org.mastodon.revised.ui.keymap.CommandDescriptionProvider;
+import org.mastodon.revised.ui.keymap.CommandDescriptions;
 import org.mastodon.trackmate.semiauto.ui.SemiAutomaticTrackerConfigPage;
 import org.mastodon.trackmate.semiauto.ui.SemiAutomaticTrackerSettings;
 import org.mastodon.trackmate.semiauto.ui.SemiAutomaticTrackerSettingsManager;
@@ -42,8 +45,8 @@ import net.imagej.ops.special.computer.Computers;
 public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 {
 
-	private static final String ACTION_1 = "[semiautotrack] track";
-	private static final String ACTION_2 = "[semiautotrack] show config";
+	private static final String ACTION_1 = "semi-automatic tracking";
+	private static final String ACTION_2 = "config semi-automatic tracking";
 
 	private static final String[] ACTION_1_KEYS = new String[] { "ctrl T" };
 	private static final String[] ACTION_2_KEYS = new String[] { "not mapped" };
@@ -57,6 +60,10 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 
 	private final Map< String, Object > currentSettings;
 
+	private JDialog dialog;
+
+	private NavigationHandler< Spot, Link > navigationHandler;
+
 	public SemiAutomaticTrackerPlugin()
 	{
 		this.currentSettings = new HashMap<>();
@@ -69,54 +76,24 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 		menuTexts.put( ACTION_2, "Configure semi-automatic tracker" );
 	}
 
-	private final AbstractNamedAction performSemiAutoTrackAction = new AbstractNamedAction( ACTION_1 )
+	/*
+	 * Command descriptions for all provided commands
+	 */
+	@Plugin( type = Descriptions.class )
+	public static class Descriptions extends CommandDescriptionProvider
 	{
-		private static final long serialVersionUID = 1L;
+		public Descriptions()
+		{
+			super( KeyConfigContexts.MASTODON );
+		}
 
 		@Override
-		public void actionPerformed( final ActionEvent e )
+		public void getCommandDescriptions( final CommandDescriptions descriptions )
 		{
-			if ( null == appModel )
-				return;
-
-			final SelectionModel< Spot, Link > selectionModel = appModel.getAppModel().getSelectionModel();
-			final Collection< Spot > selectedSpots = selectionModel.getSelectedVertices();
-			final Collection< Spot > spots = RefCollections.createRefList(
-					appModel.getAppModel().getModel().getGraph().vertices(), selectedSpots.size() );
-			spots.addAll( selectedSpots );
-
-			final Map< String, Object > settings = ( currentSettings == null )
-					? SemiAutomaticTrackerKeys.getDefaultDetectorSettingsMap()
-							: currentSettings;
-			final Model model = appModel.getAppModel().getModel();
-
-			final SpimDataMinimal spimData = ( SpimDataMinimal ) appModel.getAppModel().getSharedBdvData().getSpimData();
-			final SemiAutomaticTracker tracker = ( SemiAutomaticTracker ) Computers.binary(
-					ops, SemiAutomaticTracker.class, model, spots, settings,
-					spimData,
-					navigationHandler,
-					selectionModel );
-			tracker.compute( spots, settings, model );
+			descriptions.add( ACTION_1, ACTION_1_KEYS, "Execute semi-automatic tracking, using the spots currently in the selection." );
+			descriptions.add( ACTION_2, ACTION_2_KEYS, "Toggle the smi-automatic tracking configuration panel." );
 		}
-	};
-
-	private final AbstractNamedAction toggleConfigDialogVisibility = new AbstractNamedAction( ACTION_2)
-	{
-
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			if (null == dialog)
-				return;
-			dialog.setVisible( !dialog.isVisible() );
-		}
-	};
-
-	private JDialog dialog;
-
-	private NavigationHandler< Spot, Link > navigationHandler;
+	}
 
 	@Override
 	public Map< String, String > getMenuTexts()
@@ -183,4 +160,49 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 		} );
 		dialog.pack();
 	}
+
+	private final AbstractNamedAction performSemiAutoTrackAction = new AbstractNamedAction( ACTION_1 )
+	{
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			if ( null == appModel )
+				return;
+
+			final SelectionModel< Spot, Link > selectionModel = appModel.getAppModel().getSelectionModel();
+			final Collection< Spot > selectedSpots = selectionModel.getSelectedVertices();
+			final Collection< Spot > spots = RefCollections.createRefList(
+					appModel.getAppModel().getModel().getGraph().vertices(), selectedSpots.size() );
+			spots.addAll( selectedSpots );
+
+			final Map< String, Object > settings = ( currentSettings == null )
+					? SemiAutomaticTrackerKeys.getDefaultDetectorSettingsMap()
+					: currentSettings;
+			final Model model = appModel.getAppModel().getModel();
+
+			final SpimDataMinimal spimData = ( SpimDataMinimal ) appModel.getAppModel().getSharedBdvData().getSpimData();
+			final SemiAutomaticTracker tracker = ( SemiAutomaticTracker ) Computers.binary(
+					ops, SemiAutomaticTracker.class, model, spots, settings,
+					spimData,
+					navigationHandler,
+					selectionModel );
+			tracker.compute( spots, settings, model );
+		}
+	};
+
+	private final AbstractNamedAction toggleConfigDialogVisibility = new AbstractNamedAction( ACTION_2 )
+	{
+
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			if ( null == dialog )
+				return;
+			dialog.setVisible( !dialog.isVisible() );
+		}
+	};
 }
