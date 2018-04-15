@@ -22,6 +22,7 @@ import org.mastodon.HasErrorMessage;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.linking.LinkingUtils;
+import org.mastodon.model.NavigationHandler;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.bdv.overlay.util.JamaEigenvalueDecomposition;
 import org.mastodon.revised.model.feature.Feature;
@@ -76,6 +77,9 @@ public class SemiAutomaticTracker
 
 	@Parameter( type = ItemIO.INPUT )
 	private SpimDataMinimal spimData;
+
+	@Parameter
+	private NavigationHandler< Spot, Link > navigationHandler;
 
 	@Parameter( type = ItemIO.OUTPUT )
 	protected String errorMessage;
@@ -387,6 +391,9 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 						log.info( "Linking spot " + source.getLabel() + " to spot " + target.getLabel() + " with linking cost " + cost + ". "
 								 + Util.printCoordinates( source ) + " -> " + Util.printCoordinates( target ) );
 						linkCostFeature.getPropertyMap().set( edge, cost );
+
+						if ( null != navigationHandler )
+							navigationHandler.notifyNavigateToVertex( target );
 					}
 					else
 					{
@@ -429,6 +436,9 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 							+ " " + Util.printCoordinates( source ) + " -> " + Util.printCoordinates( target ) );
 					linkCostFeature.getPropertyMap().set( edge, cost );
 					qualityFeature.getPropertyMap().set( target, quality );
+
+					if ( null != navigationHandler )
+						navigationHandler.notifyNavigateToVertex( target );
 
 					source.refTo( target );
 					graph.releaseRef( eref );

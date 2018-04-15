@@ -16,6 +16,8 @@ import javax.swing.WindowConstants;
 
 import org.mastodon.app.ui.ViewMenuBuilder.MenuItem;
 import org.mastodon.app.ui.settings.SettingsPanel;
+import org.mastodon.grouping.GroupHandle;
+import org.mastodon.model.NavigationHandler;
 import org.mastodon.model.SelectionModel;
 import org.mastodon.plugin.MastodonPlugin;
 import org.mastodon.plugin.MastodonPluginAppModel;
@@ -86,7 +88,8 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 			final SpimDataMinimal spimData = ( SpimDataMinimal ) appModel.getAppModel().getSharedBdvData().getSpimData();
 			final SemiAutomaticTracker tracker = ( SemiAutomaticTracker ) Computers.binary(
 					ops, SemiAutomaticTracker.class, model, spots, settings,
-					spimData );
+					spimData,
+					navigationHandler );
 			tracker.compute( spots, settings, model );
 		}
 	};
@@ -106,6 +109,8 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 	};
 
 	private JDialog dialog;
+
+	private NavigationHandler< Spot, Link > navigationHandler;
 
 	@Override
 	public Map< String, String > getMenuTexts()
@@ -137,9 +142,12 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 	{
 		this.appModel = appModel;
 
+		final GroupHandle groupHandle = appModel.getAppModel().getGroupManager().createGroupHandle();
+		this.navigationHandler = groupHandle.getModel( appModel.getAppModel().NAVIGATION );
+
 		final SpimDataMinimal spimData = ( SpimDataMinimal ) appModel.getAppModel().getSharedBdvData().getSpimData();
 		final SemiAutomaticTrackerSettingsManager styleManager = new SemiAutomaticTrackerSettingsManager();
-		final SemiAutomaticTrackerConfigPage page = new SemiAutomaticTrackerConfigPage( "Settings", styleManager, spimData )
+		final SemiAutomaticTrackerConfigPage page = new SemiAutomaticTrackerConfigPage( "Settings", styleManager, spimData, groupHandle )
 		{
 			@Override
 			public void apply()

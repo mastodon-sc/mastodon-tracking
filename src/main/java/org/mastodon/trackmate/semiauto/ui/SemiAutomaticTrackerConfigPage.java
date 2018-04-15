@@ -19,6 +19,7 @@ import org.mastodon.app.ui.settings.SelectAndEditProfileSettingsPage;
 import org.mastodon.app.ui.settings.SettingsPanel;
 import org.mastodon.app.ui.settings.style.StyleProfile;
 import org.mastodon.app.ui.settings.style.StyleProfileManager;
+import org.mastodon.grouping.GroupHandle;
 import org.mastodon.revised.mamut.MamutProject;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.util.Listeners;
@@ -31,11 +32,11 @@ import mpicbg.spim.data.SpimDataException;
 public class SemiAutomaticTrackerConfigPage extends SelectAndEditProfileSettingsPage< StyleProfile< SemiAutomaticTrackerSettings > >
 {
 
-	public SemiAutomaticTrackerConfigPage( final String treePath, final SemiAutomaticTrackerSettingsManager settingsManager, final SpimDataMinimal spimData )
+	public SemiAutomaticTrackerConfigPage( final String treePath, final SemiAutomaticTrackerSettingsManager settingsManager, final SpimDataMinimal spimData, final GroupHandle groupHandle )
 	{
 		super( treePath,
 				new StyleProfileManager<>( settingsManager, new SemiAutomaticTrackerSettingsManager( false ) ),
-				new SemiAutomaticTrackerSettingsEditPanel( settingsManager.getDefaultStyle(), spimData ) );
+				new SemiAutomaticTrackerSettingsEditPanel( settingsManager.getDefaultStyle(), spimData, groupHandle ) );
 	}
 
 	static class SemiAutomaticTrackerSettingsEditPanel implements SemiAutomaticTrackerSettings.UpdateListener, SelectAndEditProfileSettingsPage.ProfileEditPanel< StyleProfile< SemiAutomaticTrackerSettings > >
@@ -49,10 +50,10 @@ public class SemiAutomaticTrackerConfigPage extends SelectAndEditProfileSettings
 
 		private final SynchronizedList< ModificationListener > modificationListeners;
 
-		public SemiAutomaticTrackerSettingsEditPanel( final SemiAutomaticTrackerSettings initialSettings, final SpimDataMinimal spimData )
+		public SemiAutomaticTrackerSettingsEditPanel( final SemiAutomaticTrackerSettings initialSettings, final SpimDataMinimal spimData, final GroupHandle groupHandle )
 		{
 			editedSettings = initialSettings.copy( "Edited" );
-			settingsPanel = new SemiAutomaticTrackerConfigPanel( spimData, editedSettings );
+			settingsPanel = new SemiAutomaticTrackerConfigPanel( spimData, editedSettings, groupHandle );
 			modificationListeners = new Listeners.SynchronizedList<>();
 			editedSettings.updateListeners().add( this );
 		}
@@ -109,10 +110,12 @@ public class SemiAutomaticTrackerConfigPage extends SelectAndEditProfileSettings
 		windowManager.getProjectManager().open( project );
 		final SpimDataMinimal spimData = ( SpimDataMinimal ) windowManager.getAppModel().getSharedBdvData().getSpimData();
 
+		final GroupHandle groupHandle = windowManager.getAppModel().getGroupManager().createGroupHandle();
+
 		final SemiAutomaticTrackerSettingsManager styleManager = new SemiAutomaticTrackerSettingsManager();
 
 		final SettingsPanel settings = new SettingsPanel();
-		settings.addPage( new SemiAutomaticTrackerConfigPage( "Semi-automatic tracker settings", styleManager, spimData ) );
+		settings.addPage( new SemiAutomaticTrackerConfigPage( "Semi-automatic tracker settings", styleManager, spimData, groupHandle ) );
 
 		final JDialog dialog = new JDialog( ( Frame ) null, "Settings" );
 		dialog.getContentPane().add( settings, BorderLayout.CENTER );

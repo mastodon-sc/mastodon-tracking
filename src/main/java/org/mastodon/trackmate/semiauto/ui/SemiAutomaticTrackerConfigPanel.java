@@ -20,6 +20,8 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.SwingConstants;
 
+import org.mastodon.app.ui.GroupLocksPanel;
+import org.mastodon.grouping.GroupHandle;
 import org.mastodon.trackmate.semiauto.ui.SemiAutomaticTrackerSettings.UpdateListener;
 import org.mastodon.trackmate.ui.wizard.util.SetupIDComboBox;
 
@@ -80,7 +82,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 			+ "target spots. "
 			+ "</p></html>";
 
-	public SemiAutomaticTrackerConfigPanel( final SpimDataMinimal spimData, final SemiAutomaticTrackerSettings editedSettings )
+	public SemiAutomaticTrackerConfigPanel( final SpimDataMinimal spimData, final SemiAutomaticTrackerSettings editedSettings, final GroupHandle groupHandle )
 	{
 		final int nTimePoints = ( null == spimData )
 				? 100
@@ -88,9 +90,9 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 
 		final GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] { 0, 0, 0 };
-		gridBagLayout.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		gridBagLayout.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		gridBagLayout.columnWeights = new double[] { 0.0, 1.0, Double.MIN_VALUE };
-		gridBagLayout.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, Double.MIN_VALUE };
+		gridBagLayout.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, Double.MIN_VALUE };
 		setLayout( gridBagLayout );
 
 		final JLabel lblDetection = new JLabel( "Detection." );
@@ -267,6 +269,27 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_chckbxContinueTracking.gridy = 11;
 		add( chckbxContinueTracking, gbc_chckbxContinueTracking );
 
+		final JLabel lblNavigation = new JLabel( "Navigation." );
+		lblNavigation.setFont( lblNavigation.getFont().deriveFont( lblNavigation.getFont().getStyle() | Font.BOLD ) );
+		final GridBagConstraints gbc_lblNavigation = new GridBagConstraints();
+		gbc_lblNavigation.gridwidth = 2;
+		gbc_lblNavigation.insets = new Insets( 0, 0, 5, 0 );
+		gbc_lblNavigation.gridx = 0;
+		gbc_lblNavigation.gridy = 12;
+		add( lblNavigation, gbc_lblNavigation );
+
+		if ( null != groupHandle )
+		{
+			final GroupLocksPanel groupLocksPanel = new GroupLocksPanel( groupHandle );
+			final GridBagConstraints gbc_groupLocksPanel = new GridBagConstraints();
+			gbc_groupLocksPanel.gridwidth = 2;
+			gbc_groupLocksPanel.insets = new Insets( 0, 0, 5, 0 );
+			gbc_groupLocksPanel.fill = GridBagConstraints.BOTH;
+			gbc_groupLocksPanel.gridx = 0;
+			gbc_groupLocksPanel.gridy = 13;
+			add( groupLocksPanel, gbc_groupLocksPanel );
+		}
+
 		final JPanel panelButtons = new JPanel();
 		final GridBagConstraints gbc_panelButtons = new GridBagConstraints();
 		gbc_panelButtons.anchor = GridBagConstraints.SOUTH;
@@ -274,7 +297,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_panelButtons.insets = new Insets( 5, 5, 0, 0 );
 		gbc_panelButtons.fill = GridBagConstraints.HORIZONTAL;
 		gbc_panelButtons.gridx = 0;
-		gbc_panelButtons.gridy = 12;
+		gbc_panelButtons.gridy = 14;
 		add( panelButtons, gbc_panelButtons );
 		panelButtons.setLayout( new BoxLayout( panelButtons, BoxLayout.X_AXIS ) );
 
