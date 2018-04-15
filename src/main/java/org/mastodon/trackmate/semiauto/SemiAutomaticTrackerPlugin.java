@@ -78,9 +78,6 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 
 			final SelectionModel< Spot, Link > selectionModel = appModel.getAppModel().getSelectionModel();
 			final Collection< Spot > spots = selectionModel.getSelectedVertices();
-			if ( spots == null || spots.isEmpty() )
-				return;
-
 			final Map< String, Object > settings = ( currentSettings == null )
 					? SemiAutomaticTrackerKeys.getDefaultDetectorSettingsMap()
 							: currentSettings;

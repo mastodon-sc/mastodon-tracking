@@ -90,6 +90,11 @@ public class SemiAutomaticTracker
 	@Override
 	public void compute( final Collection< Spot > input, final Map< String, Object > settings, final Model model )
 	{
+		if ( null == input || input.isEmpty() )
+		{
+			log.info( "Spot collection to track is empty. Stopping." );
+			return;
+		}
 
 		final ModelGraph graph = model.getGraph();
 		final SpatioTemporalIndex< Spot > spatioTemporalIndex = model.getSpatioTemporalIndex();
@@ -312,7 +317,8 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				{
 					log.info( "Suitable spot found, but outside the tolerance radius. "
 							+ "Stopping semi-automatic tracking for spot " + first.getLabel() + ". "
-									+ "Refused to link from " + Util.printCoordinates( source ) + " to " + Util.printCoordinates( p3d ) );
+							+ "Refused to link from spot " + source.getLabel() + " @"
+							+ Util.printCoordinates( source ) + " to " + Util.printCoordinates( p3d ) );
 					continue INPUT;
 				}
 
