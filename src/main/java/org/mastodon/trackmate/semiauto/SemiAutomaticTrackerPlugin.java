@@ -16,6 +16,7 @@ import javax.swing.WindowConstants;
 
 import org.mastodon.app.ui.ViewMenuBuilder.MenuItem;
 import org.mastodon.app.ui.settings.SettingsPanel;
+import org.mastodon.collection.RefCollections;
 import org.mastodon.grouping.GroupHandle;
 import org.mastodon.model.NavigationHandler;
 import org.mastodon.model.SelectionModel;
@@ -79,7 +80,11 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 				return;
 
 			final SelectionModel< Spot, Link > selectionModel = appModel.getAppModel().getSelectionModel();
-			final Collection< Spot > spots = selectionModel.getSelectedVertices();
+			final Collection< Spot > selectedSpots = selectionModel.getSelectedVertices();
+			final Collection< Spot > spots = RefCollections.createRefList(
+					appModel.getAppModel().getModel().getGraph().vertices(), selectedSpots.size() );
+			spots.addAll( selectedSpots );
+
 			final Map< String, Object > settings = ( currentSettings == null )
 					? SemiAutomaticTrackerKeys.getDefaultDetectorSettingsMap()
 							: currentSettings;
@@ -89,7 +94,8 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 			final SemiAutomaticTracker tracker = ( SemiAutomaticTracker ) Computers.binary(
 					ops, SemiAutomaticTracker.class, model, spots, settings,
 					spimData,
-					navigationHandler );
+					navigationHandler,
+					selectionModel );
 			tracker.compute( spots, settings, model );
 		}
 	};

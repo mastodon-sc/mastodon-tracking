@@ -23,6 +23,7 @@ import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.linking.LinkingUtils;
 import org.mastodon.model.NavigationHandler;
+import org.mastodon.model.SelectionModel;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.bdv.overlay.util.JamaEigenvalueDecomposition;
 import org.mastodon.revised.model.feature.Feature;
@@ -81,6 +82,9 @@ public class SemiAutomaticTracker
 	@Parameter
 	private NavigationHandler< Spot, Link > navigationHandler;
 
+	@Parameter
+	private SelectionModel< Spot, Link > selectionModel;
+
 	@Parameter( type = ItemIO.OUTPUT )
 	protected String errorMessage;
 
@@ -102,6 +106,13 @@ public class SemiAutomaticTracker
 
 		final ModelGraph graph = model.getGraph();
 		final SpatioTemporalIndex< Spot > spatioTemporalIndex = model.getSpatioTemporalIndex();
+
+		/*
+		 * Clean selection if we have one.
+		 */
+
+		if ( null != selectionModel )
+			selectionModel.clearSelection();
 
 		/*
 		 * Quality and link-cost features. If they do not exist, create them and register them.
@@ -326,6 +337,10 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 					continue INPUT;
 				}
 
+				// Deselect source spot.
+				if ( null != selectionModel )
+					selectionModel.setSelected( source, false );
+
 				/*
 				 * Check whether candidate is close to an existing spot.
 				 */
@@ -352,6 +367,10 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 					/*
 					 * We have an existing spot close to our candidate.
 					 */
+
+					// Select it.
+					if ( null != selectionModel )
+						selectionModel.setSelected( target, true );
 
 					log.info( "Found an exising spot close to candidate: " + target.getLabel() + " @" + Util.printCoordinates( target ) + "." );
 					if ( !allowLinkingToExisting )
@@ -394,6 +413,8 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 
 						if ( null != navigationHandler )
 							navigationHandler.notifyNavigateToVertex( target );
+
+
 					}
 					else
 					{
@@ -439,6 +460,10 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 
 					if ( null != navigationHandler )
 						navigationHandler.notifyNavigateToVertex( target );
+
+					// Select new spot.
+					if ( null != selectionModel )
+						selectionModel.setSelected( target, true );
 
 					source.refTo( target );
 					graph.releaseRef( eref );
