@@ -130,7 +130,7 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 
 		final SpimDataMinimal spimData = ( SpimDataMinimal ) appModel.getAppModel().getSharedBdvData().getSpimData();
 		final SemiAutomaticTrackerSettingsManager styleManager = new SemiAutomaticTrackerSettingsManager();
-		final SemiAutomaticTrackerConfigPage page = new SemiAutomaticTrackerConfigPage( "Settings", styleManager, spimData, groupHandle )
+		final SemiAutomaticTrackerConfigPage page = new SemiAutomaticTrackerConfigPage( "Settings", styleManager, spimData, groupHandle, performSemiAutoTrackAction )
 		{
 			@Override
 			public void apply()

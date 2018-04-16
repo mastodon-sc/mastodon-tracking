@@ -10,6 +10,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ItemListener;
 
+import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -82,7 +83,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 			+ "target spots. "
 			+ "</p></html>";
 
-	public SemiAutomaticTrackerConfigPanel( final SpimDataMinimal spimData, final SemiAutomaticTrackerSettings editedSettings, final GroupHandle groupHandle )
+	public SemiAutomaticTrackerConfigPanel( final SpimDataMinimal spimData, final SemiAutomaticTrackerSettings editedSettings, final GroupHandle groupHandle, final Action trackAction )
 	{
 		final int nTimePoints = ( null == spimData )
 				? 100
@@ -304,8 +305,11 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		final Component horizontalGlue = Box.createHorizontalGlue();
 		panelButtons.add( horizontalGlue );
 
-		final JButton btnTrack = new JButton( "Track" );
-		panelButtons.add( btnTrack );
+		if (null != trackAction)
+		{
+			final JButton btnTrack = new JButton( trackAction );
+			panelButtons.add( btnTrack );
+		}
 
 		final UpdateListener refresher = () -> {
 			comboBox.setSelectedSetupID( editedSettings.getSetupID() );
