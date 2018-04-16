@@ -16,13 +16,17 @@ import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.checkSett
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 
 import org.mastodon.HasErrorMessage;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.linking.LinkingUtils;
+import org.mastodon.model.NavigationHandler;
+import org.mastodon.model.SelectionModel;
 import org.mastodon.properties.DoublePropertyMap;
+import org.mastodon.revised.bdv.overlay.util.JamaEigenvalueDecomposition;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
@@ -30,16 +34,18 @@ import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.spatial.SpatioTemporalIndex;
+import org.mastodon.util.EllipsoidInsideTest;
 import org.scijava.Cancelable;
 import org.scijava.ItemIO;
 import org.scijava.log.LogService;
-import org.scijava.log.StderrLogService;
+import org.scijava.log.Logger;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.thread.ThreadService;
 
 import bdv.spimdata.SpimDataMinimal;
 import bdv.util.Affine3DHelpers;
+import mpicbg.spim.data.sequence.TimePoint;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.computer.AbstractBinaryComputerOp;
 import net.imglib2.FinalInterval;
@@ -63,8 +69,6 @@ public class SemiAutomaticTracker
 		implements HasErrorMessage, Cancelable
 {
 
-	private LogService log = new StderrLogService();
-
 	@Parameter
 	private ThreadService threadService;
 
@@ -74,6 +78,18 @@ public class SemiAutomaticTracker
 	@Parameter( type = ItemIO.INPUT )
 	private SpimDataMinimal spimData;
 
+	@Parameter
+	private NavigationHandler< Spot, Link > navigationHandler;
+
+	@Parameter
+	private SelectionModel< Spot, Link > selectionModel;
+
+	@Parameter( required = false )
+	private Logger log;
+
+	@Parameter
+	private LogService logService;
+
 	@Parameter( type = ItemIO.OUTPUT )
 	protected String errorMessage;
 
@@ -82,15 +98,33 @@ public class SemiAutomaticTracker
 
 	private final Comparator< RefinedPeak< ? > > refinedPeakComparator = new RefinedPeakComparator();
 
+	private final JamaEigenvalueDecomposition eig = new JamaEigenvalueDecomposition( 3 );
+
 	@Override
 	public void compute( final Collection< Spot > input, final Map< String, Object > settings, final Model model )
 	{
+		if ( null == log )
+			log = logService;
+
+		if ( null == input || input.isEmpty() )
+		{
+			log.info( "Spot collection to track is empty. Stopping." );
+			return;
+		}
 
 		final ModelGraph graph = model.getGraph();
 		final SpatioTemporalIndex< Spot > spatioTemporalIndex = model.getSpatioTemporalIndex();
 
 		/*
-		 * Quality and link-cost features. If they do not exist, create them and register them.
+		 * Clean selection if we have one.
+		 */
+
+		if ( null != selectionModel )
+			selectionModel.clearSelection();
+
+		/*
+		 * Quality and link-cost features. If they do not exist, create them and
+		 * register them.
 		 */
 
 		@SuppressWarnings( "unchecked" )
@@ -140,14 +174,31 @@ public class SemiAutomaticTracker
 		final boolean continueIfLinkExists = ( boolean ) settings.get( KEY_CONTINUE_IF_LINK_EXISTS );
 		final double neighborhoodFactor = Math.max( NEIGHBORHOOD_FACTOR, distanceFactor + 1. );
 		int resolutionLevel = -1;
-		if (settings.containsKey( KEY_RESOLUTION_LEVEL ))
-			resolutionLevel = (int) settings.get( KEY_RESOLUTION_LEVEL );
+		if ( settings.containsKey( KEY_RESOLUTION_LEVEL ) )
+			resolutionLevel = ( int ) settings.get( KEY_RESOLUTION_LEVEL );
+
+		/*
+		 * Units.
+		 */
+
+		final String units = spimData.getSequenceDescription().getViewSetups().get( Integer.valueOf( setup ) ).getVoxelSize().unit();
+
+		/*
+		 * First and last time-points.
+		 */
+
+		final List< TimePoint > tps = spimData.getSequenceDescription().getTimePoints().getTimePointsOrdered();
+		final int minTimepoint = tps.get( 0 ).getId();
+		final int maxTimepoint = tps.get( tps.size() - 1 ).getId();
 
 		/*
 		 * Loop over each spot input.
 		 */
 
-INPUT: 	for ( final Spot first : input )
+		final double[][] cov = new double[ 3 ][ 3 ];
+		final EllipsoidInsideTest test = new EllipsoidInsideTest();
+
+		INPUT: for ( final Spot first : input )
 		{
 			final int firstTimepoint = first.getTimepoint();
 			int tp = firstTimepoint;
@@ -155,7 +206,8 @@ INPUT: 	for ( final Spot first : input )
 			source.refTo( first );
 
 			log.info( "Semi-automatic tracking from spot " + first.getLabel() + ", going " + ( forward ? "forward" : "backward" ) + " in time." );
-TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
+			TIME: while ( Math.abs( tp - firstTimepoint ) < nTimepoints
+					&& ( forward ? tp < maxTimepoint : tp > minTimepoint ) )
 			{
 				// Are we canceled?
 				if ( isCanceled() )
@@ -171,7 +223,15 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				 * Determine optimal level for detection.
 				 */
 
-				final double radius = Math.sqrt( source.getBoundingSphereRadiusSquared() );
+				// Best radius is smallest radius of ellipse.
+				source.getCovariance( cov );
+				eig.decomposeSymmetric( cov );
+				final double[] eigVals = eig.getRealEigenvalues();
+				double minEig = Double.POSITIVE_INFINITY;
+				for ( int k = 0; k < eigVals.length; k++ )
+					minEig = Math.min( minEig, eigVals[ k ] );
+				final double radius = Math.sqrt( minEig );
+
 				final int nResolutionLevels = DetectionUtil.getNResolutionLevels( spimData, setup );
 				final int level;
 				if ( resolutionLevel < 0 )
@@ -200,7 +260,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				final double zs = Affine3DHelpers.extractScale( transform, 2 );
 
 				final Point center = new Point( 3 );
-				transform.applyInverse( new Round< >( center ), source );
+				transform.applyInverse( new Round<>( center ), source );
 				final long x = center.getLongPosition( 0 );
 				final long y = center.getLongPosition( 1 );
 				final long z = center.getLongPosition( 2 );
@@ -243,7 +303,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				else
 					threshold = 0.;
 
-				final DogDetection< FloatType > dog = new DogDetection< >(
+				final DogDetection< FloatType > dog = new DogDetection<>(
 						ra,
 						roi,
 						pixelSize,
@@ -256,7 +316,8 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				final ArrayList< RefinedPeak< Point > > refinedPeaks = dog.getSubpixelPeaks();
 				if ( refinedPeaks.isEmpty() )
 				{
-					log.info( "No spot found above desired quality threshold." );
+					log.info( String.format( " - No target spot found at t=%d for spot %s above desired quality threshold.",
+							tp, source.getLabel() ) );
 					continue INPUT;
 				}
 
@@ -272,12 +333,13 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				final RealPoint p3d = new RealPoint( 3 );
 				final double[] pos = new double[ 3 ];
 				final RealPoint sp = RealPoint.wrap( pos );
+				double sqDist = 0.;
 				for ( final RefinedPeak< Point > p : refinedPeaks )
 				{
 					// Compute square distance.
 					p3d.setPosition( p );
 					transform.apply( p3d, sp );
-					double sqDist = 0.;
+					sqDist = 0.;
 					for ( int d = 0; d < 3; d++ )
 					{
 						final double dx = pos[ d ] - source.getDoublePosition( d );
@@ -294,10 +356,16 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 
 				if ( !found )
 				{
-					log.info( "Suitable spot found, but outside the tolerance radius. "
-							+ "Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
+					log.info( String.format(
+							" - Suitable spot found at t=%d, but outside the tolerance radius for spot %s (at a distance of %.1f %s).",
+							tp, source.getLabel(), Math.sqrt( sqDist ), units ) );
+					log.info( " - Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
 					continue INPUT;
 				}
+
+				// Deselect source spot.
+				if ( null != selectionModel )
+					selectionModel.setSelected( source, false );
 
 				/*
 				 * Check whether candidate is close to an existing spot.
@@ -319,17 +387,22 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 					spatioTemporalIndex.readLock().unlock();
 				}
 
-				if ( target != null && distance < radius )
+				if ( target != null && ( test.isPointInside( pos, target ) || test.isCenterWithin( target, pos, radius ) ) )
 				{
 
 					/*
 					 * We have an existing spot close to our candidate.
 					 */
 
-					log.info( "Found an exising spot close to candidate: " + target.getLabel() + "." );
+					// Select it.
+					if ( null != selectionModel )
+						selectionModel.setSelected( target, true );
+
+					log.info( String.format( " - Found an exising spot at t=%d for spot %s close to candidate: %s.",
+							tp, source.getLabel(), target.getLabel() ) );
 					if ( !allowLinkingToExisting )
 					{
-						log.info( "Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
+						log.info( " - Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
 						continue INPUT;
 					}
 
@@ -344,12 +417,12 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 						// Should we link them?
 						if ( !allowLinkingIfIncoming && !target.incomingEdges().isEmpty() )
 						{
-							log.info( "Existing spot has incoming links. Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
+							log.info( " - Existing spot has incoming links. Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
 							continue INPUT;
 						}
 						if ( !allowLinkingIfOutgoing && !target.outgoingEdges().isEmpty() )
 						{
-							log.info( "Existing spot has outgoing links. Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
+							log.info( " - Existing spot has outgoing links. Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
 							continue INPUT;
 						}
 
@@ -361,16 +434,21 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 							edge = graph.addEdge( target, source, eref ).init();
 
 						final double cost = distance * distance;
-						log.info( "Linking spot " + source.getLabel() + " to spot " + target.getLabel() + " with linking cost " + cost );
+						log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
+								source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint(), cost ) );
 						linkCostFeature.getPropertyMap().set( edge, cost );
+
+						if ( null != navigationHandler )
+							navigationHandler.notifyNavigateToVertex( target );
 					}
 					else
 					{
 						// They are connected.
-						log.info( "Spots " + source.getLabel() + " and " + target.getLabel() + " are already linked." );
+						log.info( String.format( " - Spots %s at t=%d and %s at t=%d are already linked.",
+								source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint() ) );
 						if ( !continueIfLinkExists )
 						{
-							log.info( "Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
+							log.info( " - Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
 							continue INPUT;
 						}
 					}
@@ -401,9 +479,17 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 						cost += dx * dx;
 					}
 					final double quality = -candidate.getValue() * normalization;
-					log.info( "Linking spot " + source.getLabel() + " to new spot " + target.getLabel() + " with linking cost " + cost );
+					log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
+							source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint(), cost ) );
 					linkCostFeature.getPropertyMap().set( edge, cost );
 					qualityFeature.getPropertyMap().set( target, quality );
+
+					if ( null != navigationHandler )
+						navigationHandler.notifyNavigateToVertex( target );
+
+					// Select new spot.
+					if ( null != selectionModel )
+						selectionModel.setSelected( target, true );
 
 					source.refTo( target );
 					graph.releaseRef( eref );
@@ -413,7 +499,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				graph.notifyGraphChanged();
 			}
 
-			log.info( "Finished semi-automatic tracking for spot " + first.getLabel() + "." );
+			log.info( " - Finished semi-automatic tracking for spot " + first.getLabel() + "." );
 		}
 
 		/*
