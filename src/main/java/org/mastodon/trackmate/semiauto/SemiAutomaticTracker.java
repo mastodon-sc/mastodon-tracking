@@ -37,7 +37,7 @@ import org.mastodon.util.EllipsoidInsideTest;
 import org.scijava.Cancelable;
 import org.scijava.ItemIO;
 import org.scijava.log.LogService;
-import org.scijava.log.StderrLogService;
+import org.scijava.log.Logger;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.thread.ThreadService;
@@ -68,8 +68,6 @@ public class SemiAutomaticTracker
 		implements HasErrorMessage, Cancelable
 {
 
-	private final LogService log = new StderrLogService();
-
 	@Parameter
 	private ThreadService threadService;
 
@@ -85,6 +83,12 @@ public class SemiAutomaticTracker
 	@Parameter
 	private SelectionModel< Spot, Link > selectionModel;
 
+	@Parameter( required = false )
+	private Logger log;
+
+	@Parameter
+	private LogService logService;
+
 	@Parameter( type = ItemIO.OUTPUT )
 	protected String errorMessage;
 
@@ -98,6 +102,9 @@ public class SemiAutomaticTracker
 	@Override
 	public void compute( final Collection< Spot > input, final Map< String, Object > settings, final Model model )
 	{
+		if (null == log)
+			log = logService;
+
 		if ( null == input || input.isEmpty() )
 		{
 			log.info( "Spot collection to track is empty. Stopping." );

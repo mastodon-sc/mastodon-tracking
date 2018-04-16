@@ -32,10 +32,16 @@ import org.mastodon.revised.ui.keymap.CommandDescriptions;
 import org.mastodon.trackmate.semiauto.ui.SemiAutomaticTrackerConfigPage;
 import org.mastodon.trackmate.semiauto.ui.SemiAutomaticTrackerSettings;
 import org.mastodon.trackmate.semiauto.ui.SemiAutomaticTrackerSettingsManager;
+import org.scijava.Context;
+import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+import org.scijava.prefs.PrefService;
+import org.scijava.thread.ThreadService;
 import org.scijava.ui.behaviour.util.AbstractNamedAction;
 import org.scijava.ui.behaviour.util.Actions;
+import org.scijava.ui.swing.console.LoggingPanel;
 
 import bdv.spimdata.SpimDataMinimal;
 import net.imagej.ops.OpService;
@@ -47,12 +53,19 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 
 	private static final String ACTION_1 = "semi-automatic tracking";
 	private static final String ACTION_2 = "config semi-automatic tracking";
+	private static final String ACTION_3 = "log semi-automatic tracking";
 
 	private static final String[] ACTION_1_KEYS = new String[] { "ctrl T" };
 	private static final String[] ACTION_2_KEYS = new String[] { "not mapped" };
 
 	@Parameter
 	private OpService ops;
+
+	@Parameter( required = false )
+	private Logger log;
+
+	@Parameter
+	private LogService logService;
 
 	private MastodonPluginAppModel appModel;
 
@@ -63,6 +76,8 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 	private JDialog dialog;
 
 	private NavigationHandler< Spot, Link > navigationHandler;
+	private LoggingPanel loggingPanel;
+	private JDialog loggingDialog;
 
 	public SemiAutomaticTrackerPlugin()
 	{
@@ -125,6 +140,16 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 	{
 		this.appModel = appModel;
 
+		final Context context = appModel.getWindowManager().getContext();
+		final ThreadService threadService = context.getService(ThreadService.class);
+		final PrefService prefService = context.getService(PrefService.class);
+		final String prefKey = "Mastodon semi-automatic tracker";
+		this.loggingPanel= new LoggingPanel( threadService, prefService, prefKey );
+		this.loggingDialog = new JDialog( ( Frame ) null, "Semi-automatic tracker log" );
+		loggingDialog.getContentPane().add( loggingPanel, BorderLayout.CENTER );
+		loggingDialog.setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
+		loggingDialog.pack();
+
 		final GroupHandle groupHandle = appModel.getAppModel().getGroupManager().createGroupHandle();
 		this.navigationHandler = groupHandle.getModel( appModel.getAppModel().NAVIGATION );
 
@@ -171,6 +196,13 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 			if ( null == appModel )
 				return;
 
+			showLogDialog.actionPerformed( e );
+			if (null == log)
+				log = logService;
+
+			final Logger subLogger = log.subLogger( "Semi-auto tracker" );
+			subLogger.addLogListener( loggingPanel );
+
 			final SelectionModel< Spot, Link > selectionModel = appModel.getAppModel().getSelectionModel();
 			final Collection< Spot > selectedSpots = selectionModel.getSelectedVertices();
 			final Collection< Spot > spots = RefCollections.createRefList(
@@ -187,8 +219,10 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 					ops, SemiAutomaticTracker.class, model, spots, settings,
 					spimData,
 					navigationHandler,
-					selectionModel );
+					selectionModel,
+					subLogger );
 			tracker.compute( spots, settings, model );
+			subLogger.removeLogListener( loggingPanel );
 		}
 	};
 
@@ -203,6 +237,20 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 			if ( null == dialog )
 				return;
 			dialog.setVisible( !dialog.isVisible() );
+		}
+	};
+
+	private final AbstractNamedAction showLogDialog = new AbstractNamedAction( ACTION_3 )
+	{
+
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			if ( null == loggingDialog )
+				return;
+			loggingDialog.setVisible( true );
 		}
 	};
 }
