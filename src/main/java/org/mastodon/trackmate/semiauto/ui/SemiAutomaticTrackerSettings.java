@@ -147,7 +147,7 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 		map.put( KEY_ALLOW_LINKING_TO_EXISTING, Boolean.valueOf( allowLinkingToExisting ) );
 		map.put( KEY_ALLOW_LINKING_IF_HAS_INCOMING, Boolean.valueOf( allowIfIncomingLinks ) );
 		map.put( KEY_ALLOW_LINKING_IF_HAS_OUTGOING, Boolean.valueOf( allowIfOutgoingLinks ) );
-		map.put( KEY_CONTINUE_IF_LINK_EXISTS, Boolean.valueOf( allowIfIncomingLinks ) );
+		map.put( KEY_CONTINUE_IF_LINK_EXISTS, Boolean.valueOf( continueIfLinked ) );
 		return map;
 	}
 
