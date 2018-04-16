@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.mastodon.detection.DetectionCreatorFactory;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorOp;
-import org.mastodon.detection.DogDetectorOp;
+import org.mastodon.detection.DoGDetectorOp;
 import org.scijava.Context;
 
 import bdv.spimdata.SpimDataMinimal;
@@ -136,7 +136,7 @@ public class DetectionToTextExample
 		detectorSettings.put( KEY_MIN_TIMEPOINT, tps.get( 0 ).getId() );
 		detectorSettings.put( KEY_MAX_TIMEPOINT, tps.get( tps.size() - 1 ).getId() );
 
-		final DetectorOp detector = ( DetectorOp ) Inplaces.binary1( ops, DogDetectorOp.class,
+		final DetectorOp detector = ( DetectorOp ) Inplaces.binary1( ops, DoGDetectorOp.class,
 				detectionCreator, spimData, detectorSettings );
 		detector.mutate1( detectionCreator, spimData );
 

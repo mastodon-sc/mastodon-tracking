@@ -2,7 +2,6 @@ package org.mastodon.trackmate;
 
 import java.util.Map;
 
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.mastodon.HasErrorMessage;
 import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.graph.algorithm.RootFinder;
@@ -10,7 +9,6 @@ import org.mastodon.linking.mamut.SpotLinkerOp;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
-import org.mastodon.revised.model.mamut.Spot;
 import org.scijava.Cancelable;
 import org.scijava.app.StatusService;
 import org.scijava.command.ContextCommand;
@@ -90,22 +88,6 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		}
 
 		/*
-		 * Clear previous content.
-		 */
-
-		final ReentrantReadWriteLock lock = graph.getLock();
-		lock.writeLock().lock();
-		try
-		{
-			for ( final Spot spot : graph.vertices() )
-				graph.remove( spot );
-		}
-		finally
-		{
-			lock.writeLock().unlock();
-		}
-
-		/*
 		 * Exec detection.
 		 */
 
@@ -115,7 +97,8 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 
 		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl,
 				graph, spimData,
-				detectorSettings );
+				detectorSettings,
+				model.getSpatioTemporalIndex() );
 		this.currentOp = detector;
 		log.info( "Detection with " + cl.getSimpleName() + '\n' );
 		detector.compute( spimData, graph );

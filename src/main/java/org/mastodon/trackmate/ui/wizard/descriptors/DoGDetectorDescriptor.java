@@ -1,6 +1,6 @@
 package org.mastodon.trackmate.ui.wizard.descriptors;
 
-import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_ADD_BEHAVIOR;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
 import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
@@ -12,13 +12,11 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.awt.event.MouseListener;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.Icon;
@@ -30,77 +28,42 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import org.jfree.chart.ChartPanel;
-import org.jfree.chart.axis.NumberTickUnitSource;
-import org.jfree.chart.axis.TickUnitSource;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.title.TextTitle;
-import org.mastodon.adapter.FocusModelAdapter;
-import org.mastodon.adapter.HighlightModelAdapter;
-import org.mastodon.adapter.RefBimap;
-import org.mastodon.adapter.SelectionModelAdapter;
-import org.mastodon.collection.RefCollections;
-import org.mastodon.collection.RefList;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorKeys;
-import org.mastodon.detection.DogDetectorOp;
+import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.LoGDetectorMamut;
+import org.mastodon.detection.mamut.MamutDetectionCreatorFactories;
 import org.mastodon.detection.mamut.SpotDetectorOp;
-import org.mastodon.graph.GraphIdBimap;
-import org.mastodon.grouping.GroupManager;
-import org.mastodon.model.DefaultFocusModel;
-import org.mastodon.model.DefaultHighlightModel;
-import org.mastodon.model.DefaultSelectionModel;
-import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.bdv.BigDataViewerMamut;
-import org.mastodon.revised.bdv.NavigationActionsMamut;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
-import org.mastodon.revised.bdv.ViewerPanelMamut;
-import org.mastodon.revised.bdv.overlay.OverlayGraphRenderer;
-import org.mastodon.revised.bdv.overlay.wrap.OverlayEdgeWrapper;
-import org.mastodon.revised.bdv.overlay.wrap.OverlayGraphWrapper;
-import org.mastodon.revised.bdv.overlay.wrap.OverlayVertexWrapper;
-import org.mastodon.revised.mamut.KeyConfigContexts;
 import org.mastodon.revised.mamut.WindowManager;
-import org.mastodon.revised.model.mamut.BoundingSphereRadiusStatistics;
-import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
-import org.mastodon.revised.model.mamut.ModelGraph;
-import org.mastodon.revised.model.mamut.ModelOverlayProperties;
-import org.mastodon.revised.model.mamut.Spot;
-import org.mastodon.revised.ui.keymap.Keymap;
-import org.mastodon.revised.ui.keymap.KeymapManager;
-import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.Wizard;
-import org.mastodon.trackmate.ui.wizard.util.HistogramUtil;
+import org.mastodon.trackmate.ui.wizard.util.WizardUtils;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.ui.behaviour.util.Actions;
-import org.scijava.ui.behaviour.util.Behaviours;
 
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
-import bdv.tools.InitializeViewerState;
 import bdv.util.Affine3DHelpers;
 import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import net.imagej.ops.OpService;
-import net.imagej.ops.special.hybrid.Hybrids;
 import net.imglib2.realtransform.AffineTransform3D;
 
 @Plugin( type = SpotDetectorDescriptor.class, name = "DoG detector configuration descriptor" )
-public class DogDetectorDescriptor extends SpotDetectorDescriptor
+public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 {
-
-	private static final NumberFormat FORMAT = new DecimalFormat( "0.0" );
 
 	public static final String IDENTIFIER = "Configure DoG detector";
 
 	private static final Icon PREVIEW_ICON = new ImageIcon( Wizard.class.getResource( "led-icon-eye-green.png" ) );
+
+	private static final NumberFormat FORMAT = new DecimalFormat( "0.0" );
 
 	@Parameter
 	private LogService log;
@@ -118,10 +81,10 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 	private final Model localModel;
 
-	public DogDetectorDescriptor()
+	public DoGDetectorDescriptor()
 	{
 		this.panelIdentifier = IDENTIFIER;
-		this.targetPanel = new DogDetectorPanel();
+		this.targetPanel = new DoGDetectorPanel();
 		/*
 		 * Use a separate model for the preview. We do not want to touch the
 		 * existing model.
@@ -132,8 +95,11 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 	@Override
 	public void aboutToHidePanel()
 	{
-		grabSettings();
+		if ( null != viewFrame )
+			viewFrame.dispose();
+		viewFrame = null;
 
+		grabSettings();
 		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
 		final String units = ( null != setupID && null != settings.values.getSpimData() )
 				? settings.values.getSpimData().getSequenceDescription()
@@ -142,7 +108,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 		final SpimDataMinimal spimData = settings.values.getSpimData();
 		final double radius = ( double ) settings.values.getDetectorSettings().get( KEY_RADIUS );
-		final double minSizePixel = DogDetectorOp.MIN_SPOT_PIXEL_SIZE / 2.;
+		final double minSizePixel = DoGDetectorOp.MIN_SPOT_PIXEL_SIZE / 2.;
 		final int timepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT );
 		final int level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, minSizePixel, timepoint, setupID );
 		final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( spimData, timepoint, setupID, level );
@@ -184,80 +150,11 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 		if ( null == windowManager )
 			return;
 
-		grabSettings();
-
 		final SharedBigDataViewerData shared = windowManager.getAppModel().getSharedBdvData();
-		final SpimDataMinimal spimData = ( SpimDataMinimal ) shared.getSpimData();
-		if ( null == spimData )
-		{
-			log.error( "Cannot start detection preview: SpimData object is null." );
-			return;
-		}
-
-		final ModelGraph graph = localModel.getGraph();
-		if ( null == viewFrame || !viewFrame.isShowing() )
-		{
-			final GraphIdBimap< Spot, Link > graphIdBimap = localModel.getGraphIdBimap();
-
-			/*
-			 * Create a viewer for the preview.
-			 */
-
-			final String[] keyConfigContexts = new String[] { KeyConfigContexts.BIGDATAVIEWER };
-			final Keymap keymap = new KeymapManager().getForwardDefaultKeymap();
-
-			final BigDataViewerMamut bdv = new BigDataViewerMamut( shared, "Preview detection", new GroupManager( 0 ).createGroupHandle() );
-			final ViewerPanelMamut viewer = bdv.getViewer();
-			InitializeViewerState.initTransform( viewer );
-			viewFrame = bdv.getViewerFrame();
-
-			final BoundingSphereRadiusStatistics radiusStats = new BoundingSphereRadiusStatistics( localModel );
-			final OverlayGraphWrapper< Spot, Link > viewGraph = new OverlayGraphWrapper< Spot, Link >(
-					graph,
-					graphIdBimap,
-					localModel.getSpatioTemporalIndex(),
-					graph.getLock(),
-					new ModelOverlayProperties( graph, radiusStats ) );
-			final RefBimap< Spot, OverlayVertexWrapper< Spot, Link > > vertexMap = viewGraph.getVertexMap();
-			final RefBimap< Link, OverlayEdgeWrapper< Spot, Link > > edgeMap = viewGraph.getEdgeMap();
-
-			final DefaultHighlightModel< Spot, Link > highlightModel = new DefaultHighlightModel<>( graphIdBimap );
-			final HighlightModelAdapter< Spot, Link, OverlayVertexWrapper< Spot, Link >, OverlayEdgeWrapper< Spot, Link > > highlightModelAdapter =
-					new HighlightModelAdapter<>( highlightModel, vertexMap, edgeMap );
-
-			final DefaultFocusModel< Spot, Link > focusModel = new DefaultFocusModel<>( graphIdBimap );
-			final FocusModelAdapter< Spot, Link, OverlayVertexWrapper< Spot, Link >, OverlayEdgeWrapper< Spot, Link > > focusModelAdapter =
-					new FocusModelAdapter<>( focusModel, vertexMap, edgeMap );
-
-			final DefaultSelectionModel< Spot, Link > selectionModel = new DefaultSelectionModel<>( graph, graphIdBimap );
-			final SelectionModelAdapter< Spot, Link, OverlayVertexWrapper< Spot, Link >, OverlayEdgeWrapper< Spot, Link > > selectionModelAdapter =
-					new SelectionModelAdapter<>( selectionModel, vertexMap, edgeMap );
-
-			final OverlayGraphRenderer< OverlayVertexWrapper< Spot, Link >, OverlayEdgeWrapper< Spot, Link > > tracksOverlay = new OverlayGraphRenderer<>(
-					viewGraph,
-					highlightModelAdapter,
-					focusModelAdapter,
-					selectionModelAdapter );
-			viewer.getDisplay().addOverlayRenderer( tracksOverlay );
-			viewer.addRenderTransformListener( tracksOverlay );
-			viewer.addTimePointListener( tracksOverlay );
-			graph.addGraphChangeListener( () -> viewer.getDisplay().repaint() );
-
-			final Actions viewActions = new Actions( keymap.getConfig(), keyConfigContexts );
-			viewActions.install( viewFrame.getKeybindings(), "view" );
-			final Behaviours viewBehaviours = new Behaviours( keymap.getConfig(), keyConfigContexts );
-			viewBehaviours.install( viewFrame.getTriggerbindings(), "view" );
-
-			NavigationActionsMamut.install( viewActions, viewer );
-			viewer.getTransformEventHandler().install( viewBehaviours );
-
-			viewFrame.setVisible( true );
-		}
-
+		viewFrame = WizardUtils.previewFrame( viewFrame, shared, localModel );
 		final int currentTimepoint = viewFrame.getViewerPanel().getState().getCurrentTimepoint();
-		viewFrame.toFront();
 
-		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
+		final DoGDetectorPanel panel = ( DoGDetectorPanel ) targetPanel;
 		panel.preview.setEnabled( false );
 		new Thread( "DogDetectorPanel preview thread" )
 		{
@@ -266,74 +163,14 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 			{
 				try
 				{
-					/*
-					 * Delete spots from current time-point if we have some.
-					 * FIXME We should not do that if we want to add spots to
-					 * existing model. But I don't know how to preview then.
-					 * Maybe with another Model?
-					 */
-
-					SpatialIndex< Spot > spatialIndex;
-					localModel.getSpatioTemporalIndex().readLock().lock();
-					final RefList< Spot > toRemove = RefCollections.createRefList( graph.vertices() );
-					try
-					{
-						spatialIndex = localModel.getSpatioTemporalIndex().getSpatialIndex( currentTimepoint );
-						for ( final Spot spot : spatialIndex )
-							toRemove.add( spot );
-					}
-					finally
-					{
-						localModel.getSpatioTemporalIndex().readLock().unlock();
-					}
-
-					graph.getLock().writeLock().lock();
-					try
-					{
-						for ( final Spot spot : toRemove )
-							graph.remove( spot );
-					}
-					finally
-					{
-						graph.getLock().writeLock().unlock();
-					}
-
-					/*
-					 * Tune settings for preview.
-					 */
-
-					final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
-					// Copy settings.
-					final Map< String, Object > detectorSettings = new HashMap<>( settings.values.getDetectorSettings() );
-					detectorSettings.put( KEY_MIN_TIMEPOINT, currentTimepoint );
-					detectorSettings.put( KEY_MAX_TIMEPOINT, currentTimepoint );
-
-					/*
-					 * Execute preview.
-					 */
-
-					final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl,
-							graph, spimData,
-							detectorSettings );
-					panel.lblInfo.setText( "Previewing..." );
-					detector.compute( spimData, graph );
-
-					if ( !detector.isSuccessful() )
-					{
-						log.error( "Detection failed:\n" + detector.getErrorMessage() );
+					grabSettings();
+					final boolean ok = WizardUtils.executeDetectionPreview( localModel, settings, ops, currentTimepoint );
+					if ( !ok )
 						return;
-					}
 
-					localModel.getFeatureModel().declareFeature( detector.getQualityFeature() );
-					graph.notifyGraphChanged();
-
-					int nSpots = 0;
-					for ( @SuppressWarnings( "unused" )
-					final Spot spot : spatialIndex )
-						nSpots++;
-
+					final int nSpots = WizardUtils.countSpotsIn( localModel, currentTimepoint );
 					panel.lblInfo.setText( "Found " + nSpots + " spots in time-point " + currentTimepoint );
-					plotQualityHistogram( detector.getQualityFeature().getPropertyMap() );
+					plotQualityHistogram();
 				}
 				finally
 				{
@@ -344,36 +181,17 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 	}
 
-	private void plotQualityHistogram( final DoublePropertyMap< Spot > qualities )
+	private void plotQualityHistogram()
 	{
-		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
+		final DoGDetectorPanel panel = ( DoGDetectorPanel ) targetPanel;
 		if ( null != chartPanel )
 		{
 			panel.remove( chartPanel );
 			panel.repaint();
 		}
-
-		final double[] values = qualities.getMap().values();
-		if ( values.length == 0 )
+		this.chartPanel = WizardUtils.createQualityHistogram( localModel );
+		if ( null == chartPanel )
 			return;
-
-		this.chartPanel = HistogramUtil.createHistogramPlot( values, false );
-		chartPanel.getChart().setTitle( new TextTitle( "Quality histogram", chartPanel.getFont() ) );
-
-		// Disable zoom.
-		for ( final MouseListener ml : chartPanel.getMouseListeners() )
-			chartPanel.removeMouseListener( ml );
-
-		// Re enable the X axis.
-		final XYPlot plot = chartPanel.getChart().getXYPlot();
-		plot.getDomainAxis().setVisible( true );
-		final TickUnitSource source = new NumberTickUnitSource( false, FORMAT );
-		plot.getDomainAxis().setStandardTickUnits( source );
-		final Font smallFont = chartPanel.getFont().deriveFont( chartPanel.getFont().getSize2D() - 2f );
-		plot.getDomainAxis().setTickLabelFont( smallFont );
-
-		// Transparent background.
-		chartPanel.getChart().setBackgroundPaint( null );
 
 		final GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridy = 5;
@@ -395,10 +213,11 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 		if ( null == settings )
 			return;
 
-		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
+		final DoGDetectorPanel panel = ( DoGDetectorPanel ) targetPanel;
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 		detectorSettings.put( KEY_RADIUS, ( ( Number ) panel.diameter.getValue() ).doubleValue() / 2. );
 		detectorSettings.put( KEY_THRESHOLD, ( ( Number ) panel.threshold.getValue() ).doubleValue() );
+		detectorSettings.put( KEY_ADD_BEHAVIOR, MamutDetectionCreatorFactories.DetectionBehavior.REMOVEALL.name() );
 	}
 
 	@SuppressWarnings( { "rawtypes", "unchecked" } )
@@ -422,7 +241,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 	@Override
 	public void setTrackMate( final TrackMate trackmate )
 	{
-		final DogDetectorPanel panel = ( DogDetectorPanel ) targetPanel;
+		final DoGDetectorPanel panel = ( DoGDetectorPanel ) targetPanel;
 
 		this.settings = trackmate.getSettings();
 		if ( null == settings )
@@ -458,7 +277,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 		this.windowManager = windowManager;
 	}
 
-	private class DogDetectorPanel extends JPanel
+	private class DoGDetectorPanel extends JPanel
 	{
 
 		private static final long serialVersionUID = 1L;
@@ -473,7 +292,7 @@ public class DogDetectorDescriptor extends SpotDetectorDescriptor
 
 		private final JLabel lblInfo;
 
-		public DogDetectorPanel()
+		public DoGDetectorPanel()
 		{
 			final GridBagLayout layout = new GridBagLayout();
 			layout.columnWidths = new int[] { 80, 80, 40 };

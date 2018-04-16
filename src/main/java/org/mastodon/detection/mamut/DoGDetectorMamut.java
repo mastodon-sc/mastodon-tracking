@@ -1,6 +1,6 @@
 package org.mastodon.detection.mamut;
 
-import org.mastodon.detection.DogDetectorOp;
+import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
@@ -28,7 +28,7 @@ public class DoGDetectorMamut extends AbstractSpotDetectorOp implements SpotDete
 	@Override
 	public void compute( final SpimDataMinimal spimData, final ModelGraph graph )
 	{
-		exec( spimData, graph, DogDetectorOp.class );
+		exec( spimData, graph, DoGDetectorOp.class );
 	}
 
 }

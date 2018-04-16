@@ -6,7 +6,7 @@ import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
 import static org.mastodon.detection.DetectorKeys.KEY_ROI;
 import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
 import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
-import static org.mastodon.detection.DogDetectorOp.MIN_SPOT_PIXEL_SIZE;
+import static org.mastodon.detection.DoGDetectorOp.MIN_SPOT_PIXEL_SIZE;
 
 import java.util.Arrays;
 import java.util.List;

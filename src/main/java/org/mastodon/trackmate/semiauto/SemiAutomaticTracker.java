@@ -20,7 +20,7 @@ import java.util.Map;
 
 import org.mastodon.HasErrorMessage;
 import org.mastodon.detection.DetectionUtil;
-import org.mastodon.detection.DogDetectorOp;
+import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.linking.LinkingUtils;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
@@ -175,7 +175,7 @@ TIME: 		while ( Math.abs( tp - firstTimepoint ) < nTimepoints )
 				final int nResolutionLevels = DetectionUtil.getNResolutionLevels( spimData, setup );
 				final int level;
 				if ( resolutionLevel < 0 )
-					level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, DogDetectorOp.MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
+					level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, DoGDetectorOp.MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
 				else
 					level = Math.min( nResolutionLevels - 1, resolutionLevel );
 				final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );

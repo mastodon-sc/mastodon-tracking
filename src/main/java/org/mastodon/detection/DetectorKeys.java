@@ -77,6 +77,20 @@ public class DetectorKeys
 	 */
 	public static final Interval DEFAULT_ROI = null;
 
+	/**
+	 * Key for the parameter specifying what to do when adding a detection to a
+	 * model that contains an existing detection in the vicinity of the new one.
+	 * Expected values are {@link String}s defining a behavior that can be
+	 * interpreted by the detector implementation. A <code>null</code> value is
+	 * acceptable and will results in picking a default behavior.
+	 */
+	public static final String KEY_ADD_BEHAVIOR = "ADD_BEHAVIOR";
+
+	/**
+	 * Default value for the {@link #KEY_ADD_BEHAVIOR} parameter.
+	 */
+	public static final String DEFAULT_ADD_BEHAVIOR = null;
+
 	private DetectorKeys()
 	{}
 }

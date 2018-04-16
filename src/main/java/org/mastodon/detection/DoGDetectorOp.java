@@ -39,7 +39,7 @@ import net.imglib2.view.Views;
  * @author Jean-Yves Tinevez
  */
 @Plugin( type = DetectorOp.class )
-public class DogDetectorOp
+public class DoGDetectorOp
 		extends AbstractDetectorOp
 		implements DetectorOp, Benchmark
 {
