@@ -166,6 +166,7 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 				currentSettings.putAll( forwardDefaultStyle.getAsSettingsMap() );
 			}
 		};
+		page.apply();
 		final SettingsPanel settings = new SettingsPanel();
 		settings.addPage( page );
 
