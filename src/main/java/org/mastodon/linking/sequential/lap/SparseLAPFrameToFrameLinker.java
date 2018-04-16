@@ -3,6 +3,7 @@ package org.mastodon.linking.sequential.lap;
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.linking.LinkerKeys.KEY_ALTERNATIVE_LINKING_COST_FACTOR;
+import static org.mastodon.linking.LinkerKeys.KEY_DO_LINK_SELECTION;
 import static org.mastodon.linking.LinkerKeys.KEY_LINKING_FEATURE_PENALTIES;
 import static org.mastodon.linking.LinkerKeys.KEY_LINKING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkingUtils.checkFeatureMap;
@@ -119,7 +120,7 @@ public class SparseLAPFrameToFrameLinker< V extends HasTimepoint & RealLocalizab
 		final long start = System.currentTimeMillis();
 
 		// Prepare frame pairs in order. For now they are separated by 1.
-		final ArrayList< int[] > framePairs = new ArrayList< int[] >( maxTimepoint - minTimepoint );
+		final ArrayList< int[] > framePairs = new ArrayList< >( maxTimepoint - minTimepoint );
 		for ( int tp = minTimepoint; tp <= maxTimepoint - 1; tp++ )
 		{ // ascending order
 			framePairs.add( new int[] { tp, tp + 1 } );
@@ -176,7 +177,7 @@ public class SparseLAPFrameToFrameLinker< V extends HasTimepoint & RealLocalizab
 								sources, targets, costFunction, costThreshold, alternativeCostFactor, 1d,
 								refcol, refcol,
 								spotComparator, spotComparator );
-						linker = new JaqamanLinker< V, V >( creator, refcol, refcol );
+						linker = new JaqamanLinker< >( creator, refcol, refcol );
 						if ( !linker.checkInput() || !linker.process() )
 						{
 							errorMessage = "Linking frame " + frame0 + " to " + frame1 + ": " + linker.getErrorMessage();
@@ -260,6 +261,7 @@ public class SparseLAPFrameToFrameLinker< V extends HasTimepoint & RealLocalizab
 		boolean ok = true;
 		ok = ok & checkParameter( settings, KEY_MIN_TIMEPOINT, Integer.class, str );
 		ok = ok & checkParameter( settings, KEY_MAX_TIMEPOINT, Integer.class, str );
+
 		// Linking
 		ok = ok & checkParameter( settings, KEY_LINKING_MAX_DISTANCE, Double.class, str );
 		ok = ok & checkFeatureMap( settings, KEY_LINKING_FEATURE_PENALTIES, str );
@@ -267,13 +269,14 @@ public class SparseLAPFrameToFrameLinker< V extends HasTimepoint & RealLocalizab
 		ok = ok & checkParameter( settings, KEY_ALTERNATIVE_LINKING_COST_FACTOR, Double.class, str );
 
 		// Check keys
-		final List< String > mandatoryKeys = new ArrayList< String >();
+		final List< String > mandatoryKeys = new ArrayList< >();
 		mandatoryKeys.add( KEY_MIN_TIMEPOINT );
 		mandatoryKeys.add( KEY_MAX_TIMEPOINT );
 		mandatoryKeys.add( KEY_LINKING_MAX_DISTANCE );
 		mandatoryKeys.add( KEY_ALTERNATIVE_LINKING_COST_FACTOR );
-		final List< String > optionalKeys = new ArrayList< String >();
+		final List< String > optionalKeys = new ArrayList< >();
 		optionalKeys.add( KEY_LINKING_FEATURE_PENALTIES );
+		optionalKeys.add( KEY_DO_LINK_SELECTION );
 		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, str );
 
 		return ok;

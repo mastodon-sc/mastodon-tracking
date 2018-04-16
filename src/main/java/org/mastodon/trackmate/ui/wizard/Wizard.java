@@ -92,7 +92,7 @@ public class Wizard
 		mw.setVisible( true );
 
 		final Wizard wizard = new Wizard( windowManager.getContext() );
-		final TrackMate trackmate = new TrackMate( settings, windowManager.getAppModel().getModel() );
+		final TrackMate trackmate = new TrackMate( settings, windowManager.getAppModel().getModel(), windowManager.getAppModel().getSelectionModel() );
 		context.inject( trackmate );
 		final DetectionSequence sequence = new DetectionSequence( trackmate, windowManager, wizard.getLogService() );
 		wizard.show( sequence, "TrackMate detection" );

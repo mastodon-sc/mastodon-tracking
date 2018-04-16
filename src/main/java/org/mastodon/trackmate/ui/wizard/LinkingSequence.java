@@ -1,8 +1,5 @@
 package org.mastodon.trackmate.ui.wizard;
 
-import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
-import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +10,7 @@ import org.mastodon.trackmate.PluginProvider;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.descriptors.ChooseLinkerDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.ExecuteLinkingDescriptor;
+import org.mastodon.trackmate.ui.wizard.descriptors.LinkingTargetDescriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.SpotLinkerDescriptor;
 import org.scijava.Context;
 
@@ -37,9 +35,11 @@ public class LinkingSequence implements WizardSequence
 
 	private final PluginProvider< SpotLinkerDescriptor > descriptorProvider;
 
-	private ChooseLinkerDescriptor chooseLinkerDescriptor;
+	private final LinkingTargetDescriptor linkingTargetDescriptor;
 
-	private ExecuteLinkingDescriptor executeLinkingDescriptor;
+	private final ChooseLinkerDescriptor chooseLinkerDescriptor;
+
+	private final ExecuteLinkingDescriptor executeLinkingDescriptor;
 
 	private final WizardLogService logService;
 
@@ -49,6 +49,7 @@ public class LinkingSequence implements WizardSequence
 		this.windowManager = windowManager;
 		this.logService = logService;
 
+		this.linkingTargetDescriptor = new LinkingTargetDescriptor( trackmate, windowManager, logService );
 		this.chooseLinkerDescriptor = new ChooseLinkerDescriptor( trackmate, windowManager );
 		this.executeLinkingDescriptor = new ExecuteLinkingDescriptor( trackmate, logService.getPanel() );
 
@@ -64,14 +65,16 @@ public class LinkingSequence implements WizardSequence
 
 	private Map< WizardPanelDescriptor, WizardPanelDescriptor > getBackwardSequence()
 	{
-		final Map< WizardPanelDescriptor, WizardPanelDescriptor > map = new HashMap<>( 3 );
-		map.put( chooseLinkerDescriptor, null );
+		final Map< WizardPanelDescriptor, WizardPanelDescriptor > map = new HashMap<>( 5 );
+		map.put( chooseLinkerDescriptor, linkingTargetDescriptor );
+		map.put( linkingTargetDescriptor, null );
 		return map;
 	}
 
 	private Map< WizardPanelDescriptor, WizardPanelDescriptor > getForwardSequence()
 	{
 		final Map< WizardPanelDescriptor, WizardPanelDescriptor > map = new HashMap<>( 5 );
+		map.put( linkingTargetDescriptor, chooseLinkerDescriptor );
 		map.put( executeLinkingDescriptor, null );
 		return map;
 	}
@@ -99,10 +102,14 @@ public class LinkingSequence implements WizardSequence
 					windowManager.getContext().inject( linkerConfigDescriptor );
 				final Map< String, Object > defaultSettings = linkerConfigDescriptor.getDefaultSettings();
 
-				// Pass the old ROI to the new settings.
+				// Pass as much parameter as we can from the old settings.
 				final Map< String, Object > oldSettings = trackmate.getSettings().values.getLinkerSettings();
-				defaultSettings.put( KEY_MAX_TIMEPOINT, oldSettings.get( KEY_MAX_TIMEPOINT ) );
-				defaultSettings.put( KEY_MIN_TIMEPOINT, oldSettings.get( KEY_MIN_TIMEPOINT ) );
+				for ( final String pkey : defaultSettings.keySet() )
+				{
+					if ( !oldSettings.containsKey( pkey ) )
+						continue;
+					defaultSettings.put( pkey, oldSettings.get( pkey ) );
+				}
 
 				trackmate.getSettings().linkerSettings( defaultSettings );
 				linkerConfigDescriptor.setTrackMate( trackmate );
@@ -153,12 +160,12 @@ public class LinkingSequence implements WizardSequence
 	@Override
 	public boolean hasPrevious()
 	{
-		return current != chooseLinkerDescriptor;
+		return current != linkingTargetDescriptor;
 	}
 
 	@Override
 	public WizardPanelDescriptor init()
 	{
-		return chooseLinkerDescriptor;
+		return linkingTargetDescriptor;
 	}
 }

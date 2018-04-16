@@ -13,6 +13,7 @@ import static org.mastodon.linking.LinkerKeys.KEY_ALLOW_TRACK_SPLITTING;
 import static org.mastodon.linking.LinkerKeys.KEY_ALTERNATIVE_LINKING_COST_FACTOR;
 import static org.mastodon.linking.LinkerKeys.KEY_BLOCKING_VALUE;
 import static org.mastodon.linking.LinkerKeys.KEY_CUTOFF_PERCENTILE;
+import static org.mastodon.linking.LinkerKeys.KEY_DO_LINK_SELECTION;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_FEATURE_PENALTIES;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
@@ -96,6 +97,7 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 		log.log( String.format( "  - max linking distance: %.1f %s\n", ( double ) ls.get( KEY_LINKING_MAX_DISTANCE ), units ) );
 		log.log( String.format( "  - max gap-closing distance: %.1f %s\n", ( double ) ls.get( KEY_GAP_CLOSING_MAX_DISTANCE ), units ) );
 		log.log( String.format( "  - max frame gap: %d\n", ( int ) ls.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) ) );
+		log.log( String.format( "  - target: %s\n", ( boolean ) ls.get( KEY_DO_LINK_SELECTION ) ? "selection only." : "all detections." ) );
 		log.log( String.format( "  - min time-point: %d\n", ( int ) ls.get( KEY_MIN_TIMEPOINT ) ) );
 		log.log( String.format( "  - max time-point: %d\n", ( int ) ls.get( KEY_MAX_TIMEPOINT ) ) );
 	}
@@ -133,11 +135,11 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 
 		private static final long serialVersionUID = 1L;
 
-		private JFormattedTextField maxLinkingDistance;
+		private final JFormattedTextField maxLinkingDistance;
 
-		private JFormattedTextField maxGapClosingDistance;
+		private final JFormattedTextField maxGapClosingDistance;
 
-		private JFormattedTextField maxFrameGap;
+		private final JFormattedTextField maxFrameGap;
 
 		public SimpleLAPLinkerPanel()
 		{
@@ -236,38 +238,33 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 
 		private Map< String, Object > getSettings()
 		{
-			final Map< String, Object > ls = new HashMap<>();
+			final Map< String, Object > ls = new HashMap<>( settings.values.getLinkerSettings() );
 
 			// Panel settings.
 			// Frame to frame linking
 			ls.put( KEY_LINKING_MAX_DISTANCE, ( ( Number ) maxLinkingDistance.getValue() ).doubleValue() );
-			ls.put( KEY_LINKING_FEATURE_PENALTIES, null );
+			ls.put( KEY_LINKING_FEATURE_PENALTIES, new HashMap<>() );
 
 			// Gap-closing.
 			ls.put( KEY_ALLOW_GAP_CLOSING, true );
 			ls.put( KEY_GAP_CLOSING_MAX_DISTANCE, ( ( Number ) maxGapClosingDistance.getValue() ).doubleValue() );
 			ls.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, ( ( Number ) maxFrameGap.getValue() ).intValue() );
-			ls.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, null );
+			ls.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, new HashMap<>() );
 
 			// Track splitting.
 			ls.put( KEY_ALLOW_TRACK_SPLITTING, false );
 			ls.put( KEY_SPLITTING_MAX_DISTANCE, DEFAULT_SPLITTING_MAX_DISTANCE );
-			ls.put( KEY_SPLITTING_FEATURE_PENALTIES, null );
+			ls.put( KEY_SPLITTING_FEATURE_PENALTIES, new HashMap<>() );
 
 			// Track merging.
 			ls.put( KEY_ALLOW_TRACK_MERGING, false );
 			ls.put( KEY_MERGING_MAX_DISTANCE, DEFAULT_MERGING_MAX_DISTANCE );
-			ls.put( KEY_MERGING_FEATURE_PENALTIES, null );
+			ls.put( KEY_MERGING_FEATURE_PENALTIES, new HashMap<>() );
 
 			// Other - use defaults.
 			ls.put( KEY_BLOCKING_VALUE, DEFAULT_BLOCKING_VALUE );
 			ls.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, DEFAULT_ALTERNATIVE_LINKING_COST_FACTOR );
 			ls.put( KEY_CUTOFF_PERCENTILE, DEFAULT_CUTOFF_PERCENTILE );
-
-			// Timepoints - copy from detection step.
-			final Map< String, Object > ds = settings.values.getDetectorSettings();
-			ls.put( KEY_MIN_TIMEPOINT, ds.get( KEY_MIN_TIMEPOINT ) );
-			ls.put( KEY_MAX_TIMEPOINT, ds.get( KEY_MAX_TIMEPOINT ) );
 
 			return ls;
 		}

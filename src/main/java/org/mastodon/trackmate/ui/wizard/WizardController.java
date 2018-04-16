@@ -150,7 +150,7 @@ public class WizardController implements WindowListener
 		final WizardPanelDescriptor descriptor = sequence.init();
 		wizardPanel.btnPrevious.setEnabled( sequence.hasPrevious() );
 		wizardPanel.btnNext.setEnabled( sequence.hasNext() );
-		descriptor .aboutToDisplayPanel();
+		descriptor.aboutToDisplayPanel();
 		wizardPanel.display( descriptor );
 		descriptor.displayingPanel();
 	}
@@ -161,9 +161,11 @@ public class WizardController implements WindowListener
 			return;
 
 		wizardPanel.btnPrevious.setEnabled( sequence.hasPrevious() );
-		wizardPanel.btnNext.setVisible( sequence.hasNext() );
+		wizardPanel.btnNext.setEnabled( sequence.hasNext() );
 		wizardPanel.btnFinish.setVisible( !sequence.hasNext() );
 		wizardPanel.transition( to, from, direction );
+		if ( !sequence.hasNext() )
+			wizardPanel.btnFinish.requestFocusInWindow();
 	}
 
 	private Action getNextAction()

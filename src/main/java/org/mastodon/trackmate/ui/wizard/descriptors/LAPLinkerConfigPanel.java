@@ -483,12 +483,13 @@ public class LAPLinkerConfigPanel extends JPanel
 
 	/**
 	 * Returns a settings map with the values displayed in this panel.
+	 * @param oldSettings
 	 *
 	 * @return a new map.
 	 */
-	Map< String, Object > getSettings()
+	Map< String, Object > getSettings(final Map< String, Object > oldSettings)
 	{
-		final Map< String, Object > settings = new HashMap<>();
+		final Map< String, Object > settings = new HashMap<>( oldSettings );
 
 		// Frame to frame linking
 		settings.put( KEY_LINKING_MAX_DISTANCE, ( ( Number ) jTextFieldLinkingMaxDistance.getValue() ).doubleValue() );

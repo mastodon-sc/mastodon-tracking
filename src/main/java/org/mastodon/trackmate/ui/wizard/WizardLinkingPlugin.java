@@ -27,6 +27,15 @@ public class WizardLinkingPlugin extends WizardPlugin
 
 	private static final String MENU_PATH = "Plugins > TrackMate";
 
+	private final static Settings settings = new Settings();
+	static
+	{
+		final Map< String, Object > defaultLinkerSettings = LinkingUtils.getDefaultLAPSettingsMap();
+		final Map< String, Object > defaultDetectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
+		settings.detectorSettings( defaultDetectorSettings )
+				.linkerSettings( defaultLinkerSettings );
+	}
+
 	public WizardLinkingPlugin()
 	{
 		super( ACTION_NAME, COMMAND_NAME, MENU_PATH, KEYSTROKES );
@@ -41,18 +50,15 @@ public class WizardLinkingPlugin extends WizardPlugin
 		final int tmax = windowManager.getAppModel().getMaxTimepoint();
 		final int tmin = windowManager.getAppModel().getMinTimepoint();
 
-		final Map< String, Object > defaultLinkerSettings = LinkingUtils.getDefaultLAPSettingsMap();
-		defaultLinkerSettings.put( KEY_MIN_TIMEPOINT, Integer.valueOf( tmin ) );
-		defaultLinkerSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( tmax ) );
-		final Map< String, Object > defaultDetectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
-		defaultDetectorSettings.put( KEY_MIN_TIMEPOINT, Integer.valueOf( tmin ) );
-		defaultDetectorSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( tmax ) );
+		final Map< String, Object > linkerSettings = settings.values.getLinkerSettings();
+		linkerSettings.put( KEY_MIN_TIMEPOINT, Integer.valueOf( tmin ) );
+		linkerSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( tmax ) );
+		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
+		detectorSettings.put( KEY_MIN_TIMEPOINT, Integer.valueOf( tmin ) );
+		detectorSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( tmax ) );
 
-		final Settings settings = new Settings()
-				.spimData( spimData )
-				.linkerSettings( defaultLinkerSettings )
-				.detectorSettings( defaultDetectorSettings );
-		final TrackMate trackmate = new TrackMate( settings, appModel.getModel() );
+		settings.spimData( spimData );
+		final TrackMate trackmate = new TrackMate( settings, appModel.getModel(), appModel.getSelectionModel() );
 		getContext().inject( trackmate );
 
 		return new LinkingSequence( trackmate, windowManager, wizard.getLogService() );

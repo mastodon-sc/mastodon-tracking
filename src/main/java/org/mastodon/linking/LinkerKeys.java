@@ -3,6 +3,8 @@ package org.mastodon.linking;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.mastodon.detection.DetectorKeys;
+
 public class LinkerKeys
 {
 	/**
@@ -190,6 +192,20 @@ public class LinkerKeys
 	public static final String KEY_POSITION_SIGMA = "POSITION_SIGMA";
 
 	public static final double DEFAULT_POSITION_SIGMA = DEFAULT_MAX_SEARCH_RADIUS / 10.;
+
+	/**
+	 * Key for the parameter that specifies whether linking should occur only on the
+	 * content of the selection model. If <code>false</code>, linking will be
+	 * performed on the whole model between the time-points specified by
+	 * {@link DetectorKeys#KEY_MIN_TIMEPOINT} and
+	 * {@link DetectorKeys#KEY_MAX_TIMEPOINT}. Expected values are {@link Boolean}s.
+	 */
+	public static final String KEY_DO_LINK_SELECTION = "DO_LINK_SELECTION";
+
+	/**
+	 * Default value for the {@link #KEY_DO_LINK_SELECTION} parameter.
+	 */
+	public static final boolean DEFAULT_DO_LINK_SELECTION = false;
 
 	private LinkerKeys()
 	{}

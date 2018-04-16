@@ -17,6 +17,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.linking.mamut.KalmanLinkerMamut;
+import org.mastodon.model.DefaultSelectionModel;
 import org.mastodon.revised.mamut.MainWindow;
 import org.mastodon.revised.mamut.MamutProject;
 import org.mastodon.revised.mamut.WindowManager;
@@ -92,7 +93,7 @@ public class Sandbox
 		final MamutProject project = new MamutProject( null, new File(bdvFile) );
 		wm.getProjectManager().open( project );
 		final Model model = wm.getAppModel().getModel();
-		final TrackMate trackmate = new TrackMate( settings, model );
+		final TrackMate trackmate = new TrackMate( settings, model, new DefaultSelectionModel<>( model.getGraph(), model.getGraphIdBimap() ) );
 		trackmate.setContext( context );
 
 //		new Thread( trackmate ).start();

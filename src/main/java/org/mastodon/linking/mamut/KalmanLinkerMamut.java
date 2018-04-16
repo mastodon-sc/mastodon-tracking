@@ -4,9 +4,11 @@ import static org.mastodon.detection.DetectorKeys.DEFAULT_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
+import static org.mastodon.linking.LinkerKeys.DEFAULT_DO_LINK_SELECTION;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_LINKING_MAX_DISTANCE;
 import static org.mastodon.linking.LinkerKeys.DEFAULT_MAX_SEARCH_RADIUS;
+import static org.mastodon.linking.LinkerKeys.KEY_DO_LINK_SELECTION;
 import static org.mastodon.linking.LinkerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
 import static org.mastodon.linking.LinkerKeys.KEY_KALMAN_SEARCH_RADIUS;
 import static org.mastodon.linking.LinkerKeys.KEY_LINKING_MAX_DISTANCE;
@@ -130,15 +132,17 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 		ok = ok & checkParameter( settings, KEY_GAP_CLOSING_MAX_FRAME_GAP, Integer.class, str );
 		ok = ok & checkParameter( settings, KEY_MIN_TIMEPOINT, Integer.class, str );
 		ok = ok & checkParameter( settings, KEY_MAX_TIMEPOINT, Integer.class, str );
+		ok = ok & checkParameter( settings, KEY_DO_LINK_SELECTION, Boolean.class, str );
 		return ok;
 	}
 
 	public static Map< String, Object > getDefaultSettingsMap()
 	{
-		final Map< String, Object > sm = new HashMap< String, Object >( 3 );
+		final Map< String, Object > sm = new HashMap<>( 6 );
 		sm.put( KEY_KALMAN_SEARCH_RADIUS, DEFAULT_MAX_SEARCH_RADIUS );
 		sm.put( KEY_LINKING_MAX_DISTANCE, DEFAULT_LINKING_MAX_DISTANCE );
 		sm.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, DEFAULT_GAP_CLOSING_MAX_FRAME_GAP );
+		sm.put( KEY_DO_LINK_SELECTION, DEFAULT_DO_LINK_SELECTION );
 		sm.put( KEY_MIN_TIMEPOINT, DEFAULT_MIN_TIMEPOINT );
 		sm.put( KEY_MAX_TIMEPOINT, DEFAULT_MAX_TIMEPOINT );
 		return sm;

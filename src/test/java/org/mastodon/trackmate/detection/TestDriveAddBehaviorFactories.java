@@ -64,7 +64,7 @@ public class TestDriveAddBehaviorFactories
 				.detectorSettings( ds );
 
 		final Model model = windowManager.getAppModel().getModel();
-		final TrackMate trackmate = new TrackMate( settings, model );
+		final TrackMate trackmate = new TrackMate( settings, model, windowManager.getAppModel().getSelectionModel() );
 		trackmate.setContext( windowManager.getContext() );
 
 		if ( !trackmate.execDetection() )
