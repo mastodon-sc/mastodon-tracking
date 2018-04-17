@@ -11,7 +11,7 @@
 
 	<groupId>net.trndy</groupId>
 	<artifactId>mastodon-tracking</artifactId>
-	<version>0.1.1-SNAPSHOT</version>
+	<version>1.0.0-beta-1</version>
 
 	<name>Mastodon tracking</name>
 	<description>Basic tracking algorithms based on Mastodon data structures.</description>
@@ -51,7 +51,7 @@
 		<dependency>
 			<groupId>net.trackmate</groupId>
 			<artifactId>trackmate</artifactId>
-			<version>1.0.0-beta-4</version>
+			<version>1.0.0-beta-5</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mastodon</groupId>
