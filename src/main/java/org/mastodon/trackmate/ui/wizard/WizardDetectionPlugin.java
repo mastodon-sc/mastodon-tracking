@@ -37,6 +37,8 @@ public class WizardDetectionPlugin extends WizardPlugin
 		settings.spimData( spimData );
 		final TrackMate trackmate = new TrackMate( settings, appModel.getModel(), appModel.getSelectionModel() );
 		getContext().inject( trackmate );
+		trackmate.setLogger( wizard.getLogService() );
+		trackmate.setStatusService( wizard.getLogService() );
 		return new DetectionSequence( trackmate, windowManager, wizard.getLogService() );
 	}
 }

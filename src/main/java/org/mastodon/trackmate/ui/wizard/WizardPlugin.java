@@ -3,10 +3,18 @@ package org.mastodon.trackmate.ui.wizard;
 import static org.mastodon.app.ui.ViewMenuBuilder.item;
 import static org.mastodon.app.ui.ViewMenuBuilder.menu;
 
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
 import org.mastodon.app.ui.ViewMenuBuilder;
 import org.mastodon.plugin.MastodonPlugin;
@@ -31,6 +39,11 @@ public abstract class WizardPlugin extends AbstractContextual implements Mastodo
 	private final String menuPath;
 
 	private final String[] keyStrokes;
+
+	/**
+	 * The log document for this session.
+	 */
+	protected static final StyledDocument log = new DefaultStyledDocument();
 
 	/**
 	 * Instantiates a new wizard-based Mastodon plugin.
@@ -114,8 +127,22 @@ public abstract class WizardPlugin extends AbstractContextual implements Mastodo
 	{
 		if ( pluginAppModel != null )
 		{
+			try
+			{
+				final String str = "______________\n" + commandName + " @ " + new SimpleDateFormat( "HH:mm" ).format( new Date() );
+				final SimpleAttributeSet normal = new SimpleAttributeSet();
+				final SimpleAttributeSet bold = new SimpleAttributeSet( normal );
+				StyleConstants.setBold( bold, true );
+				log.insertString( log.getEndPosition().getOffset(), str, bold );
+				log.insertString( log.getEndPosition().getOffset(), " \n ", normal );
+			}
+			catch ( final BadLocationException e )
+			{
+				e.printStackTrace();
+			}
 			final WindowManager windowManager = pluginAppModel.getWindowManager();
-			final Wizard wizard = new Wizard( windowManager.getContext() );
+			final Wizard wizard = new Wizard( log );
+			windowManager.getContext().inject( wizard );
 			final WizardSequence sequence = getWizardSequence( pluginAppModel, wizard );
 			wizard.show( sequence, commandName );
 		}

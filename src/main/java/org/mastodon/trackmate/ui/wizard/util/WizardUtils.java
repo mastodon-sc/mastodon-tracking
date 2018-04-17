@@ -6,8 +6,6 @@ import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 
 import java.awt.Font;
 import java.awt.event.MouseListener;
-import java.io.File;
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Map;
@@ -24,8 +22,6 @@ import org.mastodon.adapter.SelectionModelAdapter;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
 import org.mastodon.detection.DetectionUtil;
-import org.mastodon.detection.DetectorKeys;
-import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.MamutDetectionCreatorFactories.DetectionBehavior;
 import org.mastodon.graph.GraphIdBimap;
 import org.mastodon.grouping.GroupManager;
@@ -43,8 +39,6 @@ import org.mastodon.revised.bdv.overlay.wrap.OverlayEdgeWrapper;
 import org.mastodon.revised.bdv.overlay.wrap.OverlayGraphWrapper;
 import org.mastodon.revised.bdv.overlay.wrap.OverlayVertexWrapper;
 import org.mastodon.revised.mamut.KeyConfigContexts;
-import org.mastodon.revised.mamut.MamutProject;
-import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.BoundingSphereRadiusStatistics;
 import org.mastodon.revised.model.mamut.Link;
@@ -57,14 +51,13 @@ import org.mastodon.revised.ui.keymap.KeymapManager;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
-import org.scijava.Context;
+import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.behaviour.util.Behaviours;
 
-import bdv.spimdata.SpimDataMinimal;
 import bdv.tools.InitializeViewerState;
-import mpicbg.spim.data.SpimDataException;
 import net.imagej.ops.OpService;
 
 /**
@@ -146,7 +139,7 @@ public class WizardUtils
 	 *            the time-point in the data to run the preview on.
 	 * @return <code>true</code> if the preview ran successfully.
 	 */
-	public static final boolean executeDetectionPreview( final Model model, final Settings settings, final OpService ops, final int currentTimepoint )
+	public static final boolean executeDetectionPreview( final Model model, final Settings settings, final OpService ops, final int currentTimepoint, final Logger logger, final StatusService statusService )
 	{
 		/*
 		 * Remove spots from current time point.
@@ -190,8 +183,11 @@ public class WizardUtils
 		/*
 		 * Execute preview.
 		 */
+
 		final TrackMate trackmate = new TrackMate( localSettings, model, new DefaultSelectionModel<>( model.getGraph(), model.getGraphIdBimap() ) );
-		trackmate.setContext( ops.context() );
+		ops.context().inject( trackmate );
+		trackmate.setStatusService( statusService );
+		trackmate.setLogger( logger );
 		final boolean ok = trackmate.execDetection();
 
 		if ( !ok )
@@ -283,27 +279,4 @@ public class WizardUtils
 
 	private WizardUtils()
 	{}
-
-	public static void main( final String[] args ) throws IOException, SpimDataException
-	{
-		final Context context = new Context();
-		final WindowManager windowManager = new WindowManager( context );
-
-		final String bdvFile = "../TrackMate3/samples/mamutproject/datasethdf5.xml";
-		final MamutProject project = new MamutProject( null, new File( bdvFile ) );
-		windowManager.getProjectManager().open( project );
-
-		final Model model = new Model();
-		model.getGraph().addVertex().init( 1, new double[] { 50., 50., 50., }, 20. );
-
-		previewFrame( null, windowManager.getAppModel().getSharedBdvData(), model );
-		final Map< String, Object > detectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
-		detectorSettings.put( DetectorKeys.KEY_THRESHOLD, 50. );
-		final Settings settings = new Settings()
-				.spimData( ( SpimDataMinimal ) windowManager.getAppModel().getSharedBdvData().getSpimData() )
-				.detector( DoGDetectorMamut.class )
-				.detectorSettings( detectorSettings );
-		final int currentTimepoint = 0;
-		executeDetectionPreview( model, settings, context.getService( OpService.class ), currentTimepoint );
-	}
 }

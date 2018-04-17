@@ -16,6 +16,7 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
 
 import org.scijava.Context;
 import org.scijava.plugin.Parameter;
@@ -40,13 +41,13 @@ public class LogPanel extends JPanel
 	@Parameter
 	private Context context;
 
-	private JScrollPane jScrollPaneLog;
+	private final JScrollPane jScrollPaneLog;
 
-	private JTextPane jTextPaneLog;
+	private final JTextPane jTextPaneLog;
 
-	private JProgressBar jProgressBar;
+	private final JProgressBar jProgressBar;
 
-	public LogPanel()
+	public LogPanel( final StyledDocument log )
 	{
 		final GridBagLayout layout = new GridBagLayout();
 		layout.columnWidths = new int[] { 64 };
@@ -75,11 +76,11 @@ public class LogPanel extends JPanel
 		gbc.gridy++;
 		add( jProgressBar, gbc );
 
-		jTextPaneLog = new JTextPane();
+		jTextPaneLog = new JTextPane( log );
 		jTextPaneLog.setEditable( true );
 		jTextPaneLog.setForeground( NORMAL_COLOR );
 		jTextPaneLog.setFont( smallFont );
-		jScrollPaneLog = new JScrollPane(jTextPaneLog);
+		jScrollPaneLog = new JScrollPane( jTextPaneLog );
 		jTextPaneLog.setBackground( getBackground() );
 		gbc.gridy++;
 		gbc.fill = GridBagConstraints.BOTH;
@@ -94,7 +95,6 @@ public class LogPanel extends JPanel
 	{
 		jTextPaneLog.setText( "" );
 	}
-
 
 	public void setStatus( final String status )
 	{
@@ -154,27 +154,4 @@ public class LogPanel extends JPanel
 			}
 		} );
 	}
-
-	/**
-	 * Returns the text content currently displayed in the log panel.
-	 *
-	 * @return the text.
-	 */
-	public String getText()
-	{
-		return jTextPaneLog.getText();
-	}
-
-	/**
-	 * Sets the text content currently displayed in the log panel.
-	 *
-	 * @param log
-	 *            the text to display.
-	 */
-	public void setText( final String log )
-	{
-		jTextPaneLog.setText( log );
-	}
-
-
 }

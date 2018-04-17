@@ -23,6 +23,7 @@ import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
+import org.scijava.log.LogLevel;
 import org.scijava.plugin.Plugin;
 
 @Plugin( type = SpotLinkerDescriptor.class, name = "LAP linker configuration descriptor" )
@@ -60,11 +61,11 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 				? settings.values.getSpimData().getSequenceDescription()
 						.getViewSetups().get( setupID ).getVoxelSize().unit()
 				: "pixels";
-		log.log( "Configured LAP linker with the following parameters:\n" );
-		log.log( LAPLinkerConfigPanel.echoSettingsMap( ls, units ) );
-		log.log( String.format( "  - target: %s\n", ( boolean ) ls.get( KEY_DO_LINK_SELECTION ) ? "selection only." : "all detections." ) );
-		log.log( String.format( "  - min time-point: %d\n", ( int ) ls.get( KEY_MIN_TIMEPOINT ) ) );
-		log.log( String.format( "  - max time-point: %d\n", ( int ) ls.get( KEY_MAX_TIMEPOINT ) ) );
+		logger.log( LogLevel.INFO, "Configured LAP linker with the following parameters:\n" );
+		logger.log( LogLevel.INFO, LAPLinkerConfigPanel.echoSettingsMap( ls, units ) );
+		logger.log( LogLevel.INFO, String.format( "  - target: %s\n", ( boolean ) ls.get( KEY_DO_LINK_SELECTION ) ? "selection only." : "all detections." ) );
+		logger.log( LogLevel.INFO, String.format( "  - min time-point: %d\n", ( int ) ls.get( KEY_MIN_TIMEPOINT ) ) );
+		logger.log( LogLevel.INFO, String.format( "  - max time-point: %d\n", ( int ) ls.get( KEY_MAX_TIMEPOINT ) ) );
 	}
 
 	@SuppressWarnings( { "rawtypes", "unchecked" } )

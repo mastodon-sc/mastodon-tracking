@@ -8,14 +8,16 @@ import javax.swing.JFrame;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.StyledDocument;
 
 import org.mastodon.revised.mamut.MainWindow;
 import org.mastodon.revised.mamut.MamutProject;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
-import org.mastodon.trackmate.ui.wizard.descriptors.LogDescriptor;
 import org.scijava.Context;
+import org.scijava.plugin.Parameter;
 
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
@@ -23,24 +25,34 @@ import mpicbg.spim.data.SpimDataException;
 
 public class Wizard
 {
+
+	@Parameter
+	private Context context;
+
 	private final JFrame frame;
 
-	private final WizardLogService logService;
+	private final WizardLogService wizardLogService;
 
-	public Wizard( final Context context )
+	public Wizard( final StyledDocument log )
 	{
 		this.frame = new JFrame();
-		this.logService = new WizardLogService();
+		this.wizardLogService = new WizardLogService( log );
+	}
+
+	public Wizard()
+	{
+		this( new DefaultStyledDocument() );
 	}
 
 	public WizardLogService getLogService()
 	{
-		return logService;
+		return wizardLogService;
 	}
 
 	public void show( final WizardSequence sequence, final String title )
 	{
-		final WizardController controller = new WizardController( sequence, new LogDescriptor( logService.getPanel() ) );
+		context.inject( wizardLogService );
+		final WizardController controller = new WizardController( sequence, wizardLogService );
 		frame.getContentPane().removeAll();
 		frame.getContentPane().add( controller.getWizardPanel() );
 		frame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
@@ -88,10 +100,10 @@ public class Wizard
 		final MamutProject project = new MamutProject( null, new File( bdvFile ) );
 		windowManager.getProjectManager().open( project );
 
-
 		mw.setVisible( true );
 
-		final Wizard wizard = new Wizard( windowManager.getContext() );
+		final Wizard wizard = new Wizard();
+		windowManager.getContext().inject( wizard );
 		final TrackMate trackmate = new TrackMate( settings, windowManager.getAppModel().getModel(), windowManager.getAppModel().getSelectionModel() );
 		context.inject( trackmate );
 		final DetectionSequence sequence = new DetectionSequence( trackmate, windowManager, wizard.getLogService() );

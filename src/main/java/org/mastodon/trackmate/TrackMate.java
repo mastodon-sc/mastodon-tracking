@@ -20,7 +20,7 @@ import org.mastodon.spatial.SpatioTemporalIndexSelection;
 import org.scijava.Cancelable;
 import org.scijava.app.StatusService;
 import org.scijava.command.ContextCommand;
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 import org.scijava.plugin.Parameter;
 
 import bdv.spimdata.SpimDataMinimal;
@@ -38,8 +38,8 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 	@Parameter
 	private StatusService statusService;
 
-	@Parameter
-	private LogService log;
+	@Parameter(required = false)
+	private Logger logger;
 
 	private final Settings settings;
 
@@ -75,6 +75,16 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		return selectionModel;
 	}
 
+	public void setLogger( final Logger logger )
+	{
+		this.logger = logger;
+	}
+
+	public void setStatusService( final StatusService statusService )
+	{
+		this.statusService = statusService;
+	}
+
 	public boolean execDetection()
 	{
 		succesful = true;
@@ -87,7 +97,7 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		if ( null == spimData )
 		{
 			errorMessage = "Cannot start detection: SpimData object is null.\n";
-			log.error( errorMessage + '\n' );
+			logger.error( errorMessage + '\n' );
 			succesful = false;
 			return false;
 		}
@@ -104,13 +114,15 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 				graph, spimData,
 				detectorSettings,
 				model.getSpatioTemporalIndex() );
+		detector.setLogger( logger );
+		detector.setStatusService( statusService );
 		this.currentOp = detector;
-		log.info( "Detection with " + cl.getSimpleName() + '\n' );
+		logger.info( "Detection with " + cl.getSimpleName() + '\n' );
 		detector.compute( spimData, graph );
 
 		if ( !detector.isSuccessful() )
 		{
-			log.error( "Detection failed:\n" + detector.getErrorMessage() + '\n' );
+			logger.error( "Detection failed:\n" + detector.getErrorMessage() + '\n' );
 			succesful = false;
 			errorMessage = detector.getErrorMessage();
 			return false;
@@ -119,8 +131,8 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 
 		model.getFeatureModel().declareFeature( detector.getQualityFeature() );
 		final long end = System.currentTimeMillis();
-		log.info( String.format( "Detection completed in %.1f s.\n", ( end - start ) / 1000. ) );
-		log.info( "Found " + graph.vertices().size() + " spots.\n" );
+		logger.info( String.format( "Detection completed in %.1f s.\n", ( end - start ) / 1000. ) );
+		logger.info( "There is now " + graph.vertices().size() + " spots.\n" );
 
 		graph.notifyGraphChanged();
 		return true;
@@ -207,12 +219,12 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 				( SpotLinkerOp ) Inplaces.binary1( ops, linkerCl, model.getGraph(), target,
 						linkerSettings, model.getFeatureModel() );
 
-		log.info( "Particle-linking with " + linkerCl.getSimpleName() + '\n' );
+		logger.info( "Particle-linking with " + linkerCl.getSimpleName() + '\n' );
 		this.currentOp = linker;
 		linker.mutate1( model.getGraph(), model.getSpatioTemporalIndex() );
 		if ( !linker.isSuccessful() )
 		{
-			log.error( "Particle-linking failed:\n" + linker.getErrorMessage() + '\n' );
+			logger.error( "Particle-linking failed:\n" + linker.getErrorMessage() + '\n' );
 			succesful = false;
 			errorMessage = linker.getErrorMessage();
 			return false;
@@ -221,9 +233,9 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		currentOp = null;
 		model.getFeatureModel().declareFeature( linker.getLinkCostFeature() );
 		final long end = System.currentTimeMillis();
-		log.info( String.format( "Particle-linking completed in %.1f s.\n", ( end - start ) / 1000. ) );
+		logger.info( String.format( "Particle-linking completed in %.1f s.\n", ( end - start ) / 1000. ) );
 		final int nTracks = RootFinder.getRoots( model.getGraph() ).size();
-		log.info( String.format( "Found %d tracks.\n", nTracks ) );
+		logger.info( String.format( "There is now %d tracks.\n", nTracks ) );
 
 		model.getGraph().notifyGraphChanged();
 		return true;

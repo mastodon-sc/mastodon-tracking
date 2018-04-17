@@ -6,7 +6,6 @@ import java.util.Map;
 import org.mastodon.linking.mamut.SpotLinkerOp;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.trackmate.TrackMate;
-import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 import org.scijava.Context;
 import org.scijava.Contextual;
@@ -18,13 +17,6 @@ public abstract class SpotLinkerDescriptor extends WizardPanelDescriptor impleme
 {
 	@Parameter
 	private Context context;
-
-	protected WizardLogService log;
-
-	public void setLog( final WizardLogService log )
-	{
-		this.log = log;
-	}
 
 	// -- Contextual methods --
 

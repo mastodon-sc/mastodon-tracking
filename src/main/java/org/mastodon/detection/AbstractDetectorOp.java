@@ -3,6 +3,8 @@ package org.mastodon.detection;
 import java.util.Map;
 
 import org.scijava.ItemIO;
+import org.scijava.app.StatusService;
+import org.scijava.log.Logger;
 import org.scijava.plugin.Parameter;
 
 import bdv.spimdata.SpimDataMinimal;
@@ -21,6 +23,12 @@ public abstract class AbstractDetectorOp
 
 	@Parameter( type = ItemIO.OUTPUT )
 	protected boolean ok;
+
+	@Parameter( required = false )
+	protected Logger logger;
+
+	@Parameter( required = false )
+	protected StatusService statusService;
 
 	@Override
 	public String getErrorMessage()
@@ -56,6 +64,18 @@ public abstract class AbstractDetectorOp
 	public String getCancelReason()
 	{
 		return cancelReason;
+	}
+
+	@Override
+	public void setLogger( final Logger logger )
+	{
+		this.logger = logger;
+	}
+
+	@Override
+	public void setStatusService( final StatusService statusService )
+	{
+		this.statusService = statusService;
 	}
 
 }

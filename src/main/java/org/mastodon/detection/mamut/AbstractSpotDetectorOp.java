@@ -15,6 +15,7 @@ import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
 import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
+import org.scijava.log.Logger;
 import org.scijava.plugin.Parameter;
 import org.scijava.thread.ThreadService;
 
@@ -25,12 +26,6 @@ import net.imglib2.algorithm.Benchmark;
 
 public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGraph > implements SpotDetectorOp, Benchmark
 {
-
-	@Parameter
-	private ThreadService threadService;
-
-	@Parameter
-	private StatusService statusService;
 
 	@Parameter( type = ItemIO.INPUT )
 	private Map< String, Object > settings;
@@ -46,6 +41,15 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 
 	@Parameter( type = ItemIO.OUTPUT )
 	protected Feature< Spot, DoublePropertyMap< Spot > > qualityFeature;
+
+	@Parameter
+	private ThreadService threadService;
+
+	@Parameter( required = false )
+	private StatusService statusService;
+
+	@Parameter( required = false )
+	private Logger log;
 
 	private long processingTime;
 
@@ -85,6 +89,8 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 
 		this.detector = ( DetectorOp ) Inplaces.binary1( ops(), cl,
 				detectionCreator, spimData, settings );
+		detector.setLogger( log );
+		detector.setStatusService( statusService );
 		detector.mutate1( detectionCreator, spimData );
 
 		final long end = System.currentTimeMillis();
@@ -124,6 +130,18 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 	public boolean isSuccessful()
 	{
 		return ok;
+	}
+
+	@Override
+	public void setLogger( final Logger logger )
+	{
+		this.log = logger;
+	}
+
+	@Override
+	public void setStatusService( final StatusService statusService )
+	{
+		this.statusService = statusService;
 	}
 
 	// -- Cancelable methods --

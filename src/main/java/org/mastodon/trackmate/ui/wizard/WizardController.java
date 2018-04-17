@@ -24,10 +24,13 @@ public class WizardController implements WindowListener
 
 	private final LogDescriptor logDescriptor;
 
-	public WizardController( final WizardSequence sequence, final LogDescriptor logDescriptor )
+	private final WizardLogService wizardLogService;
+
+	public WizardController( final WizardSequence sequence, final WizardLogService wizardLogService )
 	{
 		this.sequence = sequence;
-		this.logDescriptor = logDescriptor;
+		this.wizardLogService = wizardLogService;
+		this.logDescriptor = new LogDescriptor( wizardLogService.getPanel() );
 		this.wizardPanel = new WizardPanel();
 		wizardPanel.btnLog.setAction( getLogAction() );
 		wizardPanel.btnNext.setAction( getNextAction() );
@@ -46,6 +49,8 @@ public class WizardController implements WindowListener
 
 	public void registerWizardPanel( final WizardPanelDescriptor panel )
 	{
+		panel.setLogger( wizardLogService );
+		panel.setStatusService( wizardLogService );
 		wizardPanel.panelMain.add( panel.getPanelComponent(), panel.getPanelDescriptorIdentifier() );
 	}
 

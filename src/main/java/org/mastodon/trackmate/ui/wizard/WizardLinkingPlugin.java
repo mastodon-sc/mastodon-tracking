@@ -60,7 +60,8 @@ public class WizardLinkingPlugin extends WizardPlugin
 		settings.spimData( spimData );
 		final TrackMate trackmate = new TrackMate( settings, appModel.getModel(), appModel.getSelectionModel() );
 		getContext().inject( trackmate );
-
+		trackmate.setLogger( wizard.getLogService() );
+		trackmate.setStatusService( wizard.getLogService() );
 		return new LinkingSequence( trackmate, windowManager, wizard.getLogService() );
 	}
 }

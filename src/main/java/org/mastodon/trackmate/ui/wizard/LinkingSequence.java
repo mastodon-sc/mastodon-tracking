@@ -114,7 +114,8 @@ public class LinkingSequence implements WizardSequence
 				trackmate.getSettings().linkerSettings( defaultSettings );
 				linkerConfigDescriptor.setTrackMate( trackmate );
 				linkerConfigDescriptor.setWindowManager( windowManager );
-				linkerConfigDescriptor.setLog( logService );
+				linkerConfigDescriptor.setLogger( logService );
+				linkerConfigDescriptor.setStatusService( logService );
 				linkerConfigDescriptor.getPanelComponent().setSize( chooseLinkerDescriptor.getPanelComponent().getSize() );
 				return linkerConfigDescriptor;
 			}

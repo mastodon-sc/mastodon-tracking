@@ -37,6 +37,7 @@ import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.util.SelectOnFocusListener;
 import org.scijava.Context;
+import org.scijava.log.LogLevel;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.plugin.PluginInfo;
@@ -89,13 +90,13 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 				? settings.values.getSpimData().getSequenceDescription()
 						.getViewSetups().get( setupID ).getVoxelSize().unit()
 				: "pixels";
-		log.log( "Configured Kalman linker with the following parameters:\n" );
-		log.log( String.format( "  - initial search radius: %.1f %s\n", ( double ) ls.get( KEY_LINKING_MAX_DISTANCE ), units ) );
-		log.log( String.format( "  - search radius: %.1f %s\n", ( double ) ls.get( KEY_KALMAN_SEARCH_RADIUS ), units ) );
-		log.log( String.format( "  - max frame gap: %d\n", ( int ) ls.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) ) );
-		log.log( String.format( "  - target: %s\n", ( boolean ) ls.get( KEY_DO_LINK_SELECTION ) ? "selection only." : "all detections." ) );
-		log.log( String.format( "  - min time-point: %d\n", ( int ) ls.get( KEY_MIN_TIMEPOINT ) ) );
-		log.log( String.format( "  - max time-point: %d\n", ( int ) ls.get( KEY_MAX_TIMEPOINT ) ) );
+		logger.log( LogLevel.INFO, "Configured Kalman linker with the following parameters:\n" );
+		logger.log( LogLevel.INFO, String.format( "  - initial search radius: %.1f %s\n", ( double ) ls.get( KEY_LINKING_MAX_DISTANCE ), units ) );
+		logger.log( LogLevel.INFO, String.format( "  - search radius: %.1f %s\n", ( double ) ls.get( KEY_KALMAN_SEARCH_RADIUS ), units ) );
+		logger.log( LogLevel.INFO, String.format( "  - max frame gap: %d\n", ( int ) ls.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) ) );
+		logger.log( LogLevel.INFO, String.format( "  - target: %s\n", ( boolean ) ls.get( KEY_DO_LINK_SELECTION ) ? "selection only." : "all detections." ) );
+		logger.log( LogLevel.INFO, String.format( "  - min time-point: %d\n", ( int ) ls.get( KEY_MIN_TIMEPOINT ) ) );
+		logger.log( LogLevel.INFO, String.format( "  - max time-point: %d\n", ( int ) ls.get( KEY_MAX_TIMEPOINT ) ) );
 	}
 
 	@SuppressWarnings( { "rawtypes", "unchecked" } )

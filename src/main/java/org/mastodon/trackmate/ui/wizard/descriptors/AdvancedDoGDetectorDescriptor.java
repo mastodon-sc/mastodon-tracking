@@ -44,7 +44,6 @@ import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.mastodon.trackmate.ui.wizard.Wizard;
 import org.mastodon.trackmate.ui.wizard.util.WizardUtils;
-import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
@@ -65,9 +64,6 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 	private static final Icon PREVIEW_ICON = new ImageIcon( Wizard.class.getResource( "led-icon-eye-green.png" ) );
 
 	private static final NumberFormat FORMAT = new DecimalFormat( "0.0" );
-
-	@Parameter
-	private LogService log;
 
 	@Parameter
 	private OpService ops;
@@ -154,23 +150,22 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 		final double ry = radius / py;
 		final double rz = radius / pz;
 
-		log.info( "Configured detector with parameters:\n" );
-		log.info( String.format( "  - spot radius: %.1f %s\n", radius, units ) );
-		log.info( String.format( "  - quality threshold: %.1f\n", ( double ) settings.values.getDetectorSettings().get( KEY_THRESHOLD ) ) );
+		logger.info( "Configured detector with parameters:\n" );
+		logger.info( String.format( "  - spot radius: %.1f %s\n", radius, units ) );
+		logger.info( String.format( "  - quality threshold: %.1f\n", ( double ) settings.values.getDetectorSettings().get( KEY_THRESHOLD ) ) );
 		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
 		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
 		{
-			log.info( String.format( "  - will operate on resolution level %d (%.0f x %.0f x %.0f)\n", level, sx, sy, sz ) );
-			log.info( String.format( "  - at this level, radius = %.1f %s corresponds to:\n", radius, units ) );
+			logger.info( String.format( "  - will operate on resolution level %d (%.0f x %.0f x %.0f)\n", level, sx, sy, sz ) );
+			logger.info( String.format( "  - at this level, radius = %.1f %s corresponds to:\n", radius, units ) );
 		}
 		else
 		{
-			log.info( String.format( "  - equivalent radius = %.1f %s in pixels:\n", radius, units ) );
+			logger.info( String.format( "  - equivalent radius = %.1f %s in pixels:\n", radius, units ) );
 		}
-		log.info( String.format( "      - %.1f pixels in X.\n", rx ) );
-		log.info( String.format( "      - %.1f pixels in Y.\n", ry ) );
-		log.info( String.format( "      - %.1f pixels in Z.\n", rz ) );
-
+		logger.info( String.format( "      - %.1f pixels in X.\n", rx ) );
+		logger.info( String.format( "      - %.1f pixels in Y.\n", ry ) );
+		logger.info( String.format( "      - %.1f pixels in Z.\n", rz ) );
 	}
 
 	private void preview()
@@ -192,7 +187,7 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 				try
 				{
 					grabSettings();
-					final boolean ok = WizardUtils.executeDetectionPreview( localModel, settings, ops, currentTimepoint );
+					final boolean ok = WizardUtils.executeDetectionPreview( localModel, settings, ops, currentTimepoint, logger, statusService );
 					if ( !ok )
 						return;
 
@@ -274,7 +269,7 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 			catch ( final IllegalArgumentException e )
 			{}
 		}
-		
+
 		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
 		final BasicViewSetup setup = settings.values.getSpimData().getSequenceDescription().getViewSetups().get( setupID );
 
@@ -381,7 +376,7 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 			gbc.gridx = 0;
 			gbc.gridwidth = 3;
 			add( lblAddBehaviorInfo, gbc );
-			
+
 			// Hook it to changes in the CB.
 			behaviorCB.addItemListener( ( e ) -> lblAddBehaviorInfo.setText( "<html>" + ( ( DetectionBehavior ) behaviorCB.getSelectedItem() ).info() + "</html>" ) );
 

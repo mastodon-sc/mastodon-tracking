@@ -10,7 +10,6 @@ import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 import java.util.ArrayList;
 
 import org.mastodon.detection.DetectionCreatorFactory.DetectionCreator;
-import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.thread.ThreadService;
@@ -46,9 +45,6 @@ public class DoGDetectorOp
 
 	@Parameter
 	private ThreadService threadService;
-
-	@Parameter
-	private StatusService statusService;
 
 	/**
 	 * The minimal diameter size, in pixel, under which we stop down-sampling.

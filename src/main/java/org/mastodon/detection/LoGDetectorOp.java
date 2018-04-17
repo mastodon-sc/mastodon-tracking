@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.mastodon.detection.DetectionCreatorFactory.DetectionCreator;
-import org.scijava.app.StatusService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.thread.ThreadService;
@@ -47,9 +46,6 @@ public class LoGDetectorOp
 
 	@Parameter
 	private ThreadService threadService;
-
-	@Parameter
-	private StatusService statusService;
 
 	private long processingTime;
 

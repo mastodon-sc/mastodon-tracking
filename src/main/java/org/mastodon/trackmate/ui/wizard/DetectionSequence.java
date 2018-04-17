@@ -44,10 +44,13 @@ public class DetectionSequence implements WizardSequence
 
 	private final PluginProvider< SpotDetectorDescriptor > descriptorProvider;
 
+	private final WizardLogService logService;
+
 	public DetectionSequence( final TrackMate trackmate, final WindowManager windowManager, final WizardLogService logService )
 	{
 		this.trackmate = trackmate;
 		this.windowManager = windowManager;
+		this.logService = logService;
 
 		this.setupIdDecriptor = new SetupIdDecriptor( trackmate.getSettings(), logService );
 		setupIdDecriptor.setContext( windowManager.getContext() );
@@ -118,6 +121,8 @@ public class DetectionSequence implements WizardSequence
 
 				detectorConfigDescriptor.setTrackMate( trackmate );
 				detectorConfigDescriptor.setWindowManager( windowManager );
+				detectorConfigDescriptor.setLogger( logService );
+				detectorConfigDescriptor.setStatusService( logService );
 				detectorConfigDescriptor.getPanelComponent().setSize( chooseDetectorDescriptor.getPanelComponent().getSize() );
 				return detectorConfigDescriptor;
 			}
