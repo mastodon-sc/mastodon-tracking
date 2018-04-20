@@ -11,12 +11,21 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.mastodon.app.ui.settings.style.AbstractStyleManager;
+import org.mastodon.trackmate.semiauto.SemiAutomaticTrackerPlugin;
 import org.yaml.snakeyaml.Yaml;
 
 public class SemiAutomaticTrackerSettingsManager extends AbstractStyleManager< SemiAutomaticTrackerSettingsManager, SemiAutomaticTrackerSettings >
 {
 
-	private static final String SETTINGS_FILE = System.getProperty( "user.home" ) + "/.mastodon/semiautomatictrackersettings.yaml";
+	private static final String SETTINGS_FILE;
+	static
+	{
+		String sfPath = System.getProperty( "user.home" ) + "/.mastodon";
+		for ( final String pathElement : SemiAutomaticTrackerPlugin.MENU_PATH )
+			sfPath += '/' + pathElement;
+		sfPath += "/semiautomatictrackersettings.yaml";
+		SETTINGS_FILE = sfPath;
+	}
 
 	private final SemiAutomaticTrackerSettings forwardDefaultSettings;
 

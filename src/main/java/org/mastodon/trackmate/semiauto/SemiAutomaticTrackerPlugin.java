@@ -51,6 +51,7 @@ import net.imagej.ops.special.computer.Computers;
 public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 {
 
+	public static final String[] MENU_PATH = new String[] { "Plugins", "TrackMate" };
 	private static final String ACTION_1 = "semi-automatic tracking";
 	private static final String ACTION_2 = "config semi-automatic tracking";
 	private static final String ACTION_3 = "log semi-automatic tracking";
@@ -120,12 +121,16 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 	public List< MenuItem > getMenuItems()
 	{
 		return Arrays.asList(
-				MamutMenuBuilder.menu( "Plugins",
-						MamutMenuBuilder.menu( "TrackMate",
-								MamutMenuBuilder.item( ACTION_1 ) ) ),
-				MamutMenuBuilder.menu( "Plugins",
-						MamutMenuBuilder.menu( "TrackMate",
-								MamutMenuBuilder.item( ACTION_2 ) ) ));
+				makeFullMenuItem( MamutMenuBuilder.item( ACTION_1 ) ),
+				makeFullMenuItem( MamutMenuBuilder.item( ACTION_2 ) ) );
+	}
+
+	private static final MenuItem makeFullMenuItem( final MenuItem item )
+	{
+		MenuItem menuPath = item;
+		for ( int i = MENU_PATH.length - 1; i >= 0; i-- )
+			menuPath = MamutMenuBuilder.menu( MENU_PATH[ i ], menuPath );
+		return menuPath;
 	}
 
 	@Override
