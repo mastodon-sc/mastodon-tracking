@@ -230,7 +230,10 @@ public class SemiAutomaticTracker
 				double minEig = Double.POSITIVE_INFINITY;
 				for ( int k = 0; k < eigVals.length; k++ )
 					minEig = Math.min( minEig, eigVals[ k ] );
-				final double radius = Math.sqrt( minEig );
+				final double physicalRadius = Math.sqrt( minEig );
+
+				final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, setup );
+				final double radius = physicalRadius / calibration[ 0 ]; // pixels
 
 				final int nResolutionLevels = DetectionUtil.getNResolutionLevels( spimData, setup );
 				final int level;
@@ -465,7 +468,7 @@ public class SemiAutomaticTracker
 
 					final Spot vref = graph.vertexRef();
 					final Link eref = graph.edgeRef();
-					target = graph.addVertex( vref ).init( tp, pos, radius );
+					target = graph.addVertex( vref ).init( tp, pos, physicalRadius );
 					final Link edge;
 					if ( forward )
 						edge = graph.addEdge( source, target, eref ).init();
