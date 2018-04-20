@@ -37,6 +37,7 @@ import mpicbg.spim.data.generic.sequence.BasicViewDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHints;
 import mpicbg.spim.data.sequence.ViewId;
+import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.Point;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
@@ -72,7 +73,7 @@ public class DetectionUtil
 	 * Returns a new feature wrapping the specified property map, that serves as
 	 * a Quality feature for the detectors of Mastodon. This feature is expected
 	 * to be common to all detectors.
-	 * 
+	 *
 	 * @param <V>
 	 *            the type of spots.
 	 * @param quality
@@ -280,6 +281,13 @@ public class DetectionUtil
 		{
 			return 1.;
 		}
+	}
+
+	public static double[] getPhysicalCalibration( final SpimDataMinimal spimData, final int setupID )
+	{
+		final BasicViewSetup setup = spimData.getSequenceDescription().getViewSetups().get( setupID );
+		final VoxelDimensions voxelSize = setup.getVoxelSize();
+		return new double[] { voxelSize.dimension( 0 ), voxelSize.dimension( 1 ), voxelSize.dimension( 2 ) };
 	}
 
 	/**

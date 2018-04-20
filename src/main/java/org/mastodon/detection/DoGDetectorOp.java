@@ -71,9 +71,17 @@ public class DoGDetectorOp
 		final int minTimepoint = ( int ) settings.get( KEY_MIN_TIMEPOINT );
 		final int maxTimepoint = ( int ) settings.get( KEY_MAX_TIMEPOINT );
 		final int setup = ( int ) settings.get( KEY_SETUP_ID );
-		final double radius = ( double ) settings.get( KEY_RADIUS );
+		final double physicalRadius = ( double ) settings.get( KEY_RADIUS );
 		final double threshold = ( double ) settings.get( KEY_THRESHOLD );
 		final Interval roi = ( Interval ) settings.get( KEY_ROI );
+
+		/*
+		 * Convert from physical units to pixel units. We take the x axis as
+		 * reference scale axis, because later all scales will with reference to
+		 * this one (see below: pixel size of x = 1.0).
+		 */
+		final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, setup );
+		final double radius = physicalRadius / calibration[ 0 ]; // pixels
 
 		statusService.showStatus( "DoG detection." );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
@@ -186,7 +194,7 @@ public class DoGDetectorOp
 					// nicely with the 3D transform.
 					p3d.setPosition( p );
 					transform.apply( p3d, sp );
-					detectionCreator.createDetection( pos, radius, normalizedValue );
+					detectionCreator.createDetection( pos, physicalRadius, normalizedValue );
 				}
 			}
 			finally

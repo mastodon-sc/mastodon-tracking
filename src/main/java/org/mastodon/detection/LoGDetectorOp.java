@@ -68,9 +68,15 @@ public class LoGDetectorOp
 		final int minTimepoint = ( int ) settings.get( KEY_MIN_TIMEPOINT );
 		final int maxTimepoint = ( int ) settings.get( KEY_MAX_TIMEPOINT );
 		final int setup = ( int ) settings.get( KEY_SETUP_ID );
-		final double radius = ( double ) settings.get( KEY_RADIUS );
+		final double physicalRadius = ( double ) settings.get( KEY_RADIUS );
 		final double threshold = ( double ) settings.get( KEY_THRESHOLD );
 		final Interval roi = ( Interval ) settings.get( KEY_ROI );
+
+		/*
+		 * Convert from physical units to pixel units.
+		 */
+		final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, setup );
+		final double radius = physicalRadius / calibration[ 0 ]; // pixels
 
 		statusService.showStatus( "LoG detection" );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
@@ -141,9 +147,9 @@ public class LoGDetectorOp
 			final double xs = Affine3DHelpers.extractScale( transform, 0 );
 			final double ys = Affine3DHelpers.extractScale( transform, 1 );
 			final double zs = Affine3DHelpers.extractScale( transform, 2 );
-			final double[] calibration = new double[] { xs, ys, zs };
+			final double[] pixelCalibration = new double[] { xs, ys, zs };
 
-			final RandomAccessibleInterval< FloatType > kernel = createLoGKernel( radius, zeroMin.numDimensions(), calibration );
+			final RandomAccessibleInterval< FloatType > kernel = createLoGKernel( radius, zeroMin.numDimensions(), pixelCalibration );
 			@SuppressWarnings( "rawtypes" )
 			final IntervalView source = Views.interval( zeroMin, interval );
 
@@ -161,7 +167,7 @@ public class LoGDetectorOp
 			 * is scaled differently across X, Y and Z.
 			 */
 			final double sigma = radius / Math.sqrt( img.numDimensions() );
-			final double sigmaPixels = sigma / calibration[ 0 ];
+			final double sigmaPixels = sigma / pixelCalibration[ 0 ];
 			final FloatType C = new FloatType( ( float ) ( 1. / Math.PI / sigmaPixels / sigmaPixels ) );
 			Views.iterable( output ).forEach( ( e ) -> e.div( C ) );
 
@@ -197,7 +203,7 @@ public class LoGDetectorOp
 
 						p3d.setPosition( refinedPeak );
 						transform.apply( p3d, point );
-						detectionCreator.createDetection( pos, radius, q );
+						detectionCreator.createDetection( pos, physicalRadius, q );
 					}
 				}
 				finally
@@ -220,7 +226,7 @@ public class LoGDetectorOp
 						final double q = ra.get().getRealDouble();
 
 						transform.apply( peak, point );
-						detectionCreator.createDetection( pos, radius, q );
+						detectionCreator.createDetection( pos, physicalRadius, q );
 					}
 				}
 				finally
