@@ -135,11 +135,14 @@ public class DetectionUtil
 	}
 
 	/**
-	 * Determines the optimal resolution level.
+	 * Determines the optimal resolution level for detection of an object of a
+	 * given size (in physical units).
 	 * <p>
 	 * This optimal resolution is the largest resolution level for which an
-	 * object with the specified radius (measured at level 0) has a radius at
-	 * least larger the specified limit.
+	 * object with the specified size (measured at level 0) has an actual size
+	 * in pixels at least larger the specified limit. The size here is specified
+	 * in <b>physical units</b>. The calibration information is retrieved from
+	 * the spimData to estimate the object size in pixel units.
 	 * <p>
 	 * If the data does not ship multiple resolution levels, this methods return
 	 * 0.
@@ -147,10 +150,11 @@ public class DetectionUtil
 	 * @param spimData
 	 *            the {@link SpimDataMinimal} linking to the image data.
 	 * @param size
-	 *            the size of an object measured at resolution level 0.
+	 *            the size of an object measured at resolution level 0, <b>in
+	 *            physical units</b>.
 	 * @param minSizePixel
-	 *            the desired minimal size of the same object in higher
-	 *            resolution levels.
+	 *            the desired minimal size in pixel units of the same object in
+	 *            higher resolution levels.
 	 * @param timepoint
 	 *            the time-point to query.
 	 * @param setup
@@ -166,26 +170,17 @@ public class DetectionUtil
 		{
 			final BasicMultiResolutionSetupImgLoader< ? > loader = ( ( BasicMultiResolutionImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
 			final int numMipmapLevels = loader.numMipmapLevels();
-			final AffineTransform3D[] mipmapTransforms = loader.getMipmapTransforms();
 
 			int level = 0;
 			while ( level < numMipmapLevels - 1 )
 			{
-
 				/*
 				 * Scan all axes. The "worst" one is the one with the largest
 				 * scale. If at this scale the spot is too small, then we stop.
 				 */
 
-				final AffineTransform3D t = mipmapTransforms[ level ];
-				double scale = Affine3DHelpers.extractScale( t, 0 );
-				for ( int axis = 1; axis < t.numDimensions(); axis++ )
-				{
-					final double sc = Affine3DHelpers.extractScale( t, axis );
-					if ( sc > scale )
-						scale = sc;
-				}
-
+				final double[] calibration = getPhysicalCalibration( spimData, setup, level );
+				final double scale = Util.max( calibration );
 				final double sizeInPix = size / scale;
 				if ( sizeInPix < minSizePixel )
 					break;
@@ -260,34 +255,49 @@ public class DetectionUtil
 		return transform;
 	}
 
-	public static double getResolutionLevelScale( final SpimDataMinimal spimData, final int timepoint, final int setup, final int level )
+	/**
+	 * Returns the physical calibration of the specified setup at the specified
+	 * resolution level.
+	 * <p>
+	 * The physical calibration is the pixel size in whatever physical units,
+	 * for each axis, possibly scaled by the resolution level. If the specified
+	 * spimData does not have multiple resolution level, or if the specifed
+	 * resolution level does not exist, then the physical calibration at level 0
+	 * is returned.
+	 *
+	 * @param spimData
+	 *            the {@link SpimDataMinimal} linking to the image data.
+	 * @param setup
+	 *            the setup id to query.
+	 * @param level
+	 *            the resolution level.
+	 * @return a new <code>double[]</code> array containing the pixel physical
+	 *         size.
+	 */
+	public static double[] getPhysicalCalibration( final SpimDataMinimal spimData, final int setup, final int level )
 	{
-		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
-		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
-		{
-			final BasicMultiResolutionSetupImgLoader< ? > loader = ( ( BasicMultiResolutionImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
-			final AffineTransform3D[] mipmapTransforms = loader.getMipmapTransforms();
-			final AffineTransform3D t = mipmapTransforms[ level ];
-			double scale = Affine3DHelpers.extractScale( t, 0 );
-			for ( int axis = 1; axis < t.numDimensions(); axis++ )
-			{
-				final double sc = Affine3DHelpers.extractScale( t, axis );
-				if ( sc > scale )
-					scale = sc;
-			}
-			return scale;
-		}
-		else
-		{
-			return 1.;
-		}
-	}
+		// Harvest physical calibration at level 0.
+		final BasicViewSetup view = spimData.getSequenceDescription().getViewSetups().get( setup );
+		final VoxelDimensions voxelSize = view.getVoxelSize();
+		final double[] calibration = new double[ voxelSize.numDimensions() ];
+		voxelSize.dimensions( calibration );
 
-	public static double[] getPhysicalCalibration( final SpimDataMinimal spimData, final int setupID )
-	{
-		final BasicViewSetup setup = spimData.getSequenceDescription().getViewSetups().get( setupID );
-		final VoxelDimensions voxelSize = setup.getVoxelSize();
-		return new double[] { voxelSize.dimension( 0 ), voxelSize.dimension( 1 ), voxelSize.dimension( 2 ) };
+		// Scale depending on resolution level, if we can.
+		if ( spimData.getSequenceDescription().getImgLoader() instanceof BasicMultiResolutionImgLoader )
+		{
+			final BasicMultiResolutionSetupImgLoader< ? > loader =
+					( ( BasicMultiResolutionImgLoader ) spimData.getSequenceDescription().getImgLoader() )
+							.getSetupImgLoader( setup );
+
+			final int numMipmapLevels = loader.numMipmapLevels();
+			if ( numMipmapLevels > level )
+			{
+				final AffineTransform3D mipmapTransform = loader.getMipmapTransforms()[ level ];
+				for ( int d = 0; d < calibration.length; d++ )
+					calibration[ d ] *= Affine3DHelpers.extractScale( mipmapTransform, d );
+			}
+		}
+		return calibration;
 	}
 
 	/**

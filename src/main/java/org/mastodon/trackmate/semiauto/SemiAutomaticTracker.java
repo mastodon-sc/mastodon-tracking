@@ -44,7 +44,6 @@ import org.scijava.plugin.Plugin;
 import org.scijava.thread.ThreadService;
 
 import bdv.spimdata.SpimDataMinimal;
-import bdv.util.Affine3DHelpers;
 import mpicbg.spim.data.sequence.TimePoint;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.computer.AbstractBinaryComputerOp;
@@ -230,10 +229,8 @@ public class SemiAutomaticTracker
 				double minEig = Double.POSITIVE_INFINITY;
 				for ( int k = 0; k < eigVals.length; k++ )
 					minEig = Math.min( minEig, eigVals[ k ] );
-				final double physicalRadius = Math.sqrt( minEig );
+				final double radius = Math.sqrt( minEig );
 
-				final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, setup );
-				final double radius = physicalRadius / calibration[ 0 ]; // pixels
 
 				final int nResolutionLevels = DetectionUtil.getNResolutionLevels( spimData, setup );
 				final int level;
@@ -241,7 +238,7 @@ public class SemiAutomaticTracker
 					level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, DoGDetectorOp.MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
 				else
 					level = Math.min( nResolutionLevels - 1, resolutionLevel );
-				final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );
+				final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, setup, level );
 
 				/*
 				 * Load and extends image data.
@@ -251,25 +248,19 @@ public class SemiAutomaticTracker
 				// If 2D, the 3rd dimension will be dropped here.
 				final RandomAccessibleInterval< ? > zeroMin = Views.dropSingletonDimensions( Views.zeroMin( img ) );
 
-				@SuppressWarnings( { "unchecked", "rawtypes" } )
-				final RandomAccessible< FloatType > ra = DetectionUtil.asExtendedFloat( ( RandomAccessibleInterval ) zeroMin );
-
 				/*
 				 * Build ROI to process.
 				 */
 
-				final double xs = Affine3DHelpers.extractScale( transform, 0 );
-				final double ys = Affine3DHelpers.extractScale( transform, 1 );
-				final double zs = Affine3DHelpers.extractScale( transform, 2 );
-
+				final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );
 				final Point center = new Point( 3 );
 				transform.applyInverse( new Round<>( center ), source );
 				final long x = center.getLongPosition( 0 );
 				final long y = center.getLongPosition( 1 );
 				final long z = center.getLongPosition( 2 );
-				final long rx = ( long ) Math.ceil( neighborhoodFactor * radius / xs );
-				final long ry = ( long ) Math.ceil( neighborhoodFactor * radius / ys );
-				final long rz = ( long ) Math.ceil( neighborhoodFactor * radius / zs );
+				final long rx = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 0 ] );
+				final long ry = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 1 ] );
+				final long rz = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 2 ] );
 
 				final long[] min = new long[] { x - rx, y - ry, z - rz };
 				final long[] max = new long[] { x + rx, y + ry, z + rz };
@@ -289,12 +280,9 @@ public class SemiAutomaticTracker
 				 * Perform detection.
 				 */
 
-				final double[] pixelSize = new double[] { 1, ys / xs, zs / xs };
-				final double scale = xs;
-
 				final int stepsPerOctave = 4;
 				final double k = Math.pow( 2.0, 1.0 / stepsPerOctave );
-				final double sigma = radius / Math.sqrt( zeroMin.numDimensions() ) / scale;
+				final double sigma = radius / Math.sqrt( zeroMin.numDimensions() );
 				final double sigmaSmaller = sigma;
 				final double sigmaLarger = k * sigmaSmaller;
 				final double normalization = 1.0 / ( sigmaLarger / sigmaSmaller - 1.0 );
@@ -306,10 +294,12 @@ public class SemiAutomaticTracker
 				else
 					threshold = 0.;
 
+				@SuppressWarnings( { "unchecked", "rawtypes" } )
+				final RandomAccessible< FloatType > ra = DetectionUtil.asExtendedFloat( ( RandomAccessibleInterval ) zeroMin );
 				final DogDetection< FloatType > dog = new DogDetection<>(
 						ra,
 						roi,
-						pixelSize,
+						calibration,
 						sigmaSmaller,
 						sigmaLarger,
 						ExtremaType.MINIMA,
@@ -468,7 +458,7 @@ public class SemiAutomaticTracker
 
 					final Spot vref = graph.vertexRef();
 					final Link eref = graph.edgeRef();
-					target = graph.addVertex( vref ).init( tp, pos, physicalRadius );
+					target = graph.addVertex( vref ).init( tp, pos, radius );
 					final Link edge;
 					if ( forward )
 						edge = graph.addEdge( source, target, eref ).init();

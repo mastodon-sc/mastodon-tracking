@@ -15,7 +15,6 @@ import org.scijava.plugin.Plugin;
 import org.scijava.thread.ThreadService;
 
 import bdv.spimdata.SpimDataMinimal;
-import bdv.util.Affine3DHelpers;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.Point;
@@ -71,17 +70,9 @@ public class DoGDetectorOp
 		final int minTimepoint = ( int ) settings.get( KEY_MIN_TIMEPOINT );
 		final int maxTimepoint = ( int ) settings.get( KEY_MAX_TIMEPOINT );
 		final int setup = ( int ) settings.get( KEY_SETUP_ID );
-		final double physicalRadius = ( double ) settings.get( KEY_RADIUS );
+		final double radius = ( double ) settings.get( KEY_RADIUS );
 		final double threshold = ( double ) settings.get( KEY_THRESHOLD );
 		final Interval roi = ( Interval ) settings.get( KEY_ROI );
-
-		/*
-		 * Convert from physical units to pixel units. We take the x axis as
-		 * reference scale axis, because later all scales will with reference to
-		 * this one (see below: pixel size of x = 1.0).
-		 */
-		final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, setup );
-		final double radius = physicalRadius / calibration[ 0 ]; // pixels
 
 		statusService.showStatus( "DoG detection." );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
@@ -101,8 +92,6 @@ public class DoGDetectorOp
 			 */
 
 			final int level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
-			final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );
-			final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( spimData, tp, setup, level );
 
 			/*
 			 * Load and extends image data.
@@ -133,6 +122,7 @@ public class DoGDetectorOp
 				final double[] minTarget = new double[ 3 ];
 				final double[] maxTarget = new double[ 3 ];
 
+				final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( spimData, tp, setup, level );
 				mipmapTransform.applyInverse( minTarget, minSource );
 				mipmapTransform.applyInverse( maxTarget, maxSource );
 
@@ -152,15 +142,10 @@ public class DoGDetectorOp
 			 * Process image.
 			 */
 
-			final double xs = Affine3DHelpers.extractScale( transform, 0 );
-			final double ys = Affine3DHelpers.extractScale( transform, 1 );
-			final double zs = Affine3DHelpers.extractScale( transform, 2 );
-			final double[] pixelSize = new double[] { 1, ys / xs, zs / xs };
-			final double scale = xs;
-
+			final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, setup, level );
 			final int stepsPerOctave = 4;
 			final double k = Math.pow( 2.0, 1.0 / stepsPerOctave );
-			final double sigma = radius / Math.sqrt( zeroMin.numDimensions() ) / scale;
+			final double sigma = radius / Math.sqrt( zeroMin.numDimensions() );
 			final double sigmaSmaller = sigma;
 			final double sigmaLarger = k * sigmaSmaller;
 			final double normalization = 1.0 / ( sigmaLarger / sigmaSmaller - 1.0 );
@@ -168,7 +153,7 @@ public class DoGDetectorOp
 			final DogDetection< FloatType > dog = new DogDetection<>(
 					source,
 					interval,
-					pixelSize,
+					calibration,
 					sigmaSmaller,
 					sigmaLarger,
 					ExtremaType.MINIMA,
@@ -181,6 +166,7 @@ public class DoGDetectorOp
 			final RealPoint sp = RealPoint.wrap( pos );
 			final RealPoint p3d = new RealPoint( 3 );
 
+			final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );
 			final DetectionCreator detectionCreator = detectionCreatorFactory.create( tp );
 			detectionCreator.preAddition();
 			try
@@ -190,11 +176,13 @@ public class DoGDetectorOp
 					final double value = p.getValue();
 					final double normalizedValue = -value * normalization;
 
-					// In case p is 2D we pass it to a 3D RealPoint to work
-					// nicely with the 3D transform.
+					/*
+					 * In case p is 2D we pass it to a 3D RealPoint to work
+					 * nicely with the 3D transform.
+					 */
 					p3d.setPosition( p );
 					transform.apply( p3d, sp );
-					detectionCreator.createDetection( pos, physicalRadius, normalizedValue );
+					detectionCreator.createDetection( pos, radius, normalizedValue );
 				}
 			}
 			finally

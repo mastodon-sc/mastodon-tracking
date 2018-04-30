@@ -17,7 +17,6 @@ import org.scijava.plugin.Plugin;
 import org.scijava.thread.ThreadService;
 
 import bdv.spimdata.SpimDataMinimal;
-import bdv.util.Affine3DHelpers;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.Point;
@@ -68,15 +67,9 @@ public class LoGDetectorOp
 		final int minTimepoint = ( int ) settings.get( KEY_MIN_TIMEPOINT );
 		final int maxTimepoint = ( int ) settings.get( KEY_MAX_TIMEPOINT );
 		final int setup = ( int ) settings.get( KEY_SETUP_ID );
-		final double physicalRadius = ( double ) settings.get( KEY_RADIUS );
+		final double radius = ( double ) settings.get( KEY_RADIUS ); // um
 		final double threshold = ( double ) settings.get( KEY_THRESHOLD );
 		final Interval roi = ( Interval ) settings.get( KEY_ROI );
-
-		/*
-		 * Convert from physical units to pixel units.
-		 */
-		final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, setup );
-		final double radius = physicalRadius / calibration[ 0 ]; // pixels
 
 		statusService.showStatus( "LoG detection" );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
@@ -96,8 +89,6 @@ public class LoGDetectorOp
 			 */
 
 			final int level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
-			final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );
-			final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( spimData, tp, setup, level );
 
 			/*
 			 * Load and extends image data.
@@ -126,6 +117,7 @@ public class LoGDetectorOp
 				final double[] minTarget = new double[ 3 ];
 				final double[] maxTarget = new double[ 3 ];
 
+				final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( spimData, tp, setup, level );
 				mipmapTransform.applyInverse( minTarget, minSource );
 				mipmapTransform.applyInverse( maxTarget, maxSource );
 
@@ -144,12 +136,8 @@ public class LoGDetectorOp
 			 * Filter image.
 			 */
 
-			final double xs = Affine3DHelpers.extractScale( transform, 0 );
-			final double ys = Affine3DHelpers.extractScale( transform, 1 );
-			final double zs = Affine3DHelpers.extractScale( transform, 2 );
-			final double[] pixelCalibration = new double[] { xs, ys, zs };
-
-			final RandomAccessibleInterval< FloatType > kernel = createLoGKernel( radius, zeroMin.numDimensions(), pixelCalibration );
+			final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, setup, level );
+			final RandomAccessibleInterval< FloatType > kernel = createLoGKernel( radius, zeroMin.numDimensions(), calibration );
 			@SuppressWarnings( "rawtypes" )
 			final IntervalView source = Views.interval( zeroMin, interval );
 
@@ -167,7 +155,7 @@ public class LoGDetectorOp
 			 * is scaled differently across X, Y and Z.
 			 */
 			final double sigma = radius / Math.sqrt( img.numDimensions() );
-			final double sigmaPixels = sigma / pixelCalibration[ 0 ];
+			final double sigmaPixels = sigma / calibration[ 0 ];
 			final FloatType C = new FloatType( ( float ) ( 1. / Math.PI / sigmaPixels / sigmaPixels ) );
 			Views.iterable( output ).forEach( ( e ) -> e.div( C ) );
 
@@ -175,6 +163,7 @@ public class LoGDetectorOp
 			 * Detect local maxima.
 			 */
 
+			final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );
 			final DetectionCreator detectionCreator = detectionCreatorFactory.create( tp );
 			final List< Point > peaks = DetectionUtil.findLocalMaxima( output, threshold, threadService.getExecutorService() );
 			if ( doSubpixelLocalization )
@@ -203,7 +192,7 @@ public class LoGDetectorOp
 
 						p3d.setPosition( refinedPeak );
 						transform.apply( p3d, point );
-						detectionCreator.createDetection( pos, physicalRadius, q );
+						detectionCreator.createDetection( pos, radius, q );
 					}
 				}
 				finally
@@ -226,7 +215,7 @@ public class LoGDetectorOp
 						final double q = ra.get().getRealDouble();
 
 						transform.apply( peak, point );
-						detectionCreator.createDetection( pos, physicalRadius, q );
+						detectionCreator.createDetection( pos, radius, q );
 					}
 				}
 				finally
