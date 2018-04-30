@@ -22,6 +22,7 @@ import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 import org.mastodon.trackmate.ui.wizard.util.SetupIDComboBox;
+import org.mastodon.trackmate.ui.wizard.util.WizardUtils;
 import org.scijava.Context;
 import org.scijava.Contextual;
 import org.scijava.NullContextException;
@@ -81,14 +82,16 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 		detectorSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( nTimePoints - 1 ) );
 
 		log.log( String.format( "Selected setup ID %d for detection:\n", setupID ) );
-		log.log( panel.comboBox.echoSetupIDInfo() );
+		log.log( WizardUtils.echoSetupIDInfo( spimData, setupID ) );
 	}
 
 	@Override
 	public void actionPerformed( final ActionEvent e )
 	{
 		final SetupIdConfigPanel panel = ( SetupIdConfigPanel ) targetPanel;
-		String info = panel.comboBox.echoSetupIDInfo();
+		final SpimDataMinimal spimData = settings.values.getSpimData();
+		final int setupID = panel.comboBox.getSelectedSetupID();
+		String info = WizardUtils.echoSetupIDInfo( spimData, setupID );
 		// HTMLize the info
 		info = "<html>" + info + "</html>";
 		info = info.replace( "\n", "<br>" );
