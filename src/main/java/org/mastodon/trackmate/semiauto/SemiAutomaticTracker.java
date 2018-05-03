@@ -1,6 +1,11 @@
 package org.mastodon.trackmate.semiauto;
 
+import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
+import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
+import static org.mastodon.detection.DetectorKeys.KEY_ROI;
 import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
+import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_ALLOW_LINKING_IF_HAS_INCOMING;
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_ALLOW_LINKING_IF_HAS_OUTGOING;
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_ALLOW_LINKING_TO_EXISTING;
@@ -9,7 +14,6 @@ import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_DISTA
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_FORWARD_IN_TIME;
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_N_TIMEPOINTS;
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_QUALITY_FACTOR;
-import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_RESOLUTION_LEVEL;
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.NEIGHBORHOOD_FACTOR;
 import static org.mastodon.trackmate.semiauto.SemiAutomaticTrackerKeys.checkSettingsValidity;
 
@@ -20,7 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.mastodon.HasErrorMessage;
+import org.mastodon.detection.DetectionCreatorFactory;
 import org.mastodon.detection.DetectionUtil;
+import org.mastodon.detection.DetectorOp;
 import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.linking.LinkingUtils;
 import org.mastodon.model.NavigationHandler;
@@ -47,20 +53,13 @@ import bdv.spimdata.SpimDataMinimal;
 import mpicbg.spim.data.sequence.TimePoint;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.computer.AbstractBinaryComputerOp;
+import net.imagej.ops.special.inplace.Inplaces;
 import net.imglib2.FinalInterval;
 import net.imglib2.Point;
-import net.imglib2.RandomAccessible;
-import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealPoint;
-import net.imglib2.algorithm.dog.DogDetection;
-import net.imglib2.algorithm.dog.DogDetection.ExtremaType;
-import net.imglib2.algorithm.localextrema.RefinedPeak;
 import net.imglib2.neighborsearch.NearestNeighborSearch;
 import net.imglib2.position.transform.Round;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Intervals;
-import net.imglib2.view.Views;
 
 @Plugin( type = SemiAutomaticTracker.class )
 public class SemiAutomaticTracker
@@ -95,7 +94,7 @@ public class SemiAutomaticTracker
 	@Parameter( type = ItemIO.OUTPUT )
 	protected boolean ok;
 
-	private final Comparator< RefinedPeak< ? > > refinedPeakComparator = new RefinedPeakComparator();
+	private final Comparator< Detection > detectionComparator = new RefinedPeakComparator();
 
 	private final JamaEigenvalueDecomposition eig = new JamaEigenvalueDecomposition( 3 );
 
@@ -172,9 +171,6 @@ public class SemiAutomaticTracker
 		final boolean allowLinkingIfOutgoing = ( boolean ) settings.get( KEY_ALLOW_LINKING_IF_HAS_OUTGOING );
 		final boolean continueIfLinkExists = ( boolean ) settings.get( KEY_CONTINUE_IF_LINK_EXISTS );
 		final double neighborhoodFactor = Math.max( NEIGHBORHOOD_FACTOR, distanceFactor + 1. );
-		int resolutionLevel = -1;
-		if ( settings.containsKey( KEY_RESOLUTION_LEVEL ) )
-			resolutionLevel = ( int ) settings.get( KEY_RESOLUTION_LEVEL );
 
 		/*
 		 * Units.
@@ -218,10 +214,6 @@ public class SemiAutomaticTracker
 				if ( !DetectionUtil.isPresent( spimData, setup, tp ) )
 					continue TIME;
 
-				/*
-				 * Determine optimal level for detection.
-				 */
-
 				// Best radius is smallest radius of ellipse.
 				source.getCovariance( cov );
 				eig.decomposeSymmetric( cov );
@@ -231,28 +223,18 @@ public class SemiAutomaticTracker
 					minEig = Math.min( minEig, eigVals[ k ] );
 				final double radius = Math.sqrt( minEig );
 
-
-				final int nResolutionLevels = DetectionUtil.getNResolutionLevels( spimData, setup );
-				final int level;
-				if ( resolutionLevel < 0 )
-					level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, DoGDetectorOp.MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
+				// Does the source have a quality value?
+				final double threshold;
+				if ( qualityFeature.getPropertyMap().isSet( source ) )
+					threshold = qualityFeature.getPropertyMap().get( source ) * qualityFactor;
 				else
-					level = Math.min( nResolutionLevels - 1, resolutionLevel );
-				final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, setup, level );
-
-				/*
-				 * Load and extends image data.
-				 */
-
-				final RandomAccessibleInterval< ? > img = DetectionUtil.getImage( spimData, tp, setup, level );
-				// If 2D, the 3rd dimension will be dropped here.
-				final RandomAccessibleInterval< ? > zeroMin = Views.dropSingletonDimensions( Views.zeroMin( img ) );
+					threshold = 0.;
 
 				/*
 				 * Build ROI to process.
 				 */
-
-				final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );
+				final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, tp, setup, 0 );
+				final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, 0 );
 				final Point center = new Point( 3 );
 				transform.applyInverse( new Round<>( center ), source );
 				final long x = center.getLongPosition( 0 );
@@ -261,53 +243,54 @@ public class SemiAutomaticTracker
 				final long rx = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 0 ] );
 				final long ry = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 1 ] );
 				final long rz = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 2 ] );
-
 				final long[] min = new long[] { x - rx, y - ry, z - rz };
 				final long[] max = new long[] { x + rx, y + ry, z + rz };
-
-				// Only take 2D or 3D version of the transformed interval.
-				final long[] tmin = new long[ zeroMin.numDimensions() ];
-				final long[] tmax = new long[ zeroMin.numDimensions() ];
-				for ( int d = 0; d < zeroMin.numDimensions(); d++ )
-				{
-					tmin[ d ] = min[ d ];
-					tmax[ d ] = max[ d ];
-				}
-				final FinalInterval transformedRoi = new FinalInterval( tmin, tmax );
-				final FinalInterval roi = Intervals.intersect( transformedRoi, zeroMin );
+				final FinalInterval roi = new FinalInterval( min, max );
 
 				/*
-				 * Perform detection.
+				 * User built-in detector.
 				 */
 
-				final int stepsPerOctave = 4;
-				final double k = Math.pow( 2.0, 1.0 / stepsPerOctave );
-				final double sigma = radius / Math.sqrt( zeroMin.numDimensions() );
-				final double sigmaSmaller = sigma;
-				final double sigmaLarger = k * sigmaSmaller;
-				final double normalization = 1.0 / ( sigmaLarger / sigmaSmaller - 1.0 );
+				final List< Detection > detections = new ArrayList<>();
+				final DetectionCreatorFactory detectionCreator = new DetectionCreatorFactory()
+				{
 
-				// Does the source have a quality value?
-				final double threshold;
-				if ( qualityFeature.getPropertyMap().isSet( source ) )
-					threshold = qualityFeature.getPropertyMap().get( source ) * qualityFactor;
-				else
-					threshold = 0.;
+					@Override
+					public DetectionCreator create( final int timepoint )
+					{
+						return new DetectionCreator()
+						{
 
-				@SuppressWarnings( { "unchecked", "rawtypes" } )
-				final RandomAccessible< FloatType > ra = DetectionUtil.asExtendedFloat( ( RandomAccessibleInterval ) zeroMin );
-				final DogDetection< FloatType > dog = new DogDetection<>(
-						ra,
-						roi,
-						calibration,
-						sigmaSmaller,
-						sigmaLarger,
-						ExtremaType.MINIMA,
-						threshold,
-						true );
-				dog.setExecutorService( threadService.getExecutorService() );
-				final ArrayList< RefinedPeak< Point > > refinedPeaks = dog.getSubpixelPeaks();
-				if ( refinedPeaks.isEmpty() )
+							@Override
+							public void preAddition()
+							{}
+
+							@Override
+							public void postAddition()
+							{}
+
+							@Override
+							public void createDetection( final double[] pos, final double radius, final double quality )
+							{
+								detections.add( new Detection( pos, quality ) );
+							}
+						};
+					}
+				};
+
+				// Configure detector.
+				final Map<String, Object> detectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
+				detectorSettings.put( KEY_RADIUS, Double.valueOf( radius ) );
+				detectorSettings.put( KEY_THRESHOLD, Double.valueOf( threshold ) );
+				detectorSettings.put( KEY_SETUP_ID, Integer.valueOf( setup ) );
+				detectorSettings.put( KEY_MIN_TIMEPOINT, Integer.valueOf( tp ) );
+				detectorSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( tp ) );
+				detectorSettings.put( KEY_ROI, roi );
+				final DetectorOp detector = ( DetectorOp ) Inplaces.binary1( ops(), DoGDetectorOp.class,
+						detectionCreator, spimData, detectorSettings  );
+				detector.mutate1( detectionCreator, spimData );
+
+				if ( detections.isEmpty() )
 				{
 					log.info( String.format( " - No target spot found at t=%d for spot %s above desired quality threshold.",
 							tp, source.getLabel() ) );
@@ -319,23 +302,18 @@ public class SemiAutomaticTracker
 				 */
 
 				// Sort peaks by quality.
-				refinedPeaks.sort( refinedPeakComparator );
+				detections.sort( detectionComparator );
 
 				boolean found = false;
-				RefinedPeak< Point > candidate = null;
-				final RealPoint p3d = new RealPoint( 3 );
-				final double[] pos = new double[ 3 ];
-				final RealPoint sp = RealPoint.wrap( pos );
+				Detection candidate = null;
 				double sqDist = 0.;
-				for ( final RefinedPeak< Point > p : refinedPeaks )
+				for ( final Detection p : detections )
 				{
 					// Compute square distance.
-					p3d.setPosition( p );
-					transform.apply( p3d, sp );
 					sqDist = 0.;
-					for ( int d = 0; d < 3; d++ )
+					for ( int d = 0; d < source.numDimensions(); d++ )
 					{
-						final double dx = pos[ d ] - source.getDoublePosition( d );
+						final double dx = p.getDoublePosition( d ) - source.getDoublePosition( d );
 						sqDist += dx * dx;
 					}
 
@@ -371,7 +349,7 @@ public class SemiAutomaticTracker
 				{
 					final SpatialIndex< Spot > spatialIndex = spatioTemporalIndex.getSpatialIndex( tp );
 					final NearestNeighborSearch< Spot > nn = spatialIndex.getNearestNeighborSearch();
-					nn.search( sp );
+					nn.search( candidate );
 					target = nn.getSampler().get();
 					distance = nn.getDistance();
 				}
@@ -380,6 +358,8 @@ public class SemiAutomaticTracker
 					spatioTemporalIndex.readLock().unlock();
 				}
 
+				final double[] pos = new double[ candidate.numDimensions()];
+				candidate.localize( pos );
 				if ( target != null && ( test.isPointInside( pos, target ) || test.isCenterWithin( target, pos, radius ) ) )
 				{
 
@@ -471,7 +451,7 @@ public class SemiAutomaticTracker
 						final double dx = source.getDoublePosition( d ) - target.getDoublePosition( d );
 						cost += dx * dx;
 					}
-					final double quality = -candidate.getValue() * normalization;
+					final double quality = candidate.quality;
 					log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
 							source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint(), cost ) );
 					linkCostFeature.getPropertyMap().set( edge, cost );
@@ -538,15 +518,25 @@ public class SemiAutomaticTracker
 		return cancelReason;
 	}
 
-	private static class RefinedPeakComparator implements Comparator< RefinedPeak< ? > >
+	private static class RefinedPeakComparator implements Comparator< Detection >
 	{
 
 		@Override
-		public int compare( final RefinedPeak< ? > o1, final RefinedPeak< ? > o2 )
+		public int compare( final Detection o1, final Detection o2 )
 		{
-			return Double.compare( o1.getValue(), o2.getValue() );
+			return Double.compare( o2.quality, o1.quality );
 		}
+	}
 
+	private static class Detection extends RealPoint
+	{
+		private final double quality;
+
+		public Detection(final double[] pos, final double quality)
+		{
+			super( pos );
+			this.quality = quality;
+		}
 	}
 
 }
