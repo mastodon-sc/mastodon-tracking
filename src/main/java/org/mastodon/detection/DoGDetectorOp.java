@@ -48,7 +48,7 @@ public class DoGDetectorOp
 	/**
 	 * The minimal diameter size, in pixel, under which we stop down-sampling.
 	 */
-	public static final double MIN_SPOT_PIXEL_SIZE = 10d;
+	public static final double MIN_SPOT_PIXEL_SIZE = 5d;
 
 	private long processingTime;
 
@@ -142,7 +142,7 @@ public class DoGDetectorOp
 			 * Process image.
 			 */
 
-			final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, setup, level );
+			final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, tp, setup, level );
 			final int stepsPerOctave = 4;
 			final double k = Math.pow( 2.0, 1.0 / stepsPerOctave );
 			final double sigma = radius / Math.sqrt( zeroMin.numDimensions() );

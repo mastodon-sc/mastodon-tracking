@@ -37,7 +37,6 @@ import mpicbg.spim.data.generic.sequence.BasicViewDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHints;
 import mpicbg.spim.data.sequence.ViewId;
-import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.Point;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
@@ -179,7 +178,7 @@ public class DetectionUtil
 				 * scale. If at this scale the spot is too small, then we stop.
 				 */
 
-				final double[] calibration = getPhysicalCalibration( spimData, setup, level );
+				final double[] calibration = getPhysicalCalibration( spimData, timepoint, setup, level );
 				final double scale = Util.max( calibration );
 				final double sizeInPix = size / scale;
 				if ( sizeInPix < minSizePixel )
@@ -218,7 +217,6 @@ public class DetectionUtil
 		final ViewId viewId = new ViewId( timepoint, setup );
 		final AffineTransform3D transform = new AffineTransform3D();
 		transform.set( spimData.getViewRegistrations().getViewRegistration( viewId ).getModel() );
-
 		transform.concatenate( getMipmapTransform( spimData, timepoint, setup, level ) );
 		return transform;
 	}
@@ -267,6 +265,8 @@ public class DetectionUtil
 	 *
 	 * @param spimData
 	 *            the {@link SpimDataMinimal} linking to the image data.
+	 * @param timepoint
+	 *            the timepoint to query.
 	 * @param setup
 	 *            the setup id to query.
 	 * @param level
@@ -274,29 +274,12 @@ public class DetectionUtil
 	 * @return a new <code>double[]</code> array containing the pixel physical
 	 *         size.
 	 */
-	public static double[] getPhysicalCalibration( final SpimDataMinimal spimData, final int setup, final int level )
+	public static double[] getPhysicalCalibration( final SpimDataMinimal spimData, final int timepoint, final int setup, final int level )
 	{
-		// Harvest physical calibration at level 0.
-		final BasicViewSetup view = spimData.getSequenceDescription().getViewSetups().get( setup );
-		final VoxelDimensions voxelSize = view.getVoxelSize();
-		final double[] calibration = new double[ voxelSize.numDimensions() ];
-		voxelSize.dimensions( calibration );
-
-		// Scale depending on resolution level, if we can.
-		if ( spimData.getSequenceDescription().getImgLoader() instanceof BasicMultiResolutionImgLoader )
-		{
-			final BasicMultiResolutionSetupImgLoader< ? > loader =
-					( ( BasicMultiResolutionImgLoader ) spimData.getSequenceDescription().getImgLoader() )
-							.getSetupImgLoader( setup );
-
-			final int numMipmapLevels = loader.numMipmapLevels();
-			if ( numMipmapLevels > level )
-			{
-				final AffineTransform3D mipmapTransform = loader.getMipmapTransforms()[ level ];
-				for ( int d = 0; d < calibration.length; d++ )
-					calibration[ d ] *= Affine3DHelpers.extractScale( mipmapTransform, d );
-			}
-		}
+		final AffineTransform3D transform = getTransform( spimData, timepoint, setup, level );
+		final double[] calibration = new double[ transform.numDimensions() ];
+		for ( int d = 0; d < calibration.length; d++ )
+			calibration[ d ] = Affine3DHelpers.extractScale( transform, d );
 		return calibration;
 	}
 

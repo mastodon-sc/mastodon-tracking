@@ -136,7 +136,7 @@ public class LoGDetectorOp
 			 * Filter image.
 			 */
 
-			final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, setup, level );
+			final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, tp, setup, level );
 			final RandomAccessibleInterval< FloatType > kernel = createLoGKernel( radius, zeroMin.numDimensions(), calibration );
 			@SuppressWarnings( "rawtypes" )
 			final IntervalView source = Views.interval( zeroMin, interval );
