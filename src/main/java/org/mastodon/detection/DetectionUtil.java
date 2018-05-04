@@ -17,6 +17,8 @@ import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 import static org.mastodon.linking.LinkingUtils.checkMapKeys;
 import static org.mastodon.linking.LinkingUtils.checkParameter;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,19 +26,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.input.SAXBuilder;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.feature.FeatureProjectors;
 
-import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.BigDataViewer;
 import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
+import bdv.tools.brightness.ConverterSetup;
+import bdv.tools.transformation.ManualTransformation;
 import bdv.util.Affine3DHelpers;
-import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
-import mpicbg.spim.data.generic.sequence.BasicMultiResolutionSetupImgLoader;
-import mpicbg.spim.data.generic.sequence.BasicViewDescription;
-import mpicbg.spim.data.generic.sequence.BasicViewSetup;
-import mpicbg.spim.data.generic.sequence.ImgLoaderHints;
-import mpicbg.spim.data.sequence.ViewId;
+import bdv.viewer.SourceAndConverter;
+import mpicbg.spim.data.SpimDataException;
 import net.imglib2.Point;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
@@ -93,8 +97,8 @@ public class DetectionUtil
 	 * Returns <code>true</code> if the there is some data at the specified
 	 * time-point for the specified setup id.
 	 *
-	 * @param spimData
-	 *            the {@link SpimDataMinimal} linking to the image data.
+	 * @param sources
+	 *            the image data.
 	 * @param setup
 	 *            the setup id.
 	 * @param timepoint
@@ -102,35 +106,9 @@ public class DetectionUtil
 	 * @return <code>true</code> if there are some data at the specified
 	 *         time-point for the specified setup id.
 	 */
-	public static final boolean isPresent( final SpimDataMinimal spimData, final int setup, final int timepoint )
+	public static final boolean isPresent( final List< SourceAndConverter< ? > > sources, final int setup, final int timepoint )
 	{
-		final BasicViewDescription< BasicViewSetup > vd = spimData.getSequenceDescription().getViewDescriptions().get( new ViewId( timepoint, setup ) );
-		return ( null != vd && vd.isPresent() );
-	}
-
-	/**
-	 * Returns the number of resolution levels present in the specified data,
-	 * for the setup with specified id.
-	 *
-	 * @param spimData
-	 *            the {@link SpimDataMinimal} linking to the image data.
-	 * @param setup
-	 *            the setup id to query.
-	 * @return the number of resolution levels.
-	 */
-	public static int getNResolutionLevels( final SpimDataMinimal spimData, final int setup )
-	{
-		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
-		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
-		{
-			final BasicMultiResolutionSetupImgLoader< ? > loader = ( ( BasicMultiResolutionImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
-			final int numMipmapLevels = loader.numMipmapLevels();
-			return numMipmapLevels;
-		}
-		else
-		{
-			return 1;
-		}
+		return sources.get( setup ).getSpimSource().isPresent( timepoint );
 	}
 
 	/**
@@ -146,8 +124,8 @@ public class DetectionUtil
 	 * If the data does not ship multiple resolution levels, this methods return
 	 * 0.
 	 *
-	 * @param spimData
-	 *            the {@link SpimDataMinimal} linking to the image data.
+	 * @param sources
+	 *           the image data.
 	 * @param size
 	 *            the size of an object measured at resolution level 0, <b>in
 	 *            physical units</b>.
@@ -162,36 +140,26 @@ public class DetectionUtil
 	 *         larger than the minimal desired size. Returns 0 if the data does
 	 *         not ship multiple resolution levels.
 	 */
-	public static final int determineOptimalResolutionLevel( final SpimDataMinimal spimData, final double size, final double minSizePixel, final int timepoint, final int setup )
+	public static final int determineOptimalResolutionLevel( final List< SourceAndConverter< ? > > sources, final double size, final double minSizePixel, final int timepoint, final int setup )
 	{
-		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
-		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
+		final int numMipmapLevels = sources.get( setup ).getSpimSource().getNumMipmapLevels();
+		int level = 0;
+		while ( level < numMipmapLevels - 1 )
 		{
-			final BasicMultiResolutionSetupImgLoader< ? > loader = ( ( BasicMultiResolutionImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
-			final int numMipmapLevels = loader.numMipmapLevels();
+			/*
+			 * Scan all axes. The "worst" one is the one with the largest scale.
+			 * If at this scale the spot is too small, then we stop.
+			 */
 
-			int level = 0;
-			while ( level < numMipmapLevels - 1 )
-			{
-				/*
-				 * Scan all axes. The "worst" one is the one with the largest
-				 * scale. If at this scale the spot is too small, then we stop.
-				 */
+			final double[] calibration = getPhysicalCalibration( sources, timepoint, setup, level );
+			final double scale = Util.max( calibration );
+			final double sizeInPix = size / scale;
+			if ( sizeInPix < minSizePixel )
+				break;
 
-				final double[] calibration = getPhysicalCalibration( spimData, timepoint, setup, level );
-				final double scale = Util.max( calibration );
-				final double sizeInPix = size / scale;
-				if ( sizeInPix < minSizePixel )
-					break;
-
-				level++;
-			}
-			return level;
+			level++;
 		}
-		else
-		{
-			return 0;
-		}
+		return level;
 	}
 
 	/**
@@ -202,8 +170,8 @@ public class DetectionUtil
 	 * If the data does not ship multiple resolution levels, the {@code level}
 	 * parameter is ignored.
 	 *
-	 * @param spimData
-	 *            the {@link SpimDataMinimal} linking to the image data.
+	 * @param sources
+	 *            the image data.
 	 * @param timepoint
 	 *            the time-point to query.
 	 * @param setup
@@ -212,12 +180,10 @@ public class DetectionUtil
 	 *            the resolution level.
 	 * @return a new transform.
 	 */
-	public static AffineTransform3D getTransform( final SpimDataMinimal spimData, final int timepoint, final int setup, final int level )
+	public static AffineTransform3D getTransform( final List< SourceAndConverter< ? > > sources, final int timepoint, final int setup, final int level )
 	{
-		final ViewId viewId = new ViewId( timepoint, setup );
 		final AffineTransform3D transform = new AffineTransform3D();
-		transform.set( spimData.getViewRegistrations().getViewRegistration( viewId ).getModel() );
-		transform.concatenate( getMipmapTransform( spimData, timepoint, setup, level ) );
+		sources.get( setup ).getSpimSource().getSourceTransform( timepoint, level, transform );
 		return transform;
 	}
 
@@ -229,8 +195,8 @@ public class DetectionUtil
 	 * If the data does not ship multiple resolution levels, the identity
 	 * transform is returned.
 	 *
-	 * @param spimData
-	 *            the {@link SpimDataMinimal} linking to the image data.
+	 * @param sources
+	 *            the image data.
 	 * @param timepoint
 	 *            the time-point to query.
 	 * @param setup
@@ -239,17 +205,11 @@ public class DetectionUtil
 	 *            the resolution level.
 	 * @return a new transform.
 	 */
-	public static AffineTransform3D getMipmapTransform( final SpimDataMinimal spimData, final int timepoint, final int setup, final int level )
+	public static AffineTransform3D getMipmapTransform( final List< SourceAndConverter< ? > > sources, final int timepoint, final int setup, final int level )
 	{
-		final AffineTransform3D transform = new AffineTransform3D();
-		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
-		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
-		{
-			final BasicMultiResolutionSetupImgLoader< ? > loader = ( ( BasicMultiResolutionImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
-			final AffineTransform3D[] mipmapTransforms = loader.getMipmapTransforms();
-			final AffineTransform3D mipmapTransform = mipmapTransforms[ level ];
-			transform.set( mipmapTransform );
-		}
+		final AffineTransform3D levelL = getTransform( sources, timepoint, setup, level );
+		final AffineTransform3D level0 = getTransform( sources, timepoint, setup, 0 );
+		final AffineTransform3D transform = levelL.concatenate( level0.inverse() );
 		return transform;
 	}
 
@@ -263,8 +223,8 @@ public class DetectionUtil
 	 * resolution level does not exist, then the physical calibration at level 0
 	 * is returned.
 	 *
-	 * @param spimData
-	 *            the {@link SpimDataMinimal} linking to the image data.
+	 * @param sources
+	 *            the image data.
 	 * @param timepoint
 	 *            the timepoint to query.
 	 * @param setup
@@ -274,9 +234,9 @@ public class DetectionUtil
 	 * @return a new <code>double[]</code> array containing the pixel physical
 	 *         size.
 	 */
-	public static double[] getPhysicalCalibration( final SpimDataMinimal spimData, final int timepoint, final int setup, final int level )
+	public static double[] getPhysicalCalibration( final List< SourceAndConverter< ? > > sources, final int timepoint, final int setup, final int level )
 	{
-		final AffineTransform3D transform = getTransform( spimData, timepoint, setup, level );
+		final AffineTransform3D transform = getTransform( sources, timepoint, setup, level );
 		final double[] calibration = new double[ transform.numDimensions() ];
 		for ( int d = 0; d < calibration.length; d++ )
 			calibration[ d ] = Affine3DHelpers.extractScale( transform, d );
@@ -290,8 +250,8 @@ public class DetectionUtil
 	 * If the data does not ship multiple resolution levels, the {@code level}
 	 * parameter is ignored.
 	 *
-	 * @param spimData
-	 *            the {@link SpimDataMinimal} linking to the image data.
+	 * @param sources
+	 *            the image data.
 	 * @param timepoint
 	 *            the time-point to query.
 	 * @param setup
@@ -300,21 +260,9 @@ public class DetectionUtil
 	 *            the resolution level.
 	 * @return a new transform.
 	 */
-	public static RandomAccessibleInterval< ? > getImage( final SpimDataMinimal spimData, final int timepoint, final int setup, final int level )
+	public static RandomAccessibleInterval< ? > getImage( final List< SourceAndConverter< ? > > sources, final int timepoint, final int setup, final int level )
 	{
-		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
-		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
-		{
-			final BasicMultiResolutionSetupImgLoader< ? > loader = ( ( BasicMultiResolutionImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
-			final RandomAccessibleInterval< ? > img = loader.getImage( timepoint, level );
-			return img;
-		}
-		else
-		{
-			final RandomAccessibleInterval< ? > img = spimData.getSequenceDescription().getImgLoader().getSetupImgLoader( setup )
-					.getImage( timepoint, ImgLoaderHints.LOAD_COMPLETELY );
-			return img;
-		}
+		return sources.get( setup ).getSpimSource().getSource( timepoint, level );
 	}
 
 	/**
@@ -424,6 +372,57 @@ public class DetectionUtil
 		}
 
 		return ok;
+	}
+
+	public static List< SourceAndConverter< ? > > loadData( final String bdvFile) throws SpimDataException
+	{
+		// Try to emulate what SharedBigDataViewerData does, without the viewer thingies.
+		final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( bdvFile );
+		final ArrayList< ConverterSetup > converterSetups = new ArrayList<>();
+		final ArrayList<SourceAndConverter< ? >> sources = new ArrayList<>();
+		BigDataViewer.initSetups( spimData, converterSetups, sources );
+		// Manual transformation.
+		final ManualTransformation manualTransformation = new ManualTransformation( sources );
+		if( bdvFile.startsWith( "http://" ) )
+		{
+			// load settings.xml from the BigDataServer
+			final String settings = bdvFile + "settings";
+			{
+				try
+				{
+					final SAXBuilder sax = new SAXBuilder();
+					final Document doc = sax.build( settings );
+					final Element root = doc.getRootElement();
+					manualTransformation.restoreFromXml( root );
+				}
+				catch ( final FileNotFoundException e )
+				{}
+				catch ( final Exception e )
+				{
+					e.printStackTrace();
+				}
+			}
+		}
+		else if ( bdvFile.endsWith( ".xml" ) )
+		{
+			final String settings = bdvFile.substring( 0, bdvFile.length() - ".xml".length() ) + ".settings" + ".xml";
+			final File proposedSettingsFile = new File( settings );
+			if ( proposedSettingsFile.isFile() )
+			{
+				try
+				{
+					final SAXBuilder sax = new SAXBuilder();
+					final Document doc = sax.build( proposedSettingsFile );
+					final Element root = doc.getRootElement();
+					manualTransformation.restoreFromXml( root );
+				}
+				catch ( final Exception e )
+				{
+					e.printStackTrace();
+				}
+			}
+		}
+		return sources;
 	}
 
 	private DetectionUtil()

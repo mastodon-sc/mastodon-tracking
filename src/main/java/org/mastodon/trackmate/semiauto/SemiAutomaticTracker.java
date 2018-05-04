@@ -32,6 +32,7 @@ import org.mastodon.linking.LinkingUtils;
 import org.mastodon.model.NavigationHandler;
 import org.mastodon.model.SelectionModel;
 import org.mastodon.properties.DoublePropertyMap;
+import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.overlay.util.JamaEigenvalueDecomposition;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.Link;
@@ -49,8 +50,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.thread.ThreadService;
 
-import bdv.spimdata.SpimDataMinimal;
-import mpicbg.spim.data.sequence.TimePoint;
+import bdv.viewer.SourceAndConverter;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.computer.AbstractBinaryComputerOp;
 import net.imagej.ops.special.inplace.Inplaces;
@@ -74,7 +74,7 @@ public class SemiAutomaticTracker
 	private OpService ops;
 
 	@Parameter( type = ItemIO.INPUT )
-	private SpimDataMinimal spimData;
+	private SharedBigDataViewerData data;
 
 	@Parameter
 	private NavigationHandler< Spot, Link > navigationHandler;
@@ -110,6 +110,7 @@ public class SemiAutomaticTracker
 			return;
 		}
 
+		final List< SourceAndConverter< ? > > sources = data.getSources();
 		final ModelGraph graph = model.getGraph();
 		final SpatioTemporalIndex< Spot > spatioTemporalIndex = model.getSpatioTemporalIndex();
 
@@ -176,15 +177,14 @@ public class SemiAutomaticTracker
 		 * Units.
 		 */
 
-		final String units = spimData.getSequenceDescription().getViewSetups().get( Integer.valueOf( setup ) ).getVoxelSize().unit();
+		final String units =  sources.get( setup ).getSpimSource().getVoxelDimensions().unit();
 
 		/*
 		 * First and last time-points.
 		 */
 
-		final List< TimePoint > tps = spimData.getSequenceDescription().getTimePoints().getTimePointsOrdered();
-		final int minTimepoint = tps.get( 0 ).getId();
-		final int maxTimepoint = tps.get( tps.size() - 1 ).getId();
+		final int minTimepoint = 0;
+		final int maxTimepoint = data.getNumTimepoints() -1;
 
 		/*
 		 * Loop over each spot input.
@@ -211,7 +211,7 @@ public class SemiAutomaticTracker
 				tp = ( forward ? tp + 1 : tp - 1 );
 
 				// Check if there is some data at this timepoint.
-				if ( !DetectionUtil.isPresent( spimData, setup, tp ) )
+				if ( !DetectionUtil.isPresent( sources, setup, tp ) )
 					continue TIME;
 
 				// Best radius is smallest radius of ellipse.
@@ -233,8 +233,8 @@ public class SemiAutomaticTracker
 				/*
 				 * Build ROI to process.
 				 */
-				final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, tp, setup, 0 );
-				final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, 0 );
+				final double[] calibration = DetectionUtil.getPhysicalCalibration( sources, tp, setup, 0 );
+				final AffineTransform3D transform = DetectionUtil.getTransform( sources, tp, setup, 0 );
 				final Point center = new Point( 3 );
 				transform.applyInverse( new Round<>( center ), source );
 				final long x = center.getLongPosition( 0 );
@@ -287,8 +287,8 @@ public class SemiAutomaticTracker
 				detectorSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( tp ) );
 				detectorSettings.put( KEY_ROI, roi );
 				final DetectorOp detector = ( DetectorOp ) Inplaces.binary1( ops(), DoGDetectorOp.class,
-						detectionCreator, spimData, detectorSettings  );
-				detector.mutate1( detectionCreator, spimData );
+						detectionCreator, sources, detectorSettings  );
+				detector.mutate1( detectionCreator, sources );
 
 				if ( detections.isEmpty() )
 				{

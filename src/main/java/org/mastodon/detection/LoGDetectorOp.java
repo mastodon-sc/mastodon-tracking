@@ -16,7 +16,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.thread.ThreadService;
 
-import bdv.spimdata.SpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.Point;
@@ -51,7 +51,7 @@ public class LoGDetectorOp
 	private final boolean doSubpixelLocalization = true;
 
 	@Override
-	public void mutate1( final DetectionCreatorFactory detectionCreatorFactory, final SpimDataMinimal spimData )
+	public void mutate1( final DetectionCreatorFactory detectionCreatorFactory, final List< SourceAndConverter< ? > > sources )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
@@ -81,21 +81,21 @@ public class LoGDetectorOp
 				break;
 
 			// Check if there is some data at this timepoint.
-			if ( !DetectionUtil.isPresent( spimData, setup, tp ) )
+			if ( !DetectionUtil.isPresent( sources, setup, tp ) )
 				continue;
 
 			/*
 			 * Determine optimal level for detection.
 			 */
 
-			final int level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
+			final int level = DetectionUtil.determineOptimalResolutionLevel( sources, radius, MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
 
 			/*
 			 * Load and extends image data.
 			 */
 
 			@SuppressWarnings( "rawtypes" )
-			final RandomAccessibleInterval img = DetectionUtil.getImage( spimData, tp, setup, level );
+			final RandomAccessibleInterval img = DetectionUtil.getImage( sources, tp, setup, level );
 			@SuppressWarnings( "unchecked" )
 			final RandomAccessibleInterval< ? > zeroMin = Views.dropSingletonDimensions( Views.zeroMin( img ) );
 
@@ -117,7 +117,7 @@ public class LoGDetectorOp
 				final double[] minTarget = new double[ 3 ];
 				final double[] maxTarget = new double[ 3 ];
 
-				final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( spimData, tp, setup, level );
+				final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( sources, tp, setup, level );
 				mipmapTransform.applyInverse( minTarget, minSource );
 				mipmapTransform.applyInverse( maxTarget, maxSource );
 
@@ -136,7 +136,7 @@ public class LoGDetectorOp
 			 * Filter image.
 			 */
 
-			final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, tp, setup, level );
+			final double[] calibration = DetectionUtil.getPhysicalCalibration( sources, tp, setup, level );
 			final RandomAccessibleInterval< FloatType > kernel = createLoGKernel( radius, zeroMin.numDimensions(), calibration );
 			@SuppressWarnings( "rawtypes" )
 			final IntervalView source = Views.interval( zeroMin, interval );
@@ -163,7 +163,7 @@ public class LoGDetectorOp
 			 * Detect local maxima.
 			 */
 
-			final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );
+			final AffineTransform3D transform = DetectionUtil.getTransform( sources, tp, setup, level );
 			final DetectionCreator detectionCreator = detectionCreatorFactory.create( tp );
 			final List< Point > peaks = DetectionUtil.findLocalMaxima( output, threshold, threadService.getExecutorService() );
 			if ( doSubpixelLocalization )

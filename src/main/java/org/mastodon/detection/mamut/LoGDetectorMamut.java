@@ -1,10 +1,12 @@
 package org.mastodon.detection.mamut;
 
+import java.util.List;
+
 import org.mastodon.detection.LoGDetectorOp;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.scijava.plugin.Plugin;
 
-import bdv.spimdata.SpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 import net.imglib2.algorithm.Benchmark;
 
 /**
@@ -25,8 +27,8 @@ import net.imglib2.algorithm.Benchmark;
 public class LoGDetectorMamut extends AbstractSpotDetectorOp implements SpotDetectorOp, Benchmark
 {
 	@Override
-	public void compute( final SpimDataMinimal spimData, final ModelGraph graph )
+	public void compute( final List< SourceAndConverter< ? > > sources, final ModelGraph graph )
 	{
-		exec( spimData, graph, LoGDetectorOp.class );
+		exec( sources, graph, LoGDetectorOp.class );
 	}
 }

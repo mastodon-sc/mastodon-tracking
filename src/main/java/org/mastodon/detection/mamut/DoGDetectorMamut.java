@@ -1,11 +1,13 @@
 package org.mastodon.detection.mamut;
 
+import java.util.List;
+
 import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
 
-import bdv.spimdata.SpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 import net.imglib2.algorithm.Benchmark;
 
 /**
@@ -26,9 +28,9 @@ public class DoGDetectorMamut extends AbstractSpotDetectorOp implements SpotDete
 {
 
 	@Override
-	public void compute( final SpimDataMinimal spimData, final ModelGraph graph )
+	public void compute( final List< SourceAndConverter< ? > > sources, final ModelGraph graph )
 	{
-		exec( spimData, graph, DoGDetectorOp.class );
+		exec( sources, graph, DoGDetectorOp.class );
 	}
 
 }

@@ -1,5 +1,6 @@
 package org.mastodon.detection;
 
+import java.util.List;
 import java.util.Map;
 
 import org.scijava.ItemIO;
@@ -7,11 +8,11 @@ import org.scijava.app.StatusService;
 import org.scijava.log.Logger;
 import org.scijava.plugin.Parameter;
 
-import bdv.spimdata.SpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 import net.imagej.ops.special.inplace.AbstractBinaryInplace1Op;
 
 public abstract class AbstractDetectorOp
-		extends AbstractBinaryInplace1Op< DetectionCreatorFactory, SpimDataMinimal >
+		extends AbstractBinaryInplace1Op< DetectionCreatorFactory, List< SourceAndConverter< ? > > >
 		implements DetectorOp
 {
 

@@ -1,5 +1,7 @@
 package org.mastodon.trackmate.ui.wizard;
 
+import java.util.ArrayList;
+
 import org.mastodon.plugin.MastodonPluginAppModel;
 import org.mastodon.revised.mamut.MamutAppModel;
 import org.mastodon.revised.mamut.WindowManager;
@@ -7,7 +9,7 @@ import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.scijava.plugin.Plugin;
 
-import bdv.spimdata.SpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 
 @Plugin( type = WizardDetectionPlugin.class )
 public class WizardDetectionPlugin extends WizardPlugin
@@ -33,8 +35,8 @@ public class WizardDetectionPlugin extends WizardPlugin
 		 * SpimDataMinimal here. Using AbstractSpimData<?> everywhere should
 		 * work, but requires additional casting when instantiation ops.
 		 */
-		final SpimDataMinimal spimData = ( SpimDataMinimal ) appModel.getSharedBdvData().getSpimData();
-		settings.spimData( spimData );
+		final ArrayList< SourceAndConverter< ? > > sources = appModel.getSharedBdvData().getSources();
+		settings.sources( sources );
 		final TrackMate trackmate = new TrackMate( settings, appModel.getModel(), appModel.getSelectionModel() );
 		getContext().inject( trackmate );
 		trackmate.setLogger( wizard.getLogService() );

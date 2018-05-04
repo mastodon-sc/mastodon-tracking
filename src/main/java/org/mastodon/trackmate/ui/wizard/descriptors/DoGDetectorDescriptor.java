@@ -17,6 +17,7 @@ import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.Icon;
@@ -46,11 +47,9 @@ import org.mastodon.trackmate.ui.wizard.util.WizardUtils;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
-import bdv.spimdata.SequenceDescriptionMinimal;
-import bdv.spimdata.SpimDataMinimal;
 import bdv.util.Affine3DHelpers;
-import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
-import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
 import net.imagej.ops.OpService;
 import net.imglib2.realtransform.AffineTransform3D;
 
@@ -97,18 +96,17 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 
 		grabSettings();
 		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
-		final String units = ( null != setupID && null != settings.values.getSpimData() )
-				? settings.values.getSpimData().getSequenceDescription()
-						.getViewSetups().get( setupID ).getVoxelSize().unit()
+		final String units = ( null != setupID && null != settings.values.getSources() )
+				? settings.values.getSources().get( setupID ).getSpimSource().getVoxelDimensions().unit()
 				: "pixels";
 
-		final SpimDataMinimal spimData = settings.values.getSpimData();
+		final List< SourceAndConverter< ? > > sources = settings.values.getSources();
 		final double radius = ( double ) settings.values.getDetectorSettings().get( KEY_RADIUS );
 		final double minSizePixel = DoGDetectorOp.MIN_SPOT_PIXEL_SIZE / 2.;
 		final int timepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT );
-		final int level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, minSizePixel, timepoint, setupID );
-		final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( spimData, timepoint, setupID, level );
-		final AffineTransform3D transform = DetectionUtil.getTransform( spimData, timepoint, setupID, level );
+		final int level = DetectionUtil.determineOptimalResolutionLevel( sources, radius, minSizePixel, timepoint, setupID );
+		final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( sources, timepoint, setupID, level );
+		final AffineTransform3D transform = DetectionUtil.getTransform( sources, timepoint, setupID, level );
 
 		final double sx = Affine3DHelpers.extractScale( mipmapTransform, 0 );
 		final double sy = Affine3DHelpers.extractScale( mipmapTransform, 1 );
@@ -125,8 +123,9 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 		logger.info( "Configured detector with parameters:\n" );
 		logger.info( String.format( "  - spot radius: %.1f %s\n", radius, units ) );
 		logger.info( String.format( "  - quality threshold: %.1f\n", ( double ) settings.values.getDetectorSettings().get( KEY_THRESHOLD ) ) );
-		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
-		if ( seq.getImgLoader() instanceof BasicMultiResolutionImgLoader )
+		final Source< ? > source = sources.get( setupID.intValue() ).getSpimSource();
+		final int numMipmapLevels = source.getNumMipmapLevels();
+		if ( numMipmapLevels > 1 )
 		{
 			logger.info( String.format( "  - will operate on resolution level %d (%.0f x %.0f x %.0f)\n", level, sx, sy, sz ) );
 			logger.info( String.format( "  - at this level, radius = %.1f %s corresponds to:\n", radius, units ) );
@@ -259,11 +258,11 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 			threshold = ( double ) objThreshold;
 
 		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
-		final BasicViewSetup setup = settings.values.getSpimData().getSequenceDescription().getViewSetups().get( setupID );
+		final String unit = settings.values.getSources().get( setupID ).getSpimSource().getVoxelDimensions().unit();
 
 		panel.diameter.setValue( diameter );
 		panel.threshold.setValue( threshold );
-		panel.lblDiameterUnit.setText( setup.getVoxelSize().unit() );
+		panel.lblDiameterUnit.setText( unit );
 	}
 
 	@Override

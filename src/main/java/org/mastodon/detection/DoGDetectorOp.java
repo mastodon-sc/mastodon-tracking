@@ -8,13 +8,14 @@ import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
 import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.mastodon.detection.DetectionCreatorFactory.DetectionCreator;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.thread.ThreadService;
 
-import bdv.spimdata.SpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.Point;
@@ -53,7 +54,7 @@ public class DoGDetectorOp
 	private long processingTime;
 
 	@Override
-	public void mutate1( final DetectionCreatorFactory detectionCreatorFactory, final SpimDataMinimal spimData )
+	public void mutate1( final DetectionCreatorFactory detectionCreatorFactory, final List< SourceAndConverter< ? > > sources )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
@@ -84,20 +85,20 @@ public class DoGDetectorOp
 				break;
 
 			// Check if there is some data at this timepoint.
-			if ( !DetectionUtil.isPresent( spimData, setup, tp ) )
+			if ( !DetectionUtil.isPresent( sources, setup, tp ) )
 				continue;
 
 			/*
 			 * Determine optimal level for detection.
 			 */
 
-			final int level = DetectionUtil.determineOptimalResolutionLevel( spimData, radius, MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
+			final int level = DetectionUtil.determineOptimalResolutionLevel( sources, radius, MIN_SPOT_PIXEL_SIZE / 2., tp, setup );
 
 			/*
 			 * Load and extends image data.
 			 */
 
-			final RandomAccessibleInterval< ? > img = DetectionUtil.getImage( spimData, tp, setup, level );
+			final RandomAccessibleInterval< ? > img = DetectionUtil.getImage( sources, tp, setup, level );
 			// If 2D, the 3rd dimension will be dropped here.
 			final RandomAccessibleInterval< ? > zeroMin = Views.dropSingletonDimensions( Views.zeroMin( img ) );
 
@@ -122,7 +123,7 @@ public class DoGDetectorOp
 				final double[] minTarget = new double[ 3 ];
 				final double[] maxTarget = new double[ 3 ];
 
-				final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( spimData, tp, setup, level );
+				final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( sources, tp, setup, level );
 				mipmapTransform.applyInverse( minTarget, minSource );
 				mipmapTransform.applyInverse( maxTarget, maxSource );
 
@@ -142,7 +143,7 @@ public class DoGDetectorOp
 			 * Process image.
 			 */
 
-			final double[] calibration = DetectionUtil.getPhysicalCalibration( spimData, tp, setup, level );
+			final double[] calibration = DetectionUtil.getPhysicalCalibration( sources, tp, setup, level );
 			final int stepsPerOctave = 4;
 			final double k = Math.pow( 2.0, 1.0 / stepsPerOctave );
 			final double sigma = radius / Math.sqrt( zeroMin.numDimensions() );
@@ -166,7 +167,7 @@ public class DoGDetectorOp
 			final RealPoint sp = RealPoint.wrap( pos );
 			final RealPoint p3d = new RealPoint( 3 );
 
-			final AffineTransform3D transform = DetectionUtil.getTransform( spimData, tp, setup, level );
+			final AffineTransform3D transform = DetectionUtil.getTransform( sources, tp, setup, level );
 			final DetectionCreator detectionCreator = detectionCreatorFactory.create( tp );
 			detectionCreator.preAddition();
 			try

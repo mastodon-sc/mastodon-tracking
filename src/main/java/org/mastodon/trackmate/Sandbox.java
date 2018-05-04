@@ -8,6 +8,7 @@ import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -24,8 +25,7 @@ import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.revised.model.mamut.Model;
 import org.scijava.Context;
 
-import bdv.spimdata.SpimDataMinimal;
-import bdv.spimdata.XmlIoSpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 import mpicbg.spim.data.SpimDataException;
 
 public class Sandbox
@@ -45,19 +45,9 @@ public class Sandbox
 //		final String bdvFile = "/Users/pietzsch/Desktop/data/MAMUT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 //		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-		SpimDataMinimal sd = null;
-		try
-		{
-			sd = new XmlIoSpimDataMinimal().load( bdvFile );
-		}
-		catch ( final SpimDataException e )
-		{
-			e.printStackTrace();
-			return;
-		}
-		final SpimDataMinimal spimData = sd;
+		final List< SourceAndConverter< ? > > sources = DetectionUtil.loadData( bdvFile );
 
-		final int maxTimepoint = spimData.getSequenceDescription().getTimePoints().size() - 1;
+		final int maxTimepoint = 10;
 		final int minTimepoint = 0;
 		final double radius = 20.;
 		final double threshold = 100.;
@@ -83,7 +73,7 @@ public class Sandbox
 		linkerSettings.put( KEY_MAX_TIMEPOINT, maxTimepoint );
 
 		final Settings settings = new Settings()
-				.spimData( spimData )
+				.sources( sources )
 				.detector( detectorClass )
 				.detectorSettings( detectorSettings )
 				.linker( linkerClass )

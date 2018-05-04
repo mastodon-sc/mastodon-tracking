@@ -15,6 +15,8 @@ import org.mastodon.trackmate.ui.wizard.descriptors.SetupIdDecriptor;
 import org.mastodon.trackmate.ui.wizard.descriptors.SpotDetectorDescriptor;
 import org.scijava.Context;
 
+import mpicbg.spim.data.generic.AbstractSpimData;
+
 public class DetectionSequence implements WizardSequence
 {
 
@@ -51,8 +53,8 @@ public class DetectionSequence implements WizardSequence
 		this.trackmate = trackmate;
 		this.windowManager = windowManager;
 		this.logService = logService;
-
-		this.setupIdDecriptor = new SetupIdDecriptor( trackmate.getSettings(), logService );
+		final AbstractSpimData< ? > spimData = windowManager.getAppModel().getSharedBdvData().getSpimData();
+		this.setupIdDecriptor = new SetupIdDecriptor( trackmate.getSettings(), spimData, logService );
 		setupIdDecriptor.setContext( windowManager.getContext() );
 		this.boundingBoxDescriptor = new BoundingBoxDescriptor( trackmate.getSettings(), windowManager, logService );
 		boundingBoxDescriptor.setContext( windowManager.getContext() );

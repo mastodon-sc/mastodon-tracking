@@ -4,6 +4,7 @@ import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.linking.LinkerKeys.KEY_DO_LINK_SELECTION;
 
+import java.util.List;
 import java.util.Map;
 
 import org.mastodon.HasErrorMessage;
@@ -23,7 +24,7 @@ import org.scijava.command.ContextCommand;
 import org.scijava.log.Logger;
 import org.scijava.plugin.Parameter;
 
-import bdv.spimdata.SpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 import net.imagej.ops.Op;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.hybrid.Hybrids;
@@ -93,10 +94,10 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 			return true;
 
 		final ModelGraph graph = model.getGraph();
-		final SpimDataMinimal spimData = settings.values.getSpimData();
-		if ( null == spimData )
+		final List< SourceAndConverter< ? > > sources = settings.values.getSources();
+		if ( null == sources || sources.isEmpty() )
 		{
-			errorMessage = "Cannot start detection: SpimData object is null.\n";
+			errorMessage = "Cannot start detection: No sources.\n";
 			logger.error( errorMessage + '\n' );
 			succesful = false;
 			return false;
@@ -111,14 +112,14 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 
 		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl,
-				graph, spimData,
+				graph, sources,
 				detectorSettings,
 				model.getSpatioTemporalIndex() );
 		detector.setLogger( logger );
 		detector.setStatusService( statusService );
 		this.currentOp = detector;
 		logger.info( "Detection with " + cl.getSimpleName() + '\n' );
-		detector.compute( spimData, graph );
+		detector.compute( sources, graph );
 
 		if ( !detector.isSuccessful() )
 		{

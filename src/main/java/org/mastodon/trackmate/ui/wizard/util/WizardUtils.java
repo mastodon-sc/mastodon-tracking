@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.event.MouseListener;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.List;
 import java.util.Map;
 
 import org.jfree.chart.ChartPanel;
@@ -60,14 +61,11 @@ import org.scijava.ui.behaviour.util.Behaviours;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.tools.InitializeViewerState;
 import bdv.util.Affine3DHelpers;
-import mpicbg.spim.data.generic.base.Entity;
-import mpicbg.spim.data.generic.base.NamedEntity;
-import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
-import mpicbg.spim.data.generic.sequence.BasicMultiResolutionSetupImgLoader;
-import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
 import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imagej.ops.OpService;
-import net.imglib2.Dimensions;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**
@@ -287,68 +285,47 @@ public class WizardUtils
 		return viewFrame;
 	}
 
-
 	/**
 	 * Returns an explanatory string that states what resolutions are available
 	 * in the {@link SpimDataMinimal} for the specified setup id.
 	 *
 	 * @return a string.
 	 */
-	public static final String echoSetupIDInfo(final SpimDataMinimal spimData, final int setupID)
+	public static final String echoSetupIDInfo( final List< SourceAndConverter< ? > > sources, final int setupID )
 	{
-		if ( spimData == null )
-			return "No spim data.";
-		final BasicViewSetup setup = spimData.getSequenceDescription().getViewSetups().get( setupID );
+		if ( sources == null )
+			return "No data.";
+
+		final Source< ? > source = sources.get( setupID ).getSpimSource();
+		final RandomAccessibleInterval< ? > ra0 = source.getSource( 0, 0 );
+		final long[] size = new long[ ra0.numDimensions() ];
+		ra0.dimensions( size );
 
 		final StringBuilder str = new StringBuilder();
-		final Dimensions size = setup.getSize();
-		str.append( "  - size: " + size.dimension( 0 ) + " x " + size.dimension( 1 ) + " x " + size.dimension( 2 ) + "\n" );
 
-		final VoxelDimensions voxelSize = setup.getVoxelSize();
+		str.append( "  - name: " + source.getName() + "\n" );
+		str.append( "  - size: " + size[ 0 ] + " x " + size[ 1 ] + " x " + size[ 2 ] + "\n" );
+		final VoxelDimensions voxelSize = source.getVoxelDimensions();
 		str.append( "  - voxel size: " + voxelSize.dimension( 0 ) + " x " + voxelSize.dimension( 1 ) + " x "
 				+ voxelSize.dimension( 2 ) + " " + voxelSize.unit() + "\n" );
 
-		final Map< String, Entity > attributes = setup.getAttributes();
-		for ( final String key : attributes.keySet() )
+		final int numMipmapLevels = source.getNumMipmapLevels();
+		if ( numMipmapLevels > 1 )
 		{
-			final Entity entity = attributes.get( key );
-			if ( entity instanceof NamedEntity )
+			str.append( String.format( "  - multi-resolution image with %d levels:\n", numMipmapLevels ) );
+			for ( int level = 0; level < numMipmapLevels; level++ )
 			{
-				final NamedEntity ne = ( NamedEntity ) entity;
-				str.append( "  - " + key + ": " + ne.getName() + "\n" );
-			}
-		}
-
-		if ( spimData.getSequenceDescription().getImgLoader() instanceof BasicMultiResolutionImgLoader )
-		{
-			final BasicMultiResolutionSetupImgLoader< ? > loader =
-					( ( BasicMultiResolutionImgLoader ) spimData.getSequenceDescription().getImgLoader() )
-							.getSetupImgLoader( setupID );
-
-			final int numMipmapLevels = loader.numMipmapLevels();
-
-			if ( numMipmapLevels > 1 )
-			{
-				final AffineTransform3D[] mipmapTransforms = loader.getMipmapTransforms();
-				str.append( String.format( "  - multi-resolution image with %d levels:\n", numMipmapLevels ) );
-				for ( int level = 0; level < mipmapTransforms.length; level++ )
-				{
-					final double sx = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 0 );
-					final double sy = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 1 );
-					final double sz = Affine3DHelpers.extractScale( mipmapTransforms[ level ], 2 );
-					str.append( String.format( "     - level %d: %.0f x %.0f x %.0f\n", level, sx, sy, sz ) );
-				}
-			}
-			else
-			{
-				str.append( " - single-resolution image.\n" );
+				final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( sources, 0, setupID, level );
+				final double sx = Affine3DHelpers.extractScale( mipmapTransform, 0 );
+				final double sy = Affine3DHelpers.extractScale( mipmapTransform, 1 );
+				final double sz = Affine3DHelpers.extractScale( mipmapTransform, 2 );
+				str.append( String.format( "     - level %d: %.0f x %.0f x %.0f\n", level, sx, sy, sz ) );
 			}
 		}
 		else
 		{
 			str.append( " - single-resolution image.\n" );
 		}
-
 		return str.toString();
 	}
 

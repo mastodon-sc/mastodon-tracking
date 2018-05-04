@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -43,6 +44,9 @@ import org.scijava.plugin.Plugin;
 import org.scijava.plugin.PluginInfo;
 import org.scijava.plugin.PluginService;
 import org.scijava.plugin.SciJavaPlugin;
+
+import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
 
 @Plugin( type = SpotLinkerDescriptor.class, name = "Kalman linker configuration descriptor" )
 public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
@@ -86,10 +90,9 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 		settings.linkerSettings( ls );
 
 		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
-		final String units = ( null != setupID && null != settings.values.getSpimData() )
-				? settings.values.getSpimData().getSequenceDescription()
-						.getViewSetups().get( setupID ).getVoxelSize().unit()
-				: "pixels";
+		final List< SourceAndConverter< ? > > sources = settings.values.getSources();
+		final Source< ? > source = sources.get( setupID.intValue() ).getSpimSource();
+		final String units = source.getVoxelDimensions().unit();
 		logger.log( LogLevel.INFO, "Configured Kalman linker with the following parameters:\n" );
 		logger.log( LogLevel.INFO, String.format( "  - initial search radius: %.1f %s\n", ( double ) ls.get( KEY_LINKING_MAX_DISTANCE ), units ) );
 		logger.log( LogLevel.INFO, String.format( "  - search radius: %.1f %s\n", ( double ) ls.get( KEY_KALMAN_SEARCH_RADIUS ), units ) );
@@ -144,10 +147,9 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 			final PluginInfo< SciJavaPlugin > pluginInfo = pluginService.getPlugin( KalmanLinkerMamut.class );
 
 			final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
-			final String units = ( null != setupID && null != settings.values.getSpimData() )
-					? settings.values.getSpimData().getSequenceDescription()
-							.getViewSetups().get( setupID ).getVoxelSize().unit()
-					: "pixels";
+			final List< SourceAndConverter< ? > > sources = settings.values.getSources();
+			final Source< ? > source = sources.get( setupID.intValue() ).getSpimSource();
+			final String units = source.getVoxelDimensions().unit();
 
 			final GridBagLayout layout = new GridBagLayout();
 			layout.columnWidths = new int[] { 80, 80, 40 };

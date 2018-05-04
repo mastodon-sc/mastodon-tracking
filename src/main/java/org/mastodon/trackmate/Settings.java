@@ -1,6 +1,7 @@
 package org.mastodon.trackmate;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.mastodon.detection.DetectionUtil;
@@ -10,7 +11,7 @@ import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.mamut.SimpleSparseLAPLinkerMamut;
 import org.mastodon.linking.mamut.SpotLinkerOp;
 
-import bdv.spimdata.SpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 
 public class Settings
 {
@@ -51,15 +52,15 @@ public class Settings
 		return this;
 	}
 
-	public Settings spimData( final SpimDataMinimal spimData )
+	public Settings sources( final List< SourceAndConverter< ? > > sources )
 	{
-		values.spimData = spimData;
+		values.sources = sources;
 		return this;
 	}
 
 	/**
 	 * Returns a copy of this settings instance.
-	 * 
+	 *
 	 * @return a copy of this settings instance.
 	 */
 	public Settings copy()
@@ -71,7 +72,7 @@ public class Settings
 	public String toString()
 	{
 		final StringBuffer str = new StringBuffer( super.toString() + ":\n" );
-		str.append( " - spimData: " + values.spimData + "\n" );
+		str.append( " - sources: " + values.sources + "\n" );
 		str.append( " - detector: " + values.detector + "\n" );
 		str.append( " - detector settings: @" + values.detectorSettings.hashCode() + "\n" );
 		for ( final String key : values.detectorSettings.keySet() )
@@ -86,7 +87,7 @@ public class Settings
 
 	public static class Values
 	{
-		private SpimDataMinimal spimData = null;
+		private List< SourceAndConverter< ? > > sources = null;
 
 		private Class< ? extends SpotDetectorOp > detector = DoGDetectorMamut.class;
 
@@ -104,7 +105,7 @@ public class Settings
 		public Values copy()
 		{
 			final Values v = new Values();
-			v.spimData = spimData;
+			v.sources = sources;
 			v.detector = detector;
 			v.detectorSettings = new HashMap<>( detectorSettings );
 			v.linker = linker;
@@ -127,9 +128,9 @@ public class Settings
 			return linkerSettings;
 		}
 
-		public SpimDataMinimal getSpimData()
+		public List< SourceAndConverter< ? > > getSources()
 		{
-			return spimData;
+			return sources;
 		}
 	}
 }

@@ -2,6 +2,7 @@ package org.mastodon.detection.mamut;
 
 import static org.mastodon.detection.DetectorKeys.KEY_ADD_BEHAVIOR;
 
+import java.util.List;
 import java.util.Map;
 
 import org.mastodon.detection.DetectionCreatorFactory;
@@ -19,12 +20,12 @@ import org.scijava.log.Logger;
 import org.scijava.plugin.Parameter;
 import org.scijava.thread.ThreadService;
 
-import bdv.spimdata.SpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 import net.imagej.ops.special.hybrid.AbstractUnaryHybridCF;
 import net.imagej.ops.special.inplace.Inplaces;
 import net.imglib2.algorithm.Benchmark;
 
-public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< SpimDataMinimal, ModelGraph > implements SpotDetectorOp, Benchmark
+public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List< SourceAndConverter< ? > >, ModelGraph > implements SpotDetectorOp, Benchmark
 {
 
 	@Parameter( type = ItemIO.INPUT )
@@ -55,7 +56,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 
 	protected DetectorOp detector;
 
-	protected void exec( final SpimDataMinimal spimData, final ModelGraph graph, final Class< ? extends DetectorOp > cl )
+	protected void exec( final List< SourceAndConverter< ? > > sources, final ModelGraph graph, final Class< ? extends DetectorOp > cl )
 	{
 		ok = false;
 		final long start = System.currentTimeMillis();
@@ -88,10 +89,10 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 		}
 
 		this.detector = ( DetectorOp ) Inplaces.binary1( ops(), cl,
-				detectionCreator, spimData, settings );
+				detectionCreator, sources, settings );
 		detector.setLogger( log );
 		detector.setStatusService( statusService );
-		detector.mutate1( detectionCreator, spimData );
+		detector.mutate1( detectionCreator, sources );
 
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
@@ -109,7 +110,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< Spim
 	}
 
 	@Override
-	public ModelGraph createOutput( final SpimDataMinimal input )
+	public ModelGraph createOutput( final List< SourceAndConverter< ? > > input )
 	{
 		return new ModelGraph();
 	}

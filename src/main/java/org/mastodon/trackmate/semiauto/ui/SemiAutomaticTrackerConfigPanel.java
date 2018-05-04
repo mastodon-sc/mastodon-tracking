@@ -23,10 +23,10 @@ import javax.swing.SwingConstants;
 
 import org.mastodon.app.ui.GroupLocksPanel;
 import org.mastodon.grouping.GroupHandle;
+import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.trackmate.semiauto.ui.SemiAutomaticTrackerSettings.UpdateListener;
 import org.mastodon.trackmate.ui.wizard.util.SetupIDComboBox;
 
-import bdv.spimdata.SpimDataMinimal;
 import bdv.tools.brightness.SliderPanel;
 import bdv.tools.brightness.SliderPanelDouble;
 import bdv.util.BoundedValue;
@@ -83,11 +83,11 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 			+ "target spots. "
 			+ "</p></html>";
 
-	public SemiAutomaticTrackerConfigPanel( final SpimDataMinimal spimData, final SemiAutomaticTrackerSettings editedSettings, final GroupHandle groupHandle, final Action trackAction )
+	public SemiAutomaticTrackerConfigPanel( final SharedBigDataViewerData data, final SemiAutomaticTrackerSettings editedSettings, final GroupHandle groupHandle, final Action trackAction )
 	{
-		final int nTimePoints = ( null == spimData )
+		final int nTimePoints = ( null == data )
 				? 100
-				: spimData.getSequenceDescription().getTimePoints().size();
+				: data.getSpimData().getSequenceDescription().getTimePoints().size();
 
 		final GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] { 0, 0, 0 };
@@ -113,7 +113,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_lblSetupId.gridy = 1;
 		add( lblSetupId, gbc_lblSetupId );
 
-		final SetupIDComboBox comboBox = new SetupIDComboBox( spimData );
+		final SetupIDComboBox comboBox = new SetupIDComboBox( data.getSources() );
 		comboBox.addItemListener( ( e ) -> editedSettings.setSetupID( comboBox.getSelectedSetupID() ) );
 		final GridBagConstraints gbc_comboBox = new GridBagConstraints();
 		gbc_comboBox.insets = new Insets( 5, 5, 5, 0 );

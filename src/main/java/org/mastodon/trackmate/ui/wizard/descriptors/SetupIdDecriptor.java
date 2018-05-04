@@ -28,8 +28,8 @@ import org.scijava.Contextual;
 import org.scijava.NullContextException;
 import org.scijava.plugin.Parameter;
 
-import bdv.spimdata.SpimDataMinimal;
-import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import bdv.viewer.SourceAndConverter;
+import mpicbg.spim.data.generic.AbstractSpimData;
 
 public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionListener, Contextual
 {
@@ -40,19 +40,22 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 
 	private final Settings settings;
 
-	public SetupIdDecriptor( final Settings settings, final WizardLogService logService )
+	private final AbstractSpimData< ? > spimData;
+
+	public SetupIdDecriptor( final Settings settings, final AbstractSpimData< ? > spimData, final WizardLogService logService )
 	{
 		this.settings = settings;
+		this.spimData = spimData;
 		this.log = logService;
 		this.panelIdentifier = IDENTIFIER;
-		final SpimDataMinimal spimData = settings.values.getSpimData();
-		this.targetPanel = new SetupIdConfigPanel( spimData );
+		final List< SourceAndConverter< ? > > sources = settings.values.getSources();
+		this.targetPanel = new SetupIdConfigPanel( sources );
 	}
 
 	@Override
 	public void aboutToDisplayPanel()
 	{
-		final SpimDataMinimal spimData = settings.values.getSpimData();
+		final List< SourceAndConverter< ? > > sources = settings.values.getSources();
 		final SetupIdConfigPanel panel = ( SetupIdConfigPanel ) targetPanel;
 
 		final String dataName = spimData.getBasePath().getAbsolutePath();
@@ -60,8 +63,7 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 						+ dataName.replaceAll( Pattern.quote( File.separator ), " / " )
 						+ "</html>" );
 
-		final List< BasicViewSetup > setups = spimData.getSequenceDescription().getViewSetupsOrdered();
-		final int nSetups = setups.size();
+		final int nSetups = sources.size();
 		panel.lblNSetups.setText( nSetups == 1 ? "1 setup" : "" + nSetups + " setups" );
 
 		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
@@ -76,22 +78,21 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 		final int setupID = panel.comboBox.getSelectedSetupID();
 		detectorSettings.put( KEY_SETUP_ID, Integer.valueOf( setupID ) );
-		final SpimDataMinimal spimData = settings.values.getSpimData();
+		final List< SourceAndConverter< ? > > sources = settings.values.getSources();
 		final int nTimePoints = spimData.getSequenceDescription().getTimePoints().getTimePoints().size();
 		detectorSettings.put( KEY_MIN_TIMEPOINT, Integer.valueOf( 0 ) );
 		detectorSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( nTimePoints - 1 ) );
 
 		log.log( String.format( "Selected setup ID %d for detection:\n", setupID ) );
-		log.log( WizardUtils.echoSetupIDInfo( spimData, setupID ) );
+		log.log( WizardUtils.echoSetupIDInfo( sources, setupID ) );
 	}
 
 	@Override
 	public void actionPerformed( final ActionEvent e )
 	{
 		final SetupIdConfigPanel panel = ( SetupIdConfigPanel ) targetPanel;
-		final SpimDataMinimal spimData = settings.values.getSpimData();
 		final int setupID = panel.comboBox.getSelectedSetupID();
-		String info = WizardUtils.echoSetupIDInfo( spimData, setupID );
+		String info = WizardUtils.echoSetupIDInfo( settings.values.getSources(), setupID );
 		// HTMLize the info
 		info = "<html>" + info + "</html>";
 		info = info.replace( "\n", "<br>" );
@@ -111,7 +112,7 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 
 		private final JLabel lblFill;
 
-		public SetupIdConfigPanel( final SpimDataMinimal spimData )
+		public SetupIdConfigPanel( final List< SourceAndConverter< ? > > sources )
 		{
 
 			final GridBagLayout layout = new GridBagLayout();
@@ -172,7 +173,7 @@ public class SetupIdDecriptor extends WizardPanelDescriptor implements ActionLis
 			gbc_lblSetup.gridy = 4;
 			add( lblSetup, gbc_lblSetup );
 
-			this.comboBox = new SetupIDComboBox( spimData );
+			this.comboBox = new SetupIDComboBox( sources );
 			comboBox.addActionListener( SetupIdDecriptor.this );
 			final GridBagConstraints gbc_comboBox = new GridBagConstraints();
 			gbc_comboBox.gridwidth = 2;

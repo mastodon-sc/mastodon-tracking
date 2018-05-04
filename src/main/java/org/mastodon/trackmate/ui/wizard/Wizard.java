@@ -2,6 +2,7 @@ package org.mastodon.trackmate.ui.wizard;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
 
 import javax.swing.JFrame;
@@ -11,6 +12,7 @@ import javax.swing.WindowConstants;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.StyledDocument;
 
+import org.mastodon.detection.DetectionUtil;
 import org.mastodon.revised.mamut.MainWindow;
 import org.mastodon.revised.mamut.MamutProject;
 import org.mastodon.revised.mamut.WindowManager;
@@ -19,8 +21,7 @@ import org.mastodon.trackmate.TrackMate;
 import org.scijava.Context;
 import org.scijava.plugin.Parameter;
 
-import bdv.spimdata.SpimDataMinimal;
-import bdv.spimdata.XmlIoSpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 import mpicbg.spim.data.SpimDataException;
 
 public class Wizard
@@ -80,19 +81,9 @@ public class Wizard
 		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 //		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 
-		SpimDataMinimal sd = null;
-		try
-		{
-			sd = new XmlIoSpimDataMinimal().load( bdvFile );
-		}
-		catch ( final SpimDataException e )
-		{
-			e.printStackTrace();
-			return;
-		}
-		final SpimDataMinimal spimData = sd;
+		final List< SourceAndConverter< ? > > sources = DetectionUtil.loadData( bdvFile );
 		final Settings settings = new Settings()
-				.spimData( spimData );
+				.sources( sources );
 
 		final WindowManager windowManager = new WindowManager( context );
 		final MainWindow mw = new MainWindow( windowManager );

@@ -9,6 +9,7 @@ import java.awt.Dimension;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.JPanel;
@@ -25,6 +26,9 @@ import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.scijava.log.LogLevel;
 import org.scijava.plugin.Plugin;
+
+import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
 
 @Plugin( type = SpotLinkerDescriptor.class, name = "LAP linker configuration descriptor" )
 public class LAPLinkerDescriptor extends SpotLinkerDescriptor
@@ -57,10 +61,9 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 		settings.linkerSettings( ls );
 
 		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
-		final String units = ( null != setupID && null != settings.values.getSpimData() )
-				? settings.values.getSpimData().getSequenceDescription()
-						.getViewSetups().get( setupID ).getVoxelSize().unit()
-				: "pixels";
+		final List< SourceAndConverter< ? > > sources = settings.values.getSources();
+		final Source< ? > source = sources.get( setupID.intValue() ).getSpimSource();
+		final String units = source.getVoxelDimensions().unit();
 		logger.log( LogLevel.INFO, "Configured LAP linker with the following parameters:\n" );
 		logger.log( LogLevel.INFO, LAPLinkerConfigPanel.echoSettingsMap( ls, units ) );
 		logger.log( LogLevel.INFO, String.format( "  - target: %s\n", ( boolean ) ls.get( KEY_DO_LINK_SELECTION ) ? "selection only." : "all detections." ) );
@@ -116,10 +119,9 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 			jScrollPaneMain.getVerticalScrollBar().setUnitIncrement( 24 );
 
 			final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
-			final String units = ( null != setupID && null != settings.values.getSpimData() )
-					? settings.values.getSpimData().getSequenceDescription()
-							.getViewSetups().get( setupID ).getVoxelSize().unit()
-					: "pixels";
+			final List< SourceAndConverter< ? > > sources = settings.values.getSources();
+			final Source< ? > source = sources.get( setupID.intValue() ).getSpimSource();
+			final String units = source.getVoxelDimensions().unit();
 			this.configPanel = new LAPLinkerConfigPanel( "LAP linker.", units, model.getFeatureModel(), Spot.class );
 			jScrollPaneMain.setViewportView( configPanel );
 		}

@@ -3,6 +3,7 @@ package org.mastodon.trackmate.ui.wizard;
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import org.mastodon.detection.DetectionUtil;
@@ -14,7 +15,7 @@ import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.scijava.plugin.Plugin;
 
-import bdv.spimdata.SpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 
 @Plugin( type = WizardLinkingPlugin.class )
 public class WizardLinkingPlugin extends WizardPlugin
@@ -46,7 +47,6 @@ public class WizardLinkingPlugin extends WizardPlugin
 	{
 		final MamutAppModel appModel = pluginAppModel.getAppModel();
 		final WindowManager windowManager = pluginAppModel.getWindowManager();
-		final SpimDataMinimal spimData = ( SpimDataMinimal ) appModel.getSharedBdvData().getSpimData();
 		final int tmax = windowManager.getAppModel().getMaxTimepoint();
 		final int tmin = windowManager.getAppModel().getMinTimepoint();
 
@@ -57,7 +57,8 @@ public class WizardLinkingPlugin extends WizardPlugin
 		detectorSettings.put( KEY_MIN_TIMEPOINT, Integer.valueOf( tmin ) );
 		detectorSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( tmax ) );
 
-		settings.spimData( spimData );
+		final ArrayList< SourceAndConverter< ? > > sources = appModel.getSharedBdvData().getSources();
+		settings.sources( sources );
 		final TrackMate trackmate = new TrackMate( settings, appModel.getModel(), appModel.getSelectionModel() );
 		getContext().inject( trackmate );
 		trackmate.setLogger( wizard.getLogService() );

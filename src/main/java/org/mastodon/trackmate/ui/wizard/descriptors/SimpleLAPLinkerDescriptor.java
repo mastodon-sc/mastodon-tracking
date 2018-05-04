@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.JFormattedTextField;
@@ -54,6 +55,9 @@ import org.scijava.plugin.Plugin;
 import org.scijava.plugin.PluginInfo;
 import org.scijava.plugin.PluginService;
 import org.scijava.plugin.SciJavaPlugin;
+
+import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
 
 @Plugin( type = SpotLinkerDescriptor.class, name = "Simple LAP linker configuration descriptor" )
 public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
@@ -90,10 +94,9 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 		settings.linkerSettings( ls );
 
 		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
-		final String units = ( null != setupID && null != settings.values.getSpimData() )
-				? settings.values.getSpimData().getSequenceDescription()
-						.getViewSetups().get( setupID ).getVoxelSize().unit()
-				: "pixels";
+		final List< SourceAndConverter< ? > > sources = settings.values.getSources();
+		final Source< ? > source = sources.get( setupID.intValue() ).getSpimSource();
+		final String units = source.getVoxelDimensions().unit();
 		logger.log( LogLevel.INFO, "Configured Simple LAP linker with the following parameters:\n" );
 		logger.log( LogLevel.INFO, String.format( "  - max linking distance: %.1f %s\n", ( double ) ls.get( KEY_LINKING_MAX_DISTANCE ), units ) );
 		logger.log( LogLevel.INFO, String.format( "  - max gap-closing distance: %.1f %s\n", ( double ) ls.get( KEY_GAP_CLOSING_MAX_DISTANCE ), units ) );
@@ -148,11 +151,9 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 			final PluginInfo< SciJavaPlugin > pluginInfo = pluginService.getPlugin( SimpleSparseLAPLinkerMamut.class );
 
 			final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
-			final String units = ( null != setupID && null != settings.values.getSpimData() )
-					? settings.values.getSpimData().getSequenceDescription()
-							.getViewSetups().get( setupID ).getVoxelSize().unit()
-					: "pixels";
-
+			final List< SourceAndConverter< ? > > sources = settings.values.getSources();
+			final Source< ? > source = sources.get( setupID.intValue() ).getSpimSource();
+			final String units = source.getVoxelDimensions().unit();
 			final GridBagLayout layout = new GridBagLayout();
 			layout.columnWidths = new int[] { 80, 80, 40 };
 			layout.columnWeights = new double[] { 0.2, 0.7, 0.1 };

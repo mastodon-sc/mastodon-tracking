@@ -1,5 +1,7 @@
 package org.mastodon.detection.mamut;
 
+import java.util.List;
+
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.ModelGraph;
@@ -8,10 +10,10 @@ import org.scijava.Cancelable;
 import org.scijava.app.StatusService;
 import org.scijava.log.Logger;
 
-import bdv.spimdata.SpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 import net.imagej.ops.special.hybrid.UnaryHybridCF;
 
-public interface SpotDetectorOp extends UnaryHybridCF< SpimDataMinimal, ModelGraph >, Cancelable
+public interface SpotDetectorOp extends UnaryHybridCF< List< SourceAndConverter< ? > >, ModelGraph >, Cancelable
 {
 
 	/**

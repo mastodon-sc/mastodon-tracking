@@ -22,6 +22,7 @@ import org.mastodon.model.NavigationHandler;
 import org.mastodon.model.SelectionModel;
 import org.mastodon.plugin.MastodonPlugin;
 import org.mastodon.plugin.MastodonPluginAppModel;
+import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.mamut.KeyConfigContexts;
 import org.mastodon.revised.mamut.MamutMenuBuilder;
 import org.mastodon.revised.model.mamut.Link;
@@ -43,7 +44,6 @@ import org.scijava.ui.behaviour.util.AbstractNamedAction;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.swing.console.LoggingPanel;
 
-import bdv.spimdata.SpimDataMinimal;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.computer.Computers;
 
@@ -158,9 +158,9 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 		final GroupHandle groupHandle = appModel.getAppModel().getGroupManager().createGroupHandle();
 		this.navigationHandler = groupHandle.getModel( appModel.getAppModel().NAVIGATION );
 
-		final SpimDataMinimal spimData = ( SpimDataMinimal ) appModel.getAppModel().getSharedBdvData().getSpimData();
+		final SharedBigDataViewerData data = appModel.getAppModel().getSharedBdvData();
 		final SemiAutomaticTrackerSettingsManager styleManager = new SemiAutomaticTrackerSettingsManager();
-		final SemiAutomaticTrackerConfigPage page = new SemiAutomaticTrackerConfigPage( "Settings", styleManager, spimData, groupHandle, performSemiAutoTrackAction )
+		final SemiAutomaticTrackerConfigPage page = new SemiAutomaticTrackerConfigPage( "Settings", styleManager, data, groupHandle, performSemiAutoTrackAction )
 		{
 			@Override
 			public void apply()
@@ -220,10 +220,10 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 					: currentSettings;
 			final Model model = appModel.getAppModel().getModel();
 
-			final SpimDataMinimal spimData = ( SpimDataMinimal ) appModel.getAppModel().getSharedBdvData().getSpimData();
+			final SharedBigDataViewerData data = appModel.getAppModel().getSharedBdvData();
 			final SemiAutomaticTracker tracker = ( SemiAutomaticTracker ) Computers.binary(
 					ops, SemiAutomaticTracker.class, model, spots, settings,
-					spimData,
+					data,
 					navigationHandler,
 					selectionModel,
 					subLogger );
