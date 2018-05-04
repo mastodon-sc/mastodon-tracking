@@ -20,6 +20,7 @@ import static org.mastodon.linking.LinkingUtils.checkParameter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -108,7 +109,19 @@ public class DetectionUtil
 	 */
 	public static final boolean isPresent( final List< SourceAndConverter< ? > > sources, final int setup, final int timepoint )
 	{
-		return sources.get( setup ).getSpimSource().isPresent( timepoint );
+		return  sources.get( setup ).getSpimSource().isPresent( timepoint );
+	}
+
+	/**
+	 * Tries to determine if the data is <b>really</b> there. (Largest dimension
+	 * larger than 1 pixel.) It might not if some partition files are missing.
+	 * Then we want to fail gracefully.
+	 */
+	public static final boolean isReallyPresent(final RandomAccessibleInterval< ? > img)
+	{
+		final long[] dims = new long[ img.numDimensions() ];
+		img.dimensions( dims );
+		return Arrays.stream( dims ).max().orElse( -1l ) > 1;
 	}
 
 	/**

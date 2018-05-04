@@ -96,6 +96,9 @@ public class LoGDetectorOp
 
 			@SuppressWarnings( "rawtypes" )
 			final RandomAccessibleInterval img = DetectionUtil.getImage( sources, tp, setup, level );
+			if ( !DetectionUtil.isReallyPresent( img ) )
+				continue;
+
 			@SuppressWarnings( "unchecked" )
 			final RandomAccessibleInterval< ? > zeroMin = Views.dropSingletonDimensions( Views.zeroMin( img ) );
 

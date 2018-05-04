@@ -99,6 +99,9 @@ public class DoGDetectorOp
 			 */
 
 			final RandomAccessibleInterval< ? > img = DetectionUtil.getImage( sources, tp, setup, level );
+			if ( !DetectionUtil.isReallyPresent( img ) )
+				continue;
+
 			// If 2D, the 3rd dimension will be dropped here.
 			final RandomAccessibleInterval< ? > zeroMin = Views.dropSingletonDimensions( Views.zeroMin( img ) );
 
