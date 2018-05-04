@@ -329,6 +329,78 @@ public class WizardUtils
 		return str.toString();
 	}
 
+	/**
+	 * Returns the physical units in which spatial coordinates are stored.
+	 *
+	 * @param sources
+	 *            the image data.
+	 * @param setupID
+	 *            the id of the setup to query.
+	 * @return the spatial units.
+	 */
+	public static final String getSpatialUnits( final List< SourceAndConverter< ? > > sources, final int setupID )
+	{
+		final String units = ( null != sources )
+				? sources.get( setupID ).getSpimSource().getVoxelDimensions().unit()
+				: "pixels";
+		return units;
+	}
+
+	/**
+	 * Returns an information string on how a detector will be configured to
+	 * operate on the specified source with the specified parameters.
+	 *
+	 * @param sources
+	 *            the image data.
+	 * @param minSizePixel
+	 *            the minimal object size in pixel below which the detectors
+	 *            should not downsample the image data.
+	 * @param timepoint
+	 *            the timepoint to operate on.
+	 * @param setupID
+	 *            the id of the setup to operate on.
+	 * @param radius
+	 *            the radius of the object to detect.
+	 * @param threshold
+	 *            the quality threshold for the detector.
+	 * @return an information string.
+	 */
+	public static final String echoDetectorConfigInfo( final List< SourceAndConverter< ? > > sources, final double minSizePixel, final int timepoint, final int setupID, final double radius, final double threshold )
+	{
+		final int level = DetectionUtil.determineOptimalResolutionLevel( sources, radius, minSizePixel, timepoint, setupID );
+		final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( sources, timepoint, setupID, level );
+		final double sx = Affine3DHelpers.extractScale( mipmapTransform, 0 );
+		final double sy = Affine3DHelpers.extractScale( mipmapTransform, 1 );
+		final double sz = Affine3DHelpers.extractScale( mipmapTransform, 2 );
+
+		final double[] calibration = DetectionUtil.getPhysicalCalibration( sources, timepoint, setupID, level );
+		final String units = getSpatialUnits( sources, setupID );
+
+		final double rx = radius / calibration[ 0 ];
+		final double ry = radius / calibration[ 1 ];
+		final double rz = radius / calibration[ 2 ];
+
+		final StringBuilder str = new StringBuilder();
+		str.append( "Configured detector with parameters:\n" );
+		str.append( String.format( "  - spot radius: %.1f %s\n", radius, units ) );
+		str.append( String.format( "  - quality threshold: %.1f\n", threshold ) );
+		final Source< ? > source = sources.get( setupID ).getSpimSource();
+		final int numMipmapLevels = source.getNumMipmapLevels();
+		if ( numMipmapLevels > 1 )
+		{
+			str.append( String.format( "  - will operate on resolution level %d (%.0f x %.0f x %.0f)\n", level, sx, sy, sz ) );
+			str.append( String.format( "  - at this level, radius = %.1f %s corresponds to:\n", radius, units ) );
+		}
+		else
+		{
+			str.append( String.format( "  - equivalent radius = %.1f %s in pixels:\n", radius, units ) );
+		}
+		str.append( String.format( "      - %.1f pixels in X.\n", rx ) );
+		str.append( String.format( "      - %.1f pixels in Y.\n", ry ) );
+		str.append( String.format( "      - %.1f pixels in Z.\n", rz ) );
+		return str.toString();
+	}
+
 	private WizardUtils()
 	{}
 }

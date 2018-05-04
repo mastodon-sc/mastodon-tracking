@@ -48,11 +48,8 @@ import org.mastodon.trackmate.ui.wizard.util.WizardUtils;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
-import bdv.util.Affine3DHelpers;
-import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
 import net.imagej.ops.OpService;
-import net.imglib2.realtransform.AffineTransform3D;
 
 @Plugin( type = SpotDetectorDescriptor.class, name = "Advanced DoG detector configuration descriptor" )
 public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
@@ -124,47 +121,14 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 
 		grabSettings();
 		final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
-		final String units = ( null != setupID && null != settings.values.getSources() )
-				? settings.values.getSources().get( setupID ).getSpimSource().getVoxelDimensions().unit()
-				: "pixels";
-
-		final List< SourceAndConverter< ? > > sources = settings.values.getSources();
 		final double radius = ( double ) settings.values.getDetectorSettings().get( KEY_RADIUS );
 		final double minSizePixel = DoGDetectorOp.MIN_SPOT_PIXEL_SIZE / 2.;
 		final int timepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT );
-		final int level = DetectionUtil.determineOptimalResolutionLevel( sources, radius, minSizePixel, timepoint, setupID );
-		final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( sources, timepoint, setupID, level );
-		final AffineTransform3D transform = DetectionUtil.getTransform( sources, timepoint, setupID, level );
-
-		final double sx = Affine3DHelpers.extractScale( mipmapTransform, 0 );
-		final double sy = Affine3DHelpers.extractScale( mipmapTransform, 1 );
-		final double sz = Affine3DHelpers.extractScale( mipmapTransform, 2 );
-
-		final double px = Affine3DHelpers.extractScale( transform, 0 );
-		final double py = Affine3DHelpers.extractScale( transform, 1 );
-		final double pz = Affine3DHelpers.extractScale( transform, 2 );
-
-		final double rx = radius / px;
-		final double ry = radius / py;
-		final double rz = radius / pz;
-
-		logger.info( "Configured detector with parameters:\n" );
-		logger.info( String.format( "  - spot radius: %.1f %s\n", radius, units ) );
-		logger.info( String.format( "  - quality threshold: %.1f\n", ( double ) settings.values.getDetectorSettings().get( KEY_THRESHOLD ) ) );
-		final Source< ? > source = sources.get( setupID.intValue() ).getSpimSource();
-		final int numMipmapLevels = source.getNumMipmapLevels();
-		if ( numMipmapLevels > 1 )
-		{
-			logger.info( String.format( "  - will operate on resolution level %d (%.0f x %.0f x %.0f)\n", level, sx, sy, sz ) );
-			logger.info( String.format( "  - at this level, radius = %.1f %s corresponds to:\n", radius, units ) );
-		}
-		else
-		{
-			logger.info( String.format( "  - equivalent radius = %.1f %s in pixels:\n", radius, units ) );
-		}
-		logger.info( String.format( "      - %.1f pixels in X.\n", rx ) );
-		logger.info( String.format( "      - %.1f pixels in Y.\n", ry ) );
-		logger.info( String.format( "      - %.1f pixels in Z.\n", rz ) );
+		final double threshold = ( double ) settings.values.getDetectorSettings().get( KEY_THRESHOLD );
+		final List< SourceAndConverter< ? > > sources = settings.values.getSources();
+		logger.info( WizardUtils.echoDetectorConfigInfo( sources, minSizePixel, timepoint, setupID, radius, threshold ) );
+		final String addBehavior = ( String ) settings.values.getDetectorSettings().get( KEY_ADD_BEHAVIOR );
+		logger.info( String.format( "  - dealing with existing spot: %s.\n", addBehavior ) );
 	}
 
 	private void preview()
