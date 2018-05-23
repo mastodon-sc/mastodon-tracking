@@ -28,6 +28,7 @@ import org.scijava.ui.behaviour.util.RunnableAction;
 
 public abstract class WizardPlugin extends AbstractContextual implements MastodonPlugin
 {
+
 	private final AbstractNamedAction runWizardAction;
 
 	private MastodonPluginAppModel pluginAppModel;
