@@ -25,8 +25,6 @@ import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.trackmate.ui.wizard.util.FilterPanel;
 import org.scijava.Context;
 
-import bdv.spimdata.SpimDataMinimal;
-import bdv.spimdata.XmlIoSpimDataMinimal;
 import mpicbg.spim.data.SpimDataException;
 import net.imglib2.RealLocalizable;
 import net.imglib2.ui.PainterThread;
@@ -37,11 +35,11 @@ public class VisibilityExample extends JPanel
 
 	private static final long serialVersionUID = 1L;
 
-	private JLabel lblFilteringCompletedIn;
+	private final JLabel lblFilteringCompletedIn;
 
-	private JLabel lblVisibleSpots;
+	private final JLabel lblVisibleSpots;
 
-	private JPanel panelFilter;
+	private final JPanel panelFilter;
 
 	public VisibilityExample()
 	{
@@ -96,8 +94,6 @@ public class VisibilityExample extends JPanel
 
 //		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 //		final String modelFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo-mastodon.raw";
-
-		final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( bdvFile );
 
 		final WindowManager wm = new WindowManager( new Context() );
 		final MamutProject project = new MamutProject( new File("samples"), new File( bdvFile ) );
