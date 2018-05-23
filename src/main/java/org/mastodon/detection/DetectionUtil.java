@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 import org.jdom2.Document;
@@ -47,6 +48,7 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.localextrema.LocalExtrema;
 import net.imglib2.algorithm.localextrema.LocalExtrema.LocalNeighborhoodCheck;
+import net.imglib2.algorithm.neighborhood.RectangleShape;
 import net.imglib2.converter.Converters;
 import net.imglib2.converter.RealFloatConverter;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -311,7 +313,17 @@ public class DetectionUtil
 		val.setReal( threshold );
 		final LocalNeighborhoodCheck< Point, FloatType > localNeighborhoodCheck = new LocalExtrema.MaximumCheck< >( val );
 		final IntervalView< FloatType > extended = Views.interval( Views.extendMirrorSingle( source ), Intervals.expand( source, 1 ) );
-		final List< Point > peaks = LocalExtrema.findLocalExtrema( extended, localNeighborhoodCheck, service );
+		final RectangleShape shape = new RectangleShape( 1, true );
+		final int numTasks = Runtime.getRuntime().availableProcessors() / 2;
+		List< Point > peaks = new ArrayList<>();
+		try
+		{
+			peaks = LocalExtrema.findLocalExtrema( extended, localNeighborhoodCheck, shape, service, numTasks );
+		}
+		catch ( InterruptedException | ExecutionException e )
+		{
+			e.printStackTrace();
+		}
 		return peaks;
 	}
 
