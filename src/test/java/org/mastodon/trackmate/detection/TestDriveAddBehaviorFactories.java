@@ -23,8 +23,6 @@ import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.scijava.Context;
 
-import bdv.spimdata.SpimDataMinimal;
-import bdv.spimdata.XmlIoSpimDataMinimal;
 import mpicbg.spim.data.SpimDataException;
 
 public class TestDriveAddBehaviorFactories
@@ -42,24 +40,12 @@ public class TestDriveAddBehaviorFactories
 		final MamutProject project = new MamutProject( null, new File( bdvFile ) );
 		windowManager.getProjectManager().open( project );
 
-		SpimDataMinimal sd = null;
-		try
-		{
-			sd = new XmlIoSpimDataMinimal().load( bdvFile );
-		}
-		catch ( final SpimDataException e )
-		{
-			e.printStackTrace();
-			return;
-		}
-		final SpimDataMinimal spimData = sd;
-
 		final Map< String, Object > ds = DetectionUtil.getDefaultDetectorSettingsMap();
 		ds.put( KEY_THRESHOLD, 20. );
 		ds.put( KEY_RADIUS, 5. );
 
 		final Settings settings = new Settings()
-				.spimData( spimData )
+				.sources( windowManager.getAppModel().getSharedBdvData().getSources() )
 				.detector( DoGDetectorMamut.class )
 				.detectorSettings( ds );
 

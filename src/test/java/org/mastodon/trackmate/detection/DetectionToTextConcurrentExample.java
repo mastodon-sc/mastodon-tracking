@@ -22,10 +22,8 @@ import org.mastodon.detection.DetectorOp;
 import org.mastodon.detection.DoGDetectorOp;
 import org.scijava.Context;
 
-import bdv.spimdata.SpimDataMinimal;
-import bdv.spimdata.XmlIoSpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 import mpicbg.spim.data.SpimDataException;
-import mpicbg.spim.data.sequence.TimePoint;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.inplace.Inplaces;
 
@@ -34,7 +32,7 @@ public class DetectionToTextConcurrentExample
 	private static class MyTextDetectionOutputter implements DetectionCreatorFactory
 	{
 
-		private AtomicLong id;
+		private final AtomicLong id;
 
 		private PrintWriter out;
 
@@ -101,7 +99,7 @@ public class DetectionToTextConcurrentExample
 
 	}
 
-	public static void main( final String[] args ) throws InterruptedException
+	public static void main( final String[] args ) throws InterruptedException, SpimDataException
 	{
 		Locale.setDefault( Locale.ROOT );
 		final Context context = new Context();
@@ -112,19 +110,10 @@ public class DetectionToTextConcurrentExample
 		 */
 //		final String bdvFile = "samples/datasethdf5.xml";
 //		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+//		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+		final String bdvFile = "../TrackMate3/samples/mamutproject/datasethdf5.xml";
 
-		SpimDataMinimal sd = null;
-		try
-		{
-			sd = new XmlIoSpimDataMinimal().load( bdvFile );
-		}
-		catch ( final SpimDataException e )
-		{
-			e.printStackTrace();
-			return;
-		}
-		final SpimDataMinimal spimData = sd;
+		final List< SourceAndConverter< ? > > sources = DetectionUtil.loadData( bdvFile );
 
 		final long start = System.currentTimeMillis();
 
@@ -136,11 +125,10 @@ public class DetectionToTextConcurrentExample
 		/*
 		 * Time-points
 		 */
-		final List< TimePoint > tps = sd.getSequenceDescription().getTimePoints().getTimePointsOrdered();
-		final int t1a = tps.get( 0 ).getId();
-		final int t1b = tps.get( tps.size() - 1 ).getId() / 2;
-		final int t2a = t1b + 1;
-		final int t2b = tps.get( tps.size() - 1 ).getId();
+		final int t1a = 0;
+		final int t1b = 4;
+		final int t2a = 5;
+		final int t2b = 9;
 
 		/*
 		 * Detector 1, half the images.
@@ -151,7 +139,7 @@ public class DetectionToTextConcurrentExample
 		detectorSettings1.put( KEY_MIN_TIMEPOINT, t1a );
 		detectorSettings1.put( KEY_MAX_TIMEPOINT, t1b );
 		final DetectorOp detector1 = ( DetectorOp ) Inplaces.binary1( ops, DoGDetectorOp.class,
-				detectionCreator, spimData, detectorSettings1 );
+				detectionCreator, sources, detectorSettings1 );
 
 		/*
 		 * Detector 2, the other half.
@@ -160,14 +148,14 @@ public class DetectionToTextConcurrentExample
 		detectorSettings2.put( KEY_MIN_TIMEPOINT, t2a );
 		detectorSettings2.put( KEY_MAX_TIMEPOINT, t2b );
 		final DetectorOp detector2 = ( DetectorOp ) Inplaces.binary1( ops, DoGDetectorOp.class,
-				detectionCreator, spimData, detectorSettings2 );
+				detectionCreator, sources, detectorSettings2 );
 
 		/*
 		 * Launch detection concurrently.
 		 */
 
-		final Thread t1 = new Thread( () -> detector1.mutate1( detectionCreator, spimData ) );
-		final Thread t2 = new Thread( () -> detector2.mutate1( detectionCreator, spimData ) );
+		final Thread t1 = new Thread( () -> detector1.mutate1( detectionCreator, sources ) );
+		final Thread t2 = new Thread( () -> detector2.mutate1( detectionCreator, sources ) );
 		t1.start();
 		t2.start();
 		t1.join();

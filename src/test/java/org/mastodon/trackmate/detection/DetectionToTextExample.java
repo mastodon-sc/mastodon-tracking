@@ -21,10 +21,8 @@ import org.mastodon.detection.DetectorOp;
 import org.mastodon.detection.DoGDetectorOp;
 import org.scijava.Context;
 
-import bdv.spimdata.SpimDataMinimal;
-import bdv.spimdata.XmlIoSpimDataMinimal;
+import bdv.viewer.SourceAndConverter;
 import mpicbg.spim.data.SpimDataException;
-import mpicbg.spim.data.sequence.TimePoint;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.inplace.Inplaces;
 
@@ -33,7 +31,7 @@ public class DetectionToTextExample
 	private static class MyTextDetectionOutputter implements DetectionCreatorFactory
 	{
 
-		private AtomicLong id;
+		private final AtomicLong id;
 
 		private PrintWriter out;
 
@@ -100,7 +98,7 @@ public class DetectionToTextExample
 
 	}
 
-	public static void main( final String[] args )
+	public static void main( final String[] args ) throws SpimDataException
 	{
 		Locale.setDefault( Locale.ROOT );
 		final Context context = new Context();
@@ -109,21 +107,10 @@ public class DetectionToTextExample
 		/*
 		 * Load SpimData
 		 */
-//		final String bdvFile = "samples/datasethdf5.xml";
+		final String bdvFile = "../TrackMate3/samples/mamutproject/datasethdf5.xml";
 //		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-
-		SpimDataMinimal sd = null;
-		try
-		{
-			sd = new XmlIoSpimDataMinimal().load( bdvFile );
-		}
-		catch ( final SpimDataException e )
-		{
-			e.printStackTrace();
-			return;
-		}
-		final SpimDataMinimal spimData = sd;
+//		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+		final List< SourceAndConverter< ? > > sources = DetectionUtil.loadData( bdvFile );
 
 		final long start = System.currentTimeMillis();
 
@@ -132,13 +119,12 @@ public class DetectionToTextExample
 		final Map< String, Object > detectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
 		detectorSettings.put( KEY_RADIUS, Double.valueOf( 20. ) );
 		detectorSettings.put( KEY_THRESHOLD, Double.valueOf( 100. ) );
-		final List< TimePoint > tps = sd.getSequenceDescription().getTimePoints().getTimePointsOrdered();
-		detectorSettings.put( KEY_MIN_TIMEPOINT, tps.get( 0 ).getId() );
-		detectorSettings.put( KEY_MAX_TIMEPOINT, tps.get( tps.size() - 1 ).getId() );
+		detectorSettings.put( KEY_MIN_TIMEPOINT, 0 );
+		detectorSettings.put( KEY_MAX_TIMEPOINT, 10 );
 
 		final DetectorOp detector = ( DetectorOp ) Inplaces.binary1( ops, DoGDetectorOp.class,
-				detectionCreator, spimData, detectorSettings );
-		detector.mutate1( detectionCreator, spimData );
+				detectionCreator, sources, detectorSettings );
+		detector.mutate1( detectionCreator, sources );
 
 		final long end = System.currentTimeMillis();
 		final long processingTime = end - start;
