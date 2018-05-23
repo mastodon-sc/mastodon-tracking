@@ -38,8 +38,6 @@ import org.scijava.log.LogService;
 import org.scijava.log.Logger;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.prefs.PrefService;
-import org.scijava.thread.ThreadService;
 import org.scijava.ui.behaviour.util.AbstractNamedAction;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.swing.console.LoggingPanel;
@@ -146,10 +144,8 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 		this.appModel = appModel;
 
 		final Context context = appModel.getWindowManager().getContext();
-		final ThreadService threadService = context.getService(ThreadService.class);
-		final PrefService prefService = context.getService(PrefService.class);
 		final String prefKey = "Mastodon semi-automatic tracker";
-		this.loggingPanel= new LoggingPanel( threadService, prefService, prefKey );
+		this.loggingPanel = new LoggingPanel( context, prefKey );
 		this.loggingDialog = new JDialog( ( Frame ) null, "Semi-automatic tracker log" );
 		loggingDialog.getContentPane().add( loggingPanel, BorderLayout.CENTER );
 		loggingDialog.setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
