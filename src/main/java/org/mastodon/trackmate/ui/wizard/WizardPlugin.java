@@ -59,7 +59,8 @@ public abstract class WizardPlugin extends AbstractContextual implements Mastodo
 	 * @param menuPath
 	 *            the menu path in which to install this plugin. Menu path must
 	 *            be specified as a string, separated bye the
-	 *            '<code>&gt;</code>' char. <i>E.g.</i> "Plugins > TrackMate".
+	 *            '<code>&gt;</code>' char. <i>E.g.</i> "Plugins &gt;
+	 *            TrackMate".
 	 * @param keyStrokes
 	 *            the keystrokes to associate to this plugin, as an array of
 	 *            <code>String</code>s. <i>E.g.</i>

@@ -118,6 +118,10 @@ public class DetectionUtil
 	 * Tries to determine if the data is <b>really</b> there. (Largest dimension
 	 * larger than 1 pixel.) It might not if some partition files are missing.
 	 * Then we want to fail gracefully.
+	 * 
+	 * @param img
+	 *            the image to test presence of.
+	 * @return <code>true</code> if the image is not really there.
 	 */
 	public static final boolean isReallyPresent(final RandomAccessibleInterval< ? > img)
 	{

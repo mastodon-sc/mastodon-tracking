@@ -145,6 +145,10 @@ public class WizardUtils
 	 *            the OpService.
 	 * @param currentTimepoint
 	 *            the time-point in the data to run the preview on.
+	 * @param logger
+	 *            the log service to report possible errors.
+	 * @param statusService
+	 *            the status service to follow progress.
 	 * @return <code>true</code> if the preview ran successfully.
 	 */
 	public static final boolean executeDetectionPreview( final Model model, final Settings settings, final OpService ops, final int currentTimepoint, final Logger logger, final StatusService statusService )
@@ -289,6 +293,10 @@ public class WizardUtils
 	 * Returns an explanatory string that states what resolutions are available
 	 * in the {@link SpimDataMinimal} for the specified setup id.
 	 *
+	 * @param sources
+	 *            the sources.
+	 * @param setupID
+	 *            the setup id to query.
 	 * @return a string.
 	 */
 	public static final String echoSetupIDInfo( final List< SourceAndConverter< ? > > sources, final int setupID )

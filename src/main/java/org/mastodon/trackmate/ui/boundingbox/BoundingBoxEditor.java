@@ -180,6 +180,11 @@ public class BoundingBoxEditor
 	 * center is placed at distance {@code perspective * sourceSize} from the
 	 * projection plane (screen). Specify {@code perspective = 0} to set
 	 * parallel projection.
+	 * 
+	 * @param perspective
+	 *            the perspective value.
+	 * @param sourceSize
+	 *            the the size of the source.
 	 */
 	public void setPerspective( final double perspective, final double sourceSize )
 	{
