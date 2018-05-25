@@ -11,7 +11,7 @@
 
 	<groupId>net.trndy</groupId>
 	<artifactId>mastodon-tracking</artifactId>
-	<version>1.0.0-beta-2-SNAPSHOT</version>
+	<version>1.0.0-beta-2</version>
 
 	<name>Mastodon tracking</name>
 	<description>Basic tracking algorithms based on Mastodon data structures.</description>
@@ -51,17 +51,17 @@
 		<dependency>
 			<groupId>net.trackmate</groupId>
 			<artifactId>trackmate</artifactId>
-			<version>1.0.0-beta-6-SNAPSHOT</version>
+			<version>1.0.0-beta-6</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mastodon</groupId>
 			<artifactId>mastodon-collection</artifactId>
-			<version>1.0.0-beta-15-SNAPSHOT</version>
+			<version>1.0.0-beta-14</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mastodon</groupId>
 			<artifactId>mastodon-graph</artifactId>
-			<version>1.0.0-beta-12-SNAPSHOT</version>
+			<version>1.0.0-beta-11</version>
 		</dependency>
 
 		<!-- JFreeChart deps -->
@@ -94,7 +94,7 @@
 		<dependency>
 			<groupId>org.scijava</groupId>
 			<artifactId>ui-behaviour</artifactId>
-			<version>1.7.4-SNAPSHOT</version>
+			<version>1.7.3</version>
 		</dependency>
 
 		<!-- Test dependencies -->
