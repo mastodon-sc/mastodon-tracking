@@ -11,7 +11,7 @@
 
 	<groupId>net.trndy</groupId>
 	<artifactId>mastodon-tracking</artifactId>
-	<version>1.0.0-beta-3-SNAPSHOT</version>
+	<version>1.0.0-beta-4-SNAPSHOT</version>
 
 	<name>Mastodon tracking</name>
 	<description>Basic tracking algorithms based on Mastodon data structures.</description>
