@@ -15,7 +15,7 @@ import org.mastodon.linking.FeatureKey;
 import org.mastodon.linking.ProgressListeners;
 import org.mastodon.model.DefaultSelectionModel;
 import org.mastodon.revised.mamut.feature.DefaultMamutFeatureComputerService;
-import org.mastodon.revised.model.feature.FeatureComputer;
+import org.mastodon.revised.mamut.feature.MamutFeatureComputer;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
@@ -49,7 +49,7 @@ public class LAPConfigPanelExample
 		context.inject( featureComputerService );
 		featureComputerService.initialize();
 
-		final Set< FeatureComputer< Model > > featureComputers = new HashSet<>( featureComputerService.getFeatureComputers() );
+		final Set< MamutFeatureComputer > featureComputers = new HashSet<>( featureComputerService.getFeatureComputers() );
 		System.out.println( "Found the following computers: " + featureComputers );
 		featureComputerService.compute( model, model.getFeatureModel(), featureComputers, ProgressListeners.defaultLogger() );
 

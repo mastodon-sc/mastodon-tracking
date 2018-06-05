@@ -13,7 +13,6 @@ import javax.swing.JPanel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import org.mastodon.properties.PropertyMap;
 import org.mastodon.revised.mamut.MainWindow;
 import org.mastodon.revised.mamut.MamutProject;
 import org.mastodon.revised.mamut.WindowManager;
@@ -107,7 +106,7 @@ public class VisibilityExample extends JPanel
 		System.out.println( "Loaded a model with " + model.getGraph().vertices().size() + " vertices." );
 
 		final SpotPositionFeatureComputer computer = new SpotPositionFeatureComputer();
-		final Feature< Spot, PropertyMap< Spot, RealLocalizable > > feature = computer.compute( model );
+		final Feature< Spot, RealLocalizable > feature = computer.compute( model );
 		model.getFeatureModel().declareFeature( feature );
 		System.out.println( "Calculated Spot position feature." );
 
