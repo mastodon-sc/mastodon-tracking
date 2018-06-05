@@ -34,7 +34,7 @@ import org.mastodon.model.SelectionModel;
 import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.overlay.util.JamaEigenvalueDecomposition;
-import org.mastodon.revised.model.feature.Feature;
+import org.mastodon.revised.model.feature.WritableDoubleScalarFeature;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
@@ -127,8 +127,8 @@ public class SemiAutomaticTracker
 		 */
 
 		@SuppressWarnings( "unchecked" )
-		Feature< Spot, DoublePropertyMap< Spot > > qualityFeature =
-				( Feature< Spot, DoublePropertyMap< Spot > > ) model.getFeatureModel().getFeature( DetectionUtil.QUALITY_FEATURE_NAME );
+		WritableDoubleScalarFeature< Spot > qualityFeature =
+				(org.mastodon.revised.model.feature.WritableDoubleScalarFeature< Spot > ) model.getFeatureModel().getFeature( DetectionUtil.QUALITY_FEATURE_NAME );
 		if ( null == qualityFeature )
 		{
 			final DoublePropertyMap< Spot > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
@@ -137,8 +137,8 @@ public class SemiAutomaticTracker
 		}
 
 		@SuppressWarnings( "unchecked" )
-		Feature< Link, DoublePropertyMap< Link > > linkCostFeature =
-				( Feature< Link, DoublePropertyMap< Link > > ) model.getFeatureModel().getFeature( LinkingUtils.LINK_COST_FEATURE_NAME );
+		WritableDoubleScalarFeature< Link > linkCostFeature =
+				(org.mastodon.revised.model.feature.WritableDoubleScalarFeature< Link > ) model.getFeatureModel().getFeature( LinkingUtils.LINK_COST_FEATURE_NAME );
 		if ( null == linkCostFeature )
 		{
 			final DoublePropertyMap< Link > linkcost = new DoublePropertyMap<>( graph.edges(), Double.NaN );
@@ -225,8 +225,8 @@ public class SemiAutomaticTracker
 
 				// Does the source have a quality value?
 				final double threshold;
-				if ( qualityFeature.getPropertyMap().isSet( source ) )
-					threshold = qualityFeature.getPropertyMap().get( source ) * qualityFactor;
+				if ( qualityFeature.isSet( source ) )
+					threshold = qualityFeature.getValue( source ) * qualityFactor;
 				else
 					threshold = 0.;
 
@@ -409,7 +409,7 @@ public class SemiAutomaticTracker
 						final double cost = distance * distance;
 						log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
 								source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint(), cost ) );
-						linkCostFeature.getPropertyMap().set( edge, cost );
+						linkCostFeature.set( edge, cost );
 
 						if ( null != navigationHandler )
 							navigationHandler.notifyNavigateToVertex( target );
@@ -454,8 +454,8 @@ public class SemiAutomaticTracker
 					final double quality = candidate.quality;
 					log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
 							source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint(), cost ) );
-					linkCostFeature.getPropertyMap().set( edge, cost );
-					qualityFeature.getPropertyMap().set( target, quality );
+					linkCostFeature.set( edge, cost );
+					qualityFeature.set( target, quality );
 
 					if ( null != navigationHandler )
 						navigationHandler.notifyNavigateToVertex( target );

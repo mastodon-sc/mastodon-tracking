@@ -9,8 +9,8 @@ import org.mastodon.linking.ParticleLinker;
 import org.mastodon.linking.graph.GraphParticleLinkerOp;
 import org.mastodon.linking.sequential.SequentialParticleLinkerOp;
 import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.feature.FeatureModel;
+import org.mastodon.revised.model.feature.WritableDoubleScalarFeature;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
@@ -106,10 +106,10 @@ public abstract class AbstractSpotLinkerOp
 	 * The edge linking cost feature provided by this particle-linker.
 	 */
 	@Parameter( type = ItemIO.OUTPUT )
-	protected Feature< Link, DoublePropertyMap< Link > > linkCostFeature;
+	protected WritableDoubleScalarFeature< Link > linkCostFeature;
 
 	@Override
-	public Feature< Link, DoublePropertyMap< Link > > getLinkCostFeature()
+	public WritableDoubleScalarFeature< Link > getLinkCostFeature()
 	{
 		return linkCostFeature;
 	}

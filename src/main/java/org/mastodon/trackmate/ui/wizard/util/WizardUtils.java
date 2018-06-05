@@ -29,7 +29,6 @@ import org.mastodon.grouping.GroupManager;
 import org.mastodon.model.DefaultFocusModel;
 import org.mastodon.model.DefaultHighlightModel;
 import org.mastodon.model.DefaultSelectionModel;
-import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.bdv.BigDataViewerMamut;
 import org.mastodon.revised.bdv.NavigationActionsMamut;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
@@ -40,7 +39,7 @@ import org.mastodon.revised.bdv.overlay.wrap.OverlayEdgeWrapper;
 import org.mastodon.revised.bdv.overlay.wrap.OverlayGraphWrapper;
 import org.mastodon.revised.bdv.overlay.wrap.OverlayVertexWrapper;
 import org.mastodon.revised.mamut.KeyConfigContexts;
-import org.mastodon.revised.model.feature.Feature;
+import org.mastodon.revised.model.feature.DoubleScalarFeature;
 import org.mastodon.revised.model.mamut.BoundingSphereRadiusStatistics;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
@@ -57,6 +56,7 @@ import org.scijava.log.LogService;
 import org.scijava.log.Logger;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.behaviour.util.Behaviours;
+import org.scijava.util.DoubleArray;
 
 import bdv.spimdata.SpimDataMinimal;
 import bdv.tools.InitializeViewerState;
@@ -100,10 +100,12 @@ public class WizardUtils
 	public static final ChartPanel createQualityHistogram(final Model model)
 	{
 		@SuppressWarnings( "unchecked" )
-		final Feature< Spot, DoublePropertyMap< Spot > > qFeature =
-				( Feature< Spot, DoublePropertyMap< Spot > > ) model.getFeatureModel().getFeature( DetectionUtil.QUALITY_FEATURE_NAME );
-		final DoublePropertyMap< Spot > pm = qFeature.getPropertyMap();
-		final double[] values = pm.getMap().values();
+		final DoubleScalarFeature< Spot > qFeature =
+				( DoubleScalarFeature< Spot > ) model.getFeatureModel().getFeature( DetectionUtil.QUALITY_FEATURE_NAME );
+		final DoubleArray arr = new DoubleArray( model.getGraph().vertices().size() );
+		for ( final Spot s: model.getGraph().vertices() )
+			arr.addValue( qFeature.getValue( s ) );
+		final double[] values = arr.copyArray();
 		if ( values.length == 0 )
 			return null;
 

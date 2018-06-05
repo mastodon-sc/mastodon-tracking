@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,8 +31,9 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
 import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.model.feature.Feature;
-import org.mastodon.revised.model.feature.FeatureProjectors;
+import org.mastodon.revised.model.feature.FeatureUtil;
+import org.mastodon.revised.model.feature.WritableDoubleScalarFeature;
+import org.mastodon.revised.model.feature.FeatureUtil.Dimension;
 
 import bdv.BigDataViewer;
 import bdv.spimdata.SpimDataMinimal;
@@ -89,11 +89,10 @@ public class DetectionUtil
 	 *            the class of the spots.
 	 * @return the quality feature.
 	 */
-	public static final < V > Feature< V, DoublePropertyMap< V > > getQualityFeature( final DoublePropertyMap< V > quality, final Class< V > clazz )
+	public static final < V > WritableDoubleScalarFeature< V > getQualityFeature( final DoublePropertyMap< V > quality, final Class< V > clazz )
 	{
-		return new Feature<>(
-				QUALITY_FEATURE_NAME, clazz, quality,
-				Collections.singletonMap( QUALITY_FEATURE_NAME, FeatureProjectors.project( quality ) ) );
+		final String qualityUnits = FeatureUtil.dimensionToUnits( Dimension.QUALITY, "", "" );
+		return new WritableDoubleScalarFeature< V >(QUALITY_FEATURE_NAME, clazz, quality, qualityUnits);
 	}
 
 	/**
@@ -118,7 +117,7 @@ public class DetectionUtil
 	 * Tries to determine if the data is <b>really</b> there. (Largest dimension
 	 * larger than 1 pixel.) It might not if some partition files are missing.
 	 * Then we want to fail gracefully.
-	 * 
+	 *
 	 * @param img
 	 *            the image to test presence of.
 	 * @return <code>true</code> if the image is not really there.

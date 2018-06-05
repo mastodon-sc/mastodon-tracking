@@ -42,7 +42,6 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -66,7 +65,8 @@ import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.revised.model.feature.FeatureProjection;
-import org.mastodon.revised.model.feature.FeatureProjectors;
+import org.mastodon.revised.model.feature.FeatureUtil;
+import org.mastodon.revised.model.feature.WritableDoubleScalarFeature;
 
 import net.imglib2.RealLocalizable;
 
@@ -108,11 +108,10 @@ public class LinkingUtils
 	 *            the class of link objects.
 	 * @return the link cost feature.
 	 */
-	public static final < E > Feature< E, DoublePropertyMap< E > > getLinkCostFeature( final DoublePropertyMap< E > linkCosts, final Class< E > clazz )
+	public static final < E > WritableDoubleScalarFeature< E > getLinkCostFeature( final DoublePropertyMap< E > linkCosts, final Class< E > clazz )
 	{
-		return new Feature<>(
-				LINK_COST_FEATURE_NAME, clazz, linkCosts,
-				Collections.singletonMap( LINK_COST_FEATURE_NAME, FeatureProjectors.project( linkCosts ) ) );
+		final String lickCostUnits = FeatureUtil.dimensionToUnits( org.mastodon.revised.model.feature.FeatureUtil.Dimension.NONE, "", "" );
+		return new WritableDoubleScalarFeature<>( LINK_COST_FEATURE_NAME, clazz, linkCosts, lickCostUnits );
 	}
 
 	/**
@@ -607,7 +606,7 @@ public class LinkingUtils
 	 *
 	 * If one of the feature value cannot be found, this method returns
 	 * {@link Double#NaN}.
-	 * 
+	 *
 	 * @param <V>
 	 *            the type of vertices.
 	 * @param source

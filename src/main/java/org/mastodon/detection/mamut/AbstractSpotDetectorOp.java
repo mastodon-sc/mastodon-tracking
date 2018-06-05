@@ -10,7 +10,7 @@ import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorOp;
 import org.mastodon.detection.mamut.MamutDetectionCreatorFactories.DetectionBehavior;
 import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.model.feature.Feature;
+import org.mastodon.revised.model.feature.WritableDoubleScalarFeature;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
@@ -41,7 +41,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 	protected boolean ok;
 
 	@Parameter( type = ItemIO.OUTPUT )
-	protected Feature< Spot, DoublePropertyMap< Spot > > qualityFeature;
+	protected WritableDoubleScalarFeature< Spot > qualityFeature;
 
 	@Parameter
 	private ThreadService threadService;
@@ -116,7 +116,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 	}
 
 	@Override
-	public Feature< Spot, DoublePropertyMap< Spot > > getQualityFeature()
+	public WritableDoubleScalarFeature< Spot > getQualityFeature()
 	{
 		return qualityFeature;
 	}
