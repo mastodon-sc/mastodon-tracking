@@ -56,7 +56,6 @@ import org.scijava.log.LogService;
 import org.scijava.log.Logger;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.behaviour.util.Behaviours;
-import org.scijava.util.DoubleArray;
 
 import bdv.spimdata.SpimDataMinimal;
 import bdv.tools.InitializeViewerState;
@@ -102,10 +101,7 @@ public class WizardUtils
 		@SuppressWarnings( "unchecked" )
 		final DoubleScalarFeature< Spot > qFeature =
 				( DoubleScalarFeature< Spot > ) model.getFeatureModel().getFeature( DetectionUtil.QUALITY_FEATURE_NAME );
-		final DoubleArray arr = new DoubleArray( model.getGraph().vertices().size() );
-		for ( final Spot s: model.getGraph().vertices() )
-			arr.addValue( qFeature.getValue( s ) );
-		final double[] values = arr.copyArray();
+		final double[] values = model.getGraph().vertices().stream().mapToDouble( (o) -> qFeature.getValue( o ) ).toArray();
 		if ( values.length == 0 )
 			return null;
 
@@ -155,6 +151,7 @@ public class WizardUtils
 	 */
 	public static final boolean executeDetectionPreview( final Model model, final Settings settings, final OpService ops, final int currentTimepoint, final Logger logger, final StatusService statusService )
 	{
+
 		/*
 		 * Remove spots from current time point.
 		 */
