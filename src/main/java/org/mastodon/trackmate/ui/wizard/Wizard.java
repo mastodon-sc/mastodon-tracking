@@ -1,28 +1,12 @@
 package org.mastodon.trackmate.ui.wizard;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
-
 import javax.swing.JFrame;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.StyledDocument;
 
-import org.mastodon.detection.DetectionUtil;
-import org.mastodon.revised.mamut.MainWindow;
-import org.mastodon.revised.mamut.MamutProject;
-import org.mastodon.revised.mamut.WindowManager;
-import org.mastodon.trackmate.Settings;
-import org.mastodon.trackmate.TrackMate;
 import org.scijava.Context;
 import org.scijava.plugin.Parameter;
-
-import bdv.viewer.SourceAndConverter;
-import mpicbg.spim.data.SpimDataException;
 
 public class Wizard
 {
@@ -64,41 +48,4 @@ public class Wizard
 		frame.addWindowListener( controller );
 		frame.setVisible( true );
 	}
-
-	public static void main( final String[] args ) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException, IOException, SpimDataException
-	{
-		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
-		Locale.setDefault( Locale.ROOT );
-		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-		final Context context = new Context();
-
-		/*
-		 * Load SpimData
-		 */
-//		final String bdvFile = "../TrackMate3/samples/datasethdf5.xml";
-//		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-//		final String bdvFile = "/Users/pietzsch/Desktop/data/MAMUT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-//		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-
-		final List< SourceAndConverter< ? > > sources = DetectionUtil.loadData( bdvFile );
-		final Settings settings = new Settings()
-				.sources( sources );
-
-		final WindowManager windowManager = new WindowManager( context );
-		final MainWindow mw = new MainWindow( windowManager );
-
-		final MamutProject project = new MamutProject( null, new File( bdvFile ) );
-		windowManager.getProjectManager().open( project );
-
-		mw.setVisible( true );
-
-		final Wizard wizard = new Wizard();
-		windowManager.getContext().inject( wizard );
-		final TrackMate trackmate = new TrackMate( settings, windowManager.getAppModel().getModel(), windowManager.getAppModel().getSelectionModel() );
-		context.inject( trackmate );
-		final DetectionSequence sequence = new DetectionSequence( trackmate, windowManager, wizard.getLogService() );
-		wizard.show( sequence, "TrackMate detection" );
-	}
-
 }
