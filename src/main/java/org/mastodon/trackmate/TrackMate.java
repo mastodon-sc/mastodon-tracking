@@ -22,6 +22,7 @@ import org.scijava.Cancelable;
 import org.scijava.app.StatusService;
 import org.scijava.command.ContextCommand;
 import org.scijava.log.Logger;
+import org.scijava.log.StderrLogService;
 import org.scijava.plugin.Parameter;
 
 import bdv.viewer.SourceAndConverter;
@@ -40,7 +41,7 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 	private StatusService statusService;
 
 	@Parameter(required = false)
-	private Logger logger;
+	private Logger logger = new StderrLogService();
 
 	private final Settings settings;
 
