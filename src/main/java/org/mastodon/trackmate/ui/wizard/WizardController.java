@@ -166,8 +166,10 @@ public class WizardController implements WindowListener
 			return;
 
 		wizardPanel.btnPrevious.setEnabled( sequence.hasPrevious() );
-		wizardPanel.btnNext.setEnabled( sequence.hasNext() );
+		wizardPanel.btnNext.setVisible( sequence.hasNext() );
 		wizardPanel.btnFinish.setVisible( !sequence.hasNext() );
+		wizardPanel.btnNext.setEnabled( sequence.hasNext() );
+		wizardPanel.btnFinish.setEnabled( !sequence.hasNext() );
 		wizardPanel.transition( to, from, direction );
 		if ( !sequence.hasNext() )
 			wizardPanel.btnFinish.requestFocusInWindow();
