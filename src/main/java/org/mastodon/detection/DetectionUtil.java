@@ -118,7 +118,7 @@ public class DetectionUtil
 	 * Tries to determine if the data is <b>really</b> there. (Largest dimension
 	 * larger than 1 pixel.) It might not if some partition files are missing.
 	 * Then we want to fail gracefully.
-	 * 
+	 *
 	 * @param img
 	 *            the image to test presence of.
 	 * @return <code>true</code> if the image is not really there.
@@ -226,9 +226,16 @@ public class DetectionUtil
 	 */
 	public static AffineTransform3D getMipmapTransform( final List< SourceAndConverter< ? > > sources, final int timepoint, final int setup, final int level )
 	{
+		// Get transform at level L -> global coords.
 		final AffineTransform3D levelL = getTransform( sources, timepoint, setup, level );
+		// Get transform at level 0 -> global coords.
 		final AffineTransform3D level0 = getTransform( sources, timepoint, setup, 0 );
-		final AffineTransform3D transform = levelL.concatenate( level0.inverse() );
+		final AffineTransform3D transform = new AffineTransform3D();
+		for ( int d = 0; d < 3; d++ )
+		{
+			final double scale = Affine3DHelpers.extractScale( levelL, d ) / Affine3DHelpers.extractScale( level0, d );
+			transform.set( scale, d, d );
+		}
 		return transform;
 	}
 
