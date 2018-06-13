@@ -73,6 +73,10 @@ public class SetupIDComboBox extends JComboBox< String >
 	 */
 	public int getSelectedSetupID()
 	{
+		final Integer id = idMap.get( getSelectedItem() );
+		if (null == id)
+			return idMap.values().iterator().next();
+
 		return idMap.get( getSelectedItem() );
 	}
 
