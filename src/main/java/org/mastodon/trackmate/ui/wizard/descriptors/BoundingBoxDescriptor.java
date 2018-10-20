@@ -291,11 +291,18 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			final ViewerPanel viewer = viewFrame.getViewerPanel();
 			final SetupAssignments setupAssignments = wm.getAppModel().getSharedBdvData().getSetupAssignments();
 			final TriggerBehaviourBindings triggerBindings = viewFrame.getTriggerbindings();
-			boundingBoxEditor = new BoundingBoxEditor( keyconf, viewer, setupAssignments, triggerBindings, roi, "ROI", BoxSourceType.PLACEHOLDER );
+			boundingBoxEditor = new BoundingBoxEditor(
+					keyconf,
+					viewer,
+					setupAssignments,
+					triggerBindings,
+					roi,
+					"ROI",
+					BoxSourceType.PLACEHOLDER );
 
 			final Interval bb = BoundingBoxUtil.getSourcesBoundingBox( viewFrame.getViewerPanel().getState() );
 			final double sourceSize = Math.max( Math.max( bb.dimension( 0 ), bb.dimension( 1 ) ), bb.dimension( 2 ) );
-			boundingBoxEditor.setPerspective( 1, Math.max( sourceSize, 1 ) );
+			boundingBoxEditor.setPerspective( 1., Math.max( sourceSize, 1000. ) );
 		}
 		boundingBoxEditor.install();
 		viewFrame.toFront();
