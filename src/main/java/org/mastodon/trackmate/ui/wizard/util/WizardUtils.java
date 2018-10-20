@@ -23,13 +23,13 @@ import org.mastodon.adapter.SelectionModelAdapter;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
 import org.mastodon.detection.DetectionUtil;
+import org.mastodon.detection.mamut.DetectionQualityFeature;
 import org.mastodon.detection.mamut.MamutDetectionCreatorFactories.DetectionBehavior;
 import org.mastodon.graph.GraphIdBimap;
 import org.mastodon.grouping.GroupManager;
 import org.mastodon.model.DefaultFocusModel;
 import org.mastodon.model.DefaultHighlightModel;
 import org.mastodon.model.DefaultSelectionModel;
-import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.bdv.BigDataViewerMamut;
 import org.mastodon.revised.bdv.NavigationActionsMamut;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
@@ -40,7 +40,6 @@ import org.mastodon.revised.bdv.overlay.wrap.OverlayEdgeWrapper;
 import org.mastodon.revised.bdv.overlay.wrap.OverlayGraphWrapper;
 import org.mastodon.revised.bdv.overlay.wrap.OverlayVertexWrapper;
 import org.mastodon.revised.mamut.KeyConfigContexts;
-import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.BoundingSphereRadiusStatistics;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
@@ -99,11 +98,8 @@ public class WizardUtils
 
 	public static final ChartPanel createQualityHistogram(final Model model)
 	{
-		@SuppressWarnings( "unchecked" )
-		final Feature< Spot, DoublePropertyMap< Spot > > qFeature =
-				( Feature< Spot, DoublePropertyMap< Spot > > ) model.getFeatureModel().getFeature( DetectionUtil.QUALITY_FEATURE_NAME );
-		final DoublePropertyMap< Spot > pm = qFeature.getPropertyMap();
-		final double[] values = pm.getMap().values();
+		final DetectionQualityFeature qFeature = ( DetectionQualityFeature ) model.getFeatureModel().getFeature( DetectionQualityFeature.KEY );
+		final double[] values = qFeature.values();
 		if ( values.length == 0 )
 			return null;
 

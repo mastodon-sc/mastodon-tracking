@@ -3,11 +3,11 @@ package org.mastodon.linking.graph;
 import java.util.Comparator;
 import java.util.Map;
 
+import org.mastodon.feature.FeatureModel;
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.ReadOnlyGraph;
 import org.mastodon.graph.Vertex;
 import org.mastodon.linking.EdgeCreator;
-import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.spatial.SpatioTemporalIndex;
 import org.scijava.ItemIO;
 import org.scijava.app.StatusService;

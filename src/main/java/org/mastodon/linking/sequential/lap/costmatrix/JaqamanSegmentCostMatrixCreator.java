@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
+import org.mastodon.feature.FeatureModel;
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.ReadOnlyGraph;
 import org.mastodon.graph.Vertex;
@@ -31,7 +32,6 @@ import org.mastodon.linking.FeatureKey;
 import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.sequential.lap.costfunction.CostFunction;
 import org.mastodon.linking.sequential.lap.linker.SparseCostMatrix;
-import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.spatial.HasTimepoint;
 import org.scijava.ItemIO;
 import org.scijava.plugin.Parameter;

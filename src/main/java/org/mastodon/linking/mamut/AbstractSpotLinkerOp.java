@@ -3,14 +3,12 @@ package org.mastodon.linking.mamut;
 import java.util.Comparator;
 import java.util.Map;
 
+import org.mastodon.feature.FeatureModel;
 import org.mastodon.linking.EdgeCreator;
-import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.ParticleLinker;
 import org.mastodon.linking.graph.GraphParticleLinkerOp;
 import org.mastodon.linking.sequential.SequentialParticleLinkerOp;
 import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.model.feature.Feature;
-import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
@@ -45,10 +43,12 @@ public abstract class AbstractSpotLinkerOp
 	protected void exec( final ModelGraph graph, final SpatioTemporalIndex< Spot > spots, final Class< ? extends ParticleLinker > cl )
 	{
 		ok = false;
+		if ( null == linkCostFeature )
+			linkCostFeature = new LinkCostFeature( graph.edges().getRefPool() );
+
 		final long start = System.currentTimeMillis();
 
 		final DoublePropertyMap< Link > pm = new DoublePropertyMap<>( graph.edges(), Double.NaN );
-		linkCostFeature = LinkingUtils.getLinkCostFeature( pm, Link.class );
 		final EdgeCreator< Spot > edgeCreator = edgeCreator( graph, pm );
 
 		if ( GraphParticleLinkerOp.class.isAssignableFrom( cl ) )
@@ -105,11 +105,11 @@ public abstract class AbstractSpotLinkerOp
 	/**
 	 * The edge linking cost feature provided by this particle-linker.
 	 */
-	@Parameter( type = ItemIO.OUTPUT )
-	protected Feature< Link, DoublePropertyMap< Link > > linkCostFeature;
+	@Parameter( type = ItemIO.BOTH )
+	protected LinkCostFeature linkCostFeature;
 
 	@Override
-	public Feature< Link, DoublePropertyMap< Link > > getLinkCostFeature()
+	public LinkCostFeature getLinkCostFeature()
 	{
 		return linkCostFeature;
 	}

@@ -31,14 +31,12 @@ import java.awt.event.MouseWheelListener;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.Stack;
 import java.util.function.BinaryOperator;
+import java.util.stream.Collectors;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -52,10 +50,11 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
+import org.mastodon.feature.Feature;
+import org.mastodon.feature.FeatureModel;
+import org.mastodon.feature.FeatureSpec;
 import org.mastodon.linking.FeatureKey;
 import org.mastodon.linking.LinkingUtils;
-import org.mastodon.revised.model.feature.Feature;
-import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.trackmate.ui.wizard.Wizard;
 import org.mastodon.trackmate.ui.wizard.util.EverythingDisablerAndReenabler;
 import org.mastodon.trackmate.ui.wizard.util.ScrollToFocusListener;
@@ -544,7 +543,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		final Map< FeatureKey, Double > linkingPenalties = ( Map< FeatureKey, Double > ) settings.get( KEY_LINKING_FEATURE_PENALTIES );
 		jPanelLinkingFeatures.removeAllPanels();
 		for ( final FeatureKey fk : linkingPenalties.keySet() )
-			if (LinkingUtils.isFeatureKeyValid( fk, featureModel, vertexClass ))
+			if ( LinkingUtils.isFeatureInModel( fk, featureModel ) )
 				jPanelLinkingFeatures.addPanel( new FeaturePenalty( fk, linkingPenalties.get( fk ) ) );
 
 		// Gap-closing.
@@ -556,7 +555,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		final Map<FeatureKey, Double> gapClosingPenalties = ( Map<FeatureKey, Double> ) settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES );
 		jPanelGapClosing.removeAllPanels();
 		for ( final FeatureKey fk : gapClosingPenalties.keySet() )
-			if (LinkingUtils.isFeatureKeyValid( fk, featureModel, vertexClass ))
+			if ( LinkingUtils.isFeatureInModel( fk, featureModel ) )
 				jPanelGapClosing.addPanel( new FeaturePenalty( fk, gapClosingPenalties.get( fk ) ) );
 
 		// Track splitting.
@@ -567,7 +566,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		final Map<FeatureKey, Double> splittingPenalties = ( Map<FeatureKey, Double> ) settings.get( KEY_SPLITTING_FEATURE_PENALTIES );
 		jPanelSplittingFeatures.removeAllPanels();
 		for ( final FeatureKey fk : splittingPenalties.keySet() )
-			if (LinkingUtils.isFeatureKeyValid( fk, featureModel, vertexClass ))
+			if ( LinkingUtils.isFeatureInModel( fk, featureModel ) )
 				jPanelSplittingFeatures.addPanel( new FeaturePenalty( fk, splittingPenalties.get( fk ) ) );
 
 		// Track merging.
@@ -578,7 +577,7 @@ public class LAPLinkerConfigPanel extends JPanel
 		final Map<FeatureKey, Double> mergingPenalties = ( Map<FeatureKey, Double> ) settings.get( KEY_MERGING_FEATURE_PENALTIES );
 		jPanelMergingFeatures.removeAllPanels();
 		for ( final FeatureKey fk : mergingPenalties.keySet() )
-			if (LinkingUtils.isFeatureKeyValid( fk, featureModel, vertexClass ))
+			if ( LinkingUtils.isFeatureInModel( fk, featureModel ) )
 				jPanelMergingFeatures.addPanel( new FeaturePenalty( fk, mergingPenalties.get( fk ) ) );
 	}
 
@@ -651,7 +650,7 @@ public class LAPLinkerConfigPanel extends JPanel
 
 		private void addPanel( final FeaturePenalty featurePenalty )
 		{
-			if ( !LinkingUtils.isFeatureKeyValid( featurePenalty.key, featureModel, vertexClass ) )
+			if ( !LinkingUtils.isFeatureInModel( featurePenalty.key, featureModel ) )
 				return;
 
 			final JPanelFeaturePenalty panel = new JPanelFeaturePenalty( getAvailableFeatureKeys(), featurePenalty.key, featurePenalty.weight );
@@ -706,11 +705,19 @@ public class LAPLinkerConfigPanel extends JPanel
 
 	private List< FeatureKey > getAvailableFeatureKeys()
 	{
+		final List< FeatureSpec< ?, ? > > featureSpecs = featureModel.getFeatureSpecs()
+			.stream()
+			.filter( (fs ) -> fs.getTargetClass().equals( vertexClass ) )
+			.collect( Collectors.toList() );
+
 		final List< FeatureKey > featureKeys = new ArrayList<>();
-		final Set< Feature< ?, ? > > featureSet = Optional.ofNullable( featureModel.getFeatureSet( vertexClass ) ).orElse( Collections.emptySet() );
-		for ( final Feature< ?, ? > feature : featureSet )
-			for ( final String projectionKey : feature.getProjections().keySet() )
-				featureKeys.add( new FeatureKey( feature.getKey(), projectionKey ) );
+		for ( final FeatureSpec< ?, ? > featureSpec : featureSpecs )
+		{
+			final Feature< ? > feature = featureModel.getFeature( featureSpec.getKey() );
+			final String[] projectionKeys = feature.projectionKeys();
+			for ( final String projectionKey : projectionKeys )
+				featureKeys.add( new FeatureKey( featureSpec.getKey(), projectionKey ) );
+		}
 
 		featureKeys.sort( ( a, b ) -> a.toString().compareTo( b.toString() ) );
 		return featureKeys;

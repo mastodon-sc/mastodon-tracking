@@ -6,11 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.mastodon.detection.DetectionCreatorFactory;
-import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorOp;
 import org.mastodon.detection.mamut.MamutDetectionCreatorFactories.DetectionBehavior;
-import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
@@ -34,14 +31,15 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 	@Parameter( type = ItemIO.INPUT )
 	private SpatioTemporalIndex< Spot > sti;
 
+	@Parameter( type = ItemIO.BOTH )
+	protected DetectionQualityFeature qualityFeature;
+
 	@Parameter( type = ItemIO.OUTPUT )
 	protected String errorMessage;
 
 	@Parameter( type = ItemIO.OUTPUT )
 	protected boolean ok;
 
-	@Parameter( type = ItemIO.OUTPUT )
-	protected Feature< Spot, DoublePropertyMap< Spot > > qualityFeature;
 
 	@Parameter
 	private ThreadService threadService;
@@ -61,8 +59,8 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 		ok = false;
 		final long start = System.currentTimeMillis();
 
-		final DoublePropertyMap< Spot > pm = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
-		qualityFeature = DetectionUtil.getQualityFeature( pm, Spot.class );
+		if ( null == qualityFeature )
+			qualityFeature = new DetectionQualityFeature( graph.vertices().getRefPool() );
 
 		/*
 		 * Resolve add detection behavior.
@@ -70,7 +68,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 		final DetectionCreatorFactory detectionCreator;
 		if ( null == sti )
 		{
-			detectionCreator = MamutDetectionCreatorFactories.getAddDetectionCreatorFactory( graph, pm );
+			detectionCreator = MamutDetectionCreatorFactories.getAddDetectionCreatorFactory( graph, qualityFeature );
 		}
 		else
 		{
@@ -85,7 +83,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 				catch ( final IllegalArgumentException e )
 				{}
 			}
-			detectionCreator = detectionBehavior.getFactory( graph, pm, sti );
+			detectionCreator = detectionBehavior.getFactory( graph, qualityFeature, sti );
 		}
 
 		this.detector = ( DetectorOp ) Inplaces.binary1( ops(), cl,
@@ -116,7 +114,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 	}
 
 	@Override
-	public Feature< Spot, DoublePropertyMap< Spot > > getQualityFeature()
+	public DetectionQualityFeature getQualityFeature()
 	{
 		return qualityFeature;
 	}

@@ -4,8 +4,8 @@ import java.util.Comparator;
 import java.util.Map;
 
 import org.mastodon.collection.RefCollection;
+import org.mastodon.feature.FeatureModel;
 import org.mastodon.linking.EdgeCreator;
-import org.mastodon.revised.model.feature.FeatureModel;
 import org.mastodon.spatial.SpatioTemporalIndex;
 import org.scijava.ItemIO;
 import org.scijava.app.StatusService;

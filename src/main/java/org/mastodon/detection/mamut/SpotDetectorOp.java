@@ -2,10 +2,7 @@ package org.mastodon.detection.mamut;
 
 import java.util.List;
 
-import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.ModelGraph;
-import org.mastodon.revised.model.mamut.Spot;
 import org.scijava.Cancelable;
 import org.scijava.app.StatusService;
 import org.scijava.log.Logger;
@@ -21,7 +18,7 @@ public interface SpotDetectorOp extends UnaryHybridCF< List< SourceAndConverter<
 	 *
 	 * @return the quality feature.
 	 */
-	public Feature< Spot, DoublePropertyMap< Spot > > getQualityFeature();
+	public DetectionQualityFeature getQualityFeature();
 
 	/**
 	 * Returns <code>true</code> if the detection process completed

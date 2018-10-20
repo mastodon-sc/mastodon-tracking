@@ -2,10 +2,10 @@ package org.mastodon.linking.sequential.lap.costfunction;
 
 import java.util.Map;
 
+import org.mastodon.feature.FeatureModel;
+import org.mastodon.feature.FeatureProjection;
 import org.mastodon.linking.FeatureKey;
 import org.mastodon.linking.LinkingUtils;
-import org.mastodon.revised.model.feature.FeatureModel;
-import org.mastodon.revised.model.feature.FeatureProjection;
 
 import net.imglib2.RealLocalizable;
 

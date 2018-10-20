@@ -6,7 +6,6 @@ import org.mastodon.collection.RefSet;
 import org.mastodon.detection.DetectionCreatorFactory;
 import org.mastodon.detection.DetectionCreatorFactory.DetectionCreator;
 import org.mastodon.kdtree.IncrementalNearestNeighborSearch;
-import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
@@ -76,42 +75,42 @@ public class MamutDetectionCreatorFactories
 			return info;
 		}
 
-		public DetectionCreatorFactory getFactory( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final SpatioTemporalIndex< Spot > sti )
+		public DetectionCreatorFactory getFactory( final ModelGraph graph, final DetectionQualityFeature qualityFeature, final SpatioTemporalIndex< Spot > sti )
 		{
 			switch ( this )
 			{
 			case ADD:
-				return getAddDetectionCreatorFactory( graph, pm );
+				return getAddDetectionCreatorFactory( graph, qualityFeature );
 			case DONTADD:
-				return getDontAddDetectionCreatorFactory( graph, pm, sti );
+				return getDontAddDetectionCreatorFactory( graph, qualityFeature, sti );
 			case REMOVEALL:
-				return getRemoveAllDetectionCreatorFactory( graph, pm, sti );
+				return getRemoveAllDetectionCreatorFactory( graph, qualityFeature, sti );
 			case REPLACE:
-				return getReplaceDetectionCreatorFactory( graph, pm, sti );
+				return getReplaceDetectionCreatorFactory( graph, qualityFeature, sti );
 			default:
 				throw new IllegalArgumentException( "Unknown detection bahaviour: " + this );
 			}
 		}
 	}
 
-	public static final DetectionCreatorFactory getAddDetectionCreatorFactory( final ModelGraph graph, final DoublePropertyMap< Spot > pm )
+	public static final DetectionCreatorFactory getAddDetectionCreatorFactory( final ModelGraph graph, final DetectionQualityFeature qualityFeature )
 	{
-		return new AddDetectionCreatorFactory( graph, pm );
+		return new AddDetectionCreatorFactory( graph, qualityFeature );
 	}
 
-	public static final DetectionCreatorFactory getDontAddDetectionCreatorFactory( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final SpatioTemporalIndex< Spot > sti )
+	public static final DetectionCreatorFactory getDontAddDetectionCreatorFactory( final ModelGraph graph, final DetectionQualityFeature qualityFeature, final SpatioTemporalIndex< Spot > sti )
 	{
-		return new DontAddDetectionCreatorFactory( graph, pm, sti );
+		return new DontAddDetectionCreatorFactory( graph, qualityFeature, sti );
 	}
 
-	public static final DetectionCreatorFactory getReplaceDetectionCreatorFactory( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final SpatioTemporalIndex< Spot > sti )
+	public static final DetectionCreatorFactory getReplaceDetectionCreatorFactory( final ModelGraph graph, final DetectionQualityFeature qualityFeature, final SpatioTemporalIndex< Spot > sti )
 	{
-		return new ReplaceDetectionCreatorFactory( graph, pm, sti );
+		return new ReplaceDetectionCreatorFactory( graph, qualityFeature, sti );
 	}
 
-	public static final DetectionCreatorFactory getRemoveAllDetectionCreatorFactory( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final SpatioTemporalIndex< Spot > sti )
+	public static final DetectionCreatorFactory getRemoveAllDetectionCreatorFactory( final ModelGraph graph, final DetectionQualityFeature qualityFeature, final SpatioTemporalIndex< Spot > sti )
 	{
-		return new RemoveAllDetectionCreatorFactory( graph, pm, sti );
+		return new RemoveAllDetectionCreatorFactory( graph, qualityFeature, sti );
 	}
 
 	/**
@@ -130,20 +129,20 @@ public class MamutDetectionCreatorFactories
 	private static class AddDetectionCreatorFactory implements DetectionCreatorFactory
 	{
 
-		private final DoublePropertyMap< Spot > pm;
+		private final DetectionQualityFeature qualityFeature;
 
 		private final ModelGraph graph;
 
-		public AddDetectionCreatorFactory( final ModelGraph graph, final DoublePropertyMap< Spot > pm )
+		public AddDetectionCreatorFactory( final ModelGraph graph, final DetectionQualityFeature qualityFeature )
 		{
 			this.graph = graph;
-			this.pm = pm;
+			this.qualityFeature = qualityFeature;
 		}
 
 		@Override
 		public DetectionCreator create( final int timepoint )
 		{
-			return new AddDetectionCreator( graph, pm, timepoint );
+			return new AddDetectionCreator( graph, qualityFeature, timepoint );
 		}
 	}
 
@@ -154,14 +153,14 @@ public class MamutDetectionCreatorFactories
 
 		protected final int timepoint;
 
-		protected final DoublePropertyMap< Spot > pm;
+		protected final DetectionQualityFeature qualityFeature;
 
 		protected final ModelGraph graph;
 
-		private AddDetectionCreator( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final int timepoint )
+		private AddDetectionCreator( final ModelGraph graph, final DetectionQualityFeature qualityFeature, final int timepoint )
 		{
 			this.graph = graph;
-			this.pm = pm;
+			this.qualityFeature = qualityFeature;
 			this.timepoint = timepoint;
 			this.ref = graph.vertexRef();
 		}
@@ -182,7 +181,7 @@ public class MamutDetectionCreatorFactories
 		public void createDetection( final double[] pos, final double radius, final double quality )
 		{
 			final Spot spot = graph.addVertex( ref ).init( timepoint, pos, radius );
-			pm.set( spot, quality );
+			qualityFeature.set( spot, quality );
 		}
 	}
 
@@ -191,21 +190,21 @@ public class MamutDetectionCreatorFactories
 
 		private final ModelGraph graph;
 
-		private final DoublePropertyMap< Spot > pm;
+		private final DetectionQualityFeature qualityFeature;
 
 		private final SpatioTemporalIndex< Spot > sti;
 
-		public RemoveAllDetectionCreatorFactory( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final SpatioTemporalIndex< Spot > sti )
+		public RemoveAllDetectionCreatorFactory( final ModelGraph graph, final DetectionQualityFeature qualityFeature, final SpatioTemporalIndex< Spot > sti )
 		{
 			this.graph = graph;
-			this.pm = pm;
+			this.qualityFeature = qualityFeature;
 			this.sti = sti;
 		}
 
 		@Override
 		public DetectionCreator create( final int timepoint )
 		{
-			return new RemoveAllDetectionCreator( graph, pm, sti.getSpatialIndex( timepoint ), timepoint );
+			return new RemoveAllDetectionCreator( graph, qualityFeature, sti.getSpatialIndex( timepoint ), timepoint );
 		}
 	}
 
@@ -214,7 +213,7 @@ public class MamutDetectionCreatorFactories
 
 		private final ModelGraph graph;
 
-		private final DoublePropertyMap< Spot > pm;
+		private final DetectionQualityFeature qualityFeature;
 
 		private final SpatialIndex< Spot > spatialIndex;
 
@@ -222,10 +221,10 @@ public class MamutDetectionCreatorFactories
 
 		private final Spot ref;
 
-		public RemoveAllDetectionCreator( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final SpatialIndex< Spot > spatialIndex, final int timepoint )
+		public RemoveAllDetectionCreator( final ModelGraph graph, final DetectionQualityFeature qualityFeature, final SpatialIndex< Spot > spatialIndex, final int timepoint )
 		{
 			this.graph = graph;
-			this.pm = pm;
+			this.qualityFeature = qualityFeature;
 			this.spatialIndex = spatialIndex;
 			this.timepoint = timepoint;
 			this.ref = graph.vertexRef();
@@ -250,7 +249,7 @@ public class MamutDetectionCreatorFactories
 		public void createDetection( final double[] pos, final double radius, final double quality )
 		{
 			final Spot spot = graph.addVertex( ref ).init( timepoint, pos, radius );
-			pm.set( spot, quality );
+			qualityFeature.set( spot, quality );
 		}
 
 		@Override
@@ -263,23 +262,23 @@ public class MamutDetectionCreatorFactories
 	private static class ReplaceDetectionCreatorFactory implements DetectionCreatorFactory
 	{
 
-		private final DoublePropertyMap< Spot > pm;
+		private final DetectionQualityFeature qualityFeature;
 
 		private final ModelGraph graph;
 
 		private final SpatioTemporalIndex< Spot > sti;
 
-		public ReplaceDetectionCreatorFactory( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final SpatioTemporalIndex< Spot > sti )
+		public ReplaceDetectionCreatorFactory( final ModelGraph graph, final DetectionQualityFeature qualityFeature, final SpatioTemporalIndex< Spot > sti )
 		{
 			this.graph = graph;
-			this.pm = pm;
+			this.qualityFeature = qualityFeature;
 			this.sti = sti;
 		}
 
 		@Override
 		public DetectionCreator create( final int timepoint )
 		{
-			return new ReplaceDetectionCreator( graph, pm, sti.getSpatialIndex( timepoint ), timepoint );
+			return new ReplaceDetectionCreator( graph, qualityFeature, sti.getSpatialIndex( timepoint ), timepoint );
 		}
 	}
 
@@ -298,16 +297,16 @@ public class MamutDetectionCreatorFactories
 
 		private final ModelGraph graph;
 
-		private final DoublePropertyMap< Spot > pm;
+		private final DetectionQualityFeature qualityFeature;
 
 		private final int timepoint;
 
 		private final Spot ref;
 
-		private ReplaceDetectionCreator( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final SpatialIndex< Spot > si, final int timepoint )
+		private ReplaceDetectionCreator( final ModelGraph graph, final DetectionQualityFeature qualityFeature, final SpatialIndex< Spot > si, final int timepoint )
 		{
 			this.graph = graph;
-			this.pm = pm;
+			this.qualityFeature = qualityFeature;
 			this.si = si;
 			this.timepoint = timepoint;
 			this.ref = graph.vertexRef();
@@ -335,7 +334,7 @@ public class MamutDetectionCreatorFactories
 		public void createDetection( final double[] pos, final double radius, final double quality )
 		{
 			final Spot spot = graph.addVertex( ref ).init( timepoint, pos, radius );
-			pm.set( spot, quality );
+			qualityFeature.set( spot, quality );
 			search.search( spot );
 			final double lr2 = Math.max( r2max, radius * radius );
 			while ( search.hasNext() )
@@ -363,23 +362,23 @@ public class MamutDetectionCreatorFactories
 	private static class DontAddDetectionCreatorFactory implements DetectionCreatorFactory
 	{
 
-		private final DoublePropertyMap< Spot > pm;
+		private final DetectionQualityFeature qualityFeature;
 
 		private final ModelGraph graph;
 
 		private final SpatioTemporalIndex< Spot > sti;
 
-		public DontAddDetectionCreatorFactory( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final SpatioTemporalIndex< Spot > sti )
+		public DontAddDetectionCreatorFactory( final ModelGraph graph, final DetectionQualityFeature qualityFeature, final SpatioTemporalIndex< Spot > sti )
 		{
 			this.graph = graph;
-			this.pm = pm;
+			this.qualityFeature = qualityFeature;
 			this.sti = sti;
 		}
 
 		@Override
 		public DetectionCreator create( final int timepoint )
 		{
-			return new DontAddDetectionCreator( graph, pm, sti.getSpatialIndex( timepoint ), timepoint );
+			return new DontAddDetectionCreator( graph, qualityFeature, sti.getSpatialIndex( timepoint ), timepoint );
 		}
 	}
 
@@ -392,7 +391,7 @@ public class MamutDetectionCreatorFactories
 
 		private final ModelGraph graph;
 
-		private final DoublePropertyMap< Spot > pm;
+		private final DetectionQualityFeature qualityFeature;
 
 		private final int timepoint;
 
@@ -404,10 +403,10 @@ public class MamutDetectionCreatorFactories
 
 		private final RealPoint center;
 
-		private DontAddDetectionCreator( final ModelGraph graph, final DoublePropertyMap< Spot > pm, final SpatialIndex< Spot > si, final int timepoint )
+		private DontAddDetectionCreator( final ModelGraph graph, final DetectionQualityFeature qualityFeature, final SpatialIndex< Spot > si, final int timepoint )
 		{
 			this.graph = graph;
-			this.pm = pm;
+			this.qualityFeature = qualityFeature;
 			this.si = si;
 			this.search = si.getIncrementalNearestNeighborSearch();
 			this.timepoint = timepoint;
@@ -445,7 +444,7 @@ public class MamutDetectionCreatorFactories
 			}
 
 			final Spot spot = graph.addVertex( ref ).init( timepoint, pos, radius );
-			pm.set( spot, quality );
+			qualityFeature.set( spot, quality );
 		}
 
 		@Override

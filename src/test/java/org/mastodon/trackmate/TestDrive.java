@@ -24,7 +24,7 @@ public class TestDrive
 		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
 		final Context context = new Context();
 
-		final String bdvFile = "../TrackMate3/samples/mamutproject/datasethdf5.xml";
+		final String bdvFile = "../TrackMate3/samples/datasethdf5.xml";
 //		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 //		final String bdvFile = "/Users/pietzsch/Desktop/data/MAMUT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
 //		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";

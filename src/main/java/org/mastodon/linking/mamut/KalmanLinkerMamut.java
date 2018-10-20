@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.stream.StreamSupport;
 
 import org.mastodon.linking.EdgeCreator;
-import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.sequential.SequentialParticleLinkerOp;
 import org.mastodon.linking.sequential.kalman.KalmanLinker;
 import org.mastodon.properties.DoublePropertyMap;
@@ -101,7 +100,9 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 		}
 
 		final DoublePropertyMap< Link > pm = new DoublePropertyMap<>( graph.edges(), Double.NaN );
-		linkCostFeature = LinkingUtils.getLinkCostFeature( pm, Link.class );
+		if ( null == linkCostFeature )
+			linkCostFeature = new LinkCostFeature( graph.edges().getRefPool() );
+
 		final EdgeCreator< Spot > edgeCreator = edgeCreator( graph, pm );
 
 		@SuppressWarnings( { "rawtypes", "unchecked" } )

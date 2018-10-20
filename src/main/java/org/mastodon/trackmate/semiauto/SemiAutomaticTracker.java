@@ -28,13 +28,12 @@ import org.mastodon.detection.DetectionCreatorFactory;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorOp;
 import org.mastodon.detection.DoGDetectorOp;
-import org.mastodon.linking.LinkingUtils;
+import org.mastodon.detection.mamut.DetectionQualityFeature;
+import org.mastodon.linking.mamut.LinkCostFeature;
 import org.mastodon.model.NavigationHandler;
 import org.mastodon.model.SelectionModel;
-import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.overlay.util.JamaEigenvalueDecomposition;
-import org.mastodon.revised.model.feature.Feature;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
@@ -126,24 +125,18 @@ public class SemiAutomaticTracker
 		 * register them.
 		 */
 
-		@SuppressWarnings( "unchecked" )
-		Feature< Spot, DoublePropertyMap< Spot > > qualityFeature =
-				( Feature< Spot, DoublePropertyMap< Spot > > ) model.getFeatureModel().getFeature( DetectionUtil.QUALITY_FEATURE_NAME );
+		DetectionQualityFeature qualityFeature = ( DetectionQualityFeature ) model.getFeatureModel().getFeature( DetectionQualityFeature.KEY );
 		if ( null == qualityFeature )
 		{
-			final DoublePropertyMap< Spot > quality = new DoublePropertyMap<>( graph.vertices(), Double.NaN );
-			qualityFeature = DetectionUtil.getQualityFeature( quality, Spot.class );
-			model.getFeatureModel().declareFeature( qualityFeature );
+			qualityFeature = new DetectionQualityFeature( graph.vertices().getRefPool() );
+			model.getFeatureModel().declareFeature( qualityFeature.featureSpec(), qualityFeature );
 		}
 
-		@SuppressWarnings( "unchecked" )
-		Feature< Link, DoublePropertyMap< Link > > linkCostFeature =
-				( Feature< Link, DoublePropertyMap< Link > > ) model.getFeatureModel().getFeature( LinkingUtils.LINK_COST_FEATURE_NAME );
+		LinkCostFeature linkCostFeature = ( LinkCostFeature ) model.getFeatureModel().getFeature( LinkCostFeature.KEY );
 		if ( null == linkCostFeature )
 		{
-			final DoublePropertyMap< Link > linkcost = new DoublePropertyMap<>( graph.edges(), Double.NaN );
-			linkCostFeature = LinkingUtils.getLinkCostFeature( linkcost, Link.class );
-			model.getFeatureModel().declareFeature( linkCostFeature );
+			linkCostFeature = new LinkCostFeature( graph.edges().getRefPool() );
+			model.getFeatureModel().declareFeature( linkCostFeature.featureSpec(), linkCostFeature );
 		}
 
 		/*
@@ -225,8 +218,8 @@ public class SemiAutomaticTracker
 
 				// Does the source have a quality value?
 				final double threshold;
-				if ( qualityFeature.getPropertyMap().isSet( source ) )
-					threshold = qualityFeature.getPropertyMap().get( source ) * qualityFactor;
+				if ( qualityFeature.isSet( source ) )
+					threshold = qualityFeature.value( source ) * qualityFactor;
 				else
 					threshold = 0.;
 
@@ -409,7 +402,7 @@ public class SemiAutomaticTracker
 						final double cost = distance * distance;
 						log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
 								source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint(), cost ) );
-						linkCostFeature.getPropertyMap().set( edge, cost );
+						linkCostFeature.set( edge, cost );
 
 						if ( null != navigationHandler )
 							navigationHandler.notifyNavigateToVertex( target );
@@ -454,8 +447,8 @@ public class SemiAutomaticTracker
 					final double quality = candidate.quality;
 					log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
 							source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint(), cost ) );
-					linkCostFeature.getPropertyMap().set( edge, cost );
-					qualityFeature.getPropertyMap().set( target, quality );
+					linkCostFeature.set( edge, cost );
+					qualityFeature.set( target, quality );
 
 					if ( null != navigationHandler )
 						navigationHandler.notifyNavigateToVertex( target );

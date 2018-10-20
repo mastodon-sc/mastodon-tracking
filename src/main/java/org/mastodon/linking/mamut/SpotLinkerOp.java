@@ -1,9 +1,6 @@
 package org.mastodon.linking.mamut;
 
 import org.mastodon.linking.ParticleLinker;
-import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.model.feature.Feature;
-import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
@@ -23,6 +20,6 @@ public interface SpotLinkerOp extends BinaryInplace1OnlyOp< ModelGraph, SpatioTe
 	 *
 	 * @return the linking cost feature.
 	 */
-	Feature< Link, DoublePropertyMap< Link > > getLinkCostFeature();
+	public LinkCostFeature getLinkCostFeature();
 
 }

@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,9 +30,6 @@ import java.util.concurrent.ExecutorService;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
-import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.model.feature.Feature;
-import org.mastodon.revised.model.feature.FeatureProjectors;
 
 import bdv.BigDataViewer;
 import bdv.spimdata.SpimDataMinimal;
@@ -68,33 +64,6 @@ import net.imglib2.view.Views;
  */
 public class DetectionUtil
 {
-
-	/**
-	 * The key of the quality feature and projection returned by
-	 * {@link #getQualityFeature(DoublePropertyMap, Class)}.
-	 */
-	public static final String QUALITY_FEATURE_NAME = "Detection quality";
-
-	/**
-	 * Returns a new feature wrapping the specified property map, that serves as
-	 * a Quality feature for the detectors of Mastodon. This feature is expected
-	 * to be common to all detectors.
-	 *
-	 * @param <V>
-	 *            the type of spots.
-	 * @param quality
-	 *            the property map containing the quality values of all spots in
-	 *            the model.
-	 * @param clazz
-	 *            the class of the spots.
-	 * @return the quality feature.
-	 */
-	public static final < V > Feature< V, DoublePropertyMap< V > > getQualityFeature( final DoublePropertyMap< V > quality, final Class< V > clazz )
-	{
-		return new Feature<>(
-				QUALITY_FEATURE_NAME, clazz, quality,
-				Collections.singletonMap( QUALITY_FEATURE_NAME, FeatureProjectors.project( quality ) ) );
-	}
 
 	/**
 	 * Returns <code>true</code> if the there is some data at the specified

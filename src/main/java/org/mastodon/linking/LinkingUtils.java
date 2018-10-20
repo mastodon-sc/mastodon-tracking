@@ -42,7 +42,6 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -59,14 +58,12 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
+import org.mastodon.feature.Feature;
+import org.mastodon.feature.FeatureModel;
+import org.mastodon.feature.FeatureProjection;
 import org.mastodon.linking.sequential.lap.costfunction.CostFunction;
 import org.mastodon.linking.sequential.lap.costfunction.FeaturePenaltiesCostFunction;
 import org.mastodon.linking.sequential.lap.costfunction.SquareDistCostFunction;
-import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.model.feature.Feature;
-import org.mastodon.revised.model.feature.FeatureModel;
-import org.mastodon.revised.model.feature.FeatureProjection;
-import org.mastodon.revised.model.feature.FeatureProjectors;
 
 import net.imglib2.RealLocalizable;
 
@@ -74,11 +71,6 @@ public class LinkingUtils
 {
 
 	private static final Border RED_BORDER = new LineBorder( Color.RED );
-
-	/**
-	 * The key of the edge linking cost feature and projection.
-	 */
-	public static final String LINK_COST_FEATURE_NAME = "Link cost";
 
 	/*
 	 * STATIC METHODS - UTILS
@@ -92,27 +84,6 @@ public class LinkingUtils
 		else
 			costFunction = new FeaturePenaltiesCostFunction<>( featurePenalties, featureModel, vertexClass );
 		return costFunction;
-	}
-
-	/**
-	 * Returns a new feature wrapping the specified property map, that serves as
-	 * an Edge linking cost feature for the linkers of Mastodon. This feature is
-	 * expected to be common to all particle linkers.
-	 *
-	 * @param <E>
-	 *            the type of edges.
-	 * @param linkCosts
-	 *            the property map containing the link cost values of all edges
-	 *            in the model.
-	 * @param clazz
-	 *            the class of link objects.
-	 * @return the link cost feature.
-	 */
-	public static final < E > Feature< E, DoublePropertyMap< E > > getLinkCostFeature( final DoublePropertyMap< E > linkCosts, final Class< E > clazz )
-	{
-		return new Feature<>(
-				LINK_COST_FEATURE_NAME, clazz, linkCosts,
-				Collections.singletonMap( LINK_COST_FEATURE_NAME, FeatureProjectors.project( linkCosts ) ) );
 	}
 
 	/**
@@ -151,30 +122,16 @@ public class LinkingUtils
 		return settings;
 	}
 
-	public static final boolean isFeatureKeyValid( final FeatureKey featureKey, final FeatureModel featureModel, final Class< ? > clazz )
-	{
-		final Feature< ?, ? > feature = featureModel.getFeature( featureKey.featureKey );
-		if ( null == featureModel.getFeatureSet( clazz ) || !featureModel.getFeatureSet( clazz ).contains( feature ) )
-			return false;
-
-		if ( null == feature.getProjections().get( featureKey.projectionKey ) )
-			return false;
-
-		return true;
-	}
-
 	public static < V > Map< FeatureProjection< V >, Double > penaltyToProjectionMap( final Map< FeatureKey, Double > penalties, final FeatureModel featureModel, final Class< V > clazz )
 	{
 		final Map< FeatureProjection< V >, Double > projections = new HashMap<>();
 
 		for ( final FeatureKey key : penalties.keySet() )
 		{
-			final Feature< ?, ? > feature = featureModel.getFeature( key.featureKey );
-			if ( null == featureModel.getFeatureSet( clazz ) || !featureModel.getFeatureSet( clazz ).contains( feature ) )
-				continue;
+			final Feature< ? > feature = featureModel.getFeature( key.featureKey );
 
 			@SuppressWarnings( "unchecked" )
-			final FeatureProjection< V > projection = ( FeatureProjection< V > ) feature.getProjections().get( key.projectionKey );
+			final FeatureProjection< V > projection = ( FeatureProjection< V > ) feature.project( key.projectionKey );
 			if ( null == projection )
 				continue;
 
@@ -632,4 +589,16 @@ public class LinkingUtils
 
 	private LinkingUtils()
 	{}
+
+	public static boolean isFeatureInModel( final FeatureKey fk, final FeatureModel featureModel )
+	{
+		final Feature< ? > feature = featureModel.getFeature( fk.featureKey );
+		if ( null == feature )
+			return false;
+		for ( final String projectionKey : feature.projectionKeys() )
+			if ( fk.projectionKey.equals( projectionKey ) )
+				return true;
+
+		return false;
+	}
 }
