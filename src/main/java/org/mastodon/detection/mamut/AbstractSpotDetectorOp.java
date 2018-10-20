@@ -31,7 +31,7 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 	@Parameter( type = ItemIO.INPUT )
 	private SpatioTemporalIndex< Spot > sti;
 
-	@Parameter( type = ItemIO.BOTH )
+	@Parameter( type = ItemIO.BOTH, required = false )
 	protected DetectionQualityFeature qualityFeature;
 
 	@Parameter( type = ItemIO.OUTPUT )
@@ -39,7 +39,6 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 
 	@Parameter( type = ItemIO.OUTPUT )
 	protected boolean ok;
-
 
 	@Parameter
 	private ThreadService threadService;

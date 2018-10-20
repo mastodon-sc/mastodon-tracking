@@ -32,6 +32,12 @@ public abstract class AbstractSpotLinkerOp
 	@Parameter( type = ItemIO.INPUT )
 	protected FeatureModel featureModel;
 
+	/**
+	 * The edge linking cost feature provided by this particle-linker.
+	 */
+	@Parameter( type = ItemIO.BOTH, required = false )
+	protected LinkCostFeature linkCostFeature;
+
 	protected long processingTime;
 
 	protected boolean ok;
@@ -101,12 +107,6 @@ public abstract class AbstractSpotLinkerOp
 	{
 		return SPOT_COMPARATOR;
 	}
-
-	/**
-	 * The edge linking cost feature provided by this particle-linker.
-	 */
-	@Parameter( type = ItemIO.BOTH )
-	protected LinkCostFeature linkCostFeature;
 
 	@Override
 	public LinkCostFeature getLinkCostFeature()
