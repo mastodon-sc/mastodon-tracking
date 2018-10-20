@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.mastodon.HasErrorMessage;
+import org.mastodon.detection.mamut.DetectionQualityFeature;
 import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.graph.algorithm.RootFinder;
+import org.mastodon.linking.mamut.LinkCostFeature;
 import org.mastodon.linking.mamut.SpotLinkerOp;
 import org.mastodon.model.SelectionModel;
 import org.mastodon.revised.model.mamut.Link;
@@ -111,11 +113,14 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		final long start = System.currentTimeMillis();
 		final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
+		final DetectionQualityFeature qualityFeature =
+				( DetectionQualityFeature ) model.getFeatureModel().getFeature( DetectionQualityFeature.KEY );
 
 		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl,
 				graph, sources,
 				detectorSettings,
-				model.getSpatioTemporalIndex() );
+				model.getSpatioTemporalIndex(),
+				qualityFeature );
 		detector.setLogger( logger );
 		detector.setStatusService( statusService );
 		this.currentOp = detector;
@@ -218,10 +223,14 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 
 		final long start = System.currentTimeMillis();
 		final Class< ? extends SpotLinkerOp > linkerCl = settings.values.getLinker();
+		final LinkCostFeature linkCostFeature =
+				( LinkCostFeature ) model.getFeatureModel().getFeature( LinkCostFeature.KEY );
 
 		final SpotLinkerOp linker =
 				( SpotLinkerOp ) Inplaces.binary1( ops, linkerCl, model.getGraph(), target,
-						linkerSettings, model.getFeatureModel() );
+						linkerSettings,
+						model.getFeatureModel(),
+						linkCostFeature );
 
 		logger.info( "Particle-linking with " + linkerCl.getSimpleName() + '\n' );
 		this.currentOp = linker;
