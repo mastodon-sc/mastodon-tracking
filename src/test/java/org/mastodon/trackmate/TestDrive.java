@@ -7,8 +7,8 @@ import java.util.Locale;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import org.mastodon.project.MamutProject;
 import org.mastodon.revised.mamut.MainWindow;
-import org.mastodon.revised.mamut.MamutProject;
 import org.mastodon.revised.mamut.WindowManager;
 import org.scijava.Context;
 

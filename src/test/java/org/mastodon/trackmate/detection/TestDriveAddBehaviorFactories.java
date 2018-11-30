@@ -16,7 +16,7 @@ import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.mamut.AdvancedDoGDetectorMamut;
 import org.mastodon.detection.mamut.DoGDetectorMamut;
 import org.mastodon.detection.mamut.MamutDetectionCreatorFactories.DetectionBehavior;
-import org.mastodon.revised.mamut.MamutProject;
+import org.mastodon.project.MamutProject;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.trackmate.Settings;

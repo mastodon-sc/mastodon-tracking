@@ -4,8 +4,8 @@ import java.util.Locale;
 
 import javax.swing.UIManager;
 
-import org.mastodon.revised.mamut.MamutProject;
-import org.mastodon.revised.mamut.MamutProjectIO;
+import org.mastodon.project.MamutProject;
+import org.mastodon.project.MamutProjectIO;
 import org.mastodon.revised.mamut.Mastodon;
 import org.scijava.Context;
 

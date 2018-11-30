@@ -10,10 +10,10 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
+import org.mastodon.project.MamutProject;
+import org.mastodon.project.MamutProjectIO;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
 import org.mastodon.revised.bdv.ViewerPanelMamut;
-import org.mastodon.revised.mamut.MamutProject;
-import org.mastodon.revised.mamut.MamutProjectIO;
 import org.mastodon.revised.mamut.MamutViewBdv;
 import org.mastodon.revised.mamut.ProjectManager;
 import org.mastodon.revised.mamut.WindowManager;
