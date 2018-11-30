@@ -83,6 +83,10 @@
 			<groupId>net.imagej</groupId>
 			<artifactId>imagej-ops</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej-common</artifactId>
+		</dependency>
 
 		<!-- SciJava deps -->
 
