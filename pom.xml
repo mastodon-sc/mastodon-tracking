@@ -16,7 +16,7 @@
 	<name>Mastodon tracking</name>
 	<description>Basic tracking algorithms based on Mastodon data structures.</description>
 	<url>https://github.com/TrNdy/mastodon-tracking</url>
-	<inceptionYear>2074</inceptionYear>
+	<inceptionYear>2017</inceptionYear>
 	<organization>
 		<name>TrNdy</name>
 		<url>http://trndy.org</url>
@@ -97,7 +97,6 @@
 		<dependency>
 			<groupId>org.scijava</groupId>
 			<artifactId>ui-behaviour</artifactId>
-			<version>1.7.3</version>
 		</dependency>
 
 		<!-- Test dependencies -->
