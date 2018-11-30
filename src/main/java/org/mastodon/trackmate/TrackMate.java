@@ -113,8 +113,8 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		final long start = System.currentTimeMillis();
 		final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
-		final DetectionQualityFeature qualityFeature =
-				( DetectionQualityFeature ) model.getFeatureModel().getFeature( DetectionQualityFeature.KEY );
+		final DetectionQualityFeature qualityFeature = DetectionQualityFeature.getOrRegister(
+				model.getFeatureModel(), graph.vertices().getRefPool() );
 
 		final SpotDetectorOp detector = ( SpotDetectorOp ) Hybrids.unaryCF( ops, cl,
 				graph, sources,
@@ -136,7 +136,7 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		}
 		currentOp = null;
 
-		model.getFeatureModel().declareFeature( detector.getQualityFeature().featureSpec(), detector.getQualityFeature() );
+		model.getFeatureModel().declareFeature(  detector.getQualityFeature() );
 		final long end = System.currentTimeMillis();
 		logger.info( String.format( "Detection completed in %.1f s.\n", ( end - start ) / 1000. ) );
 		logger.info( "There is now " + graph.vertices().size() + " spots.\n" );
@@ -223,8 +223,8 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 
 		final long start = System.currentTimeMillis();
 		final Class< ? extends SpotLinkerOp > linkerCl = settings.values.getLinker();
-		final LinkCostFeature linkCostFeature =
-				( LinkCostFeature ) model.getFeatureModel().getFeature( LinkCostFeature.KEY );
+		final LinkCostFeature linkCostFeature = LinkCostFeature.getOrRegister(
+				model.getFeatureModel(), model.getGraph().edges().getRefPool() );
 
 		final SpotLinkerOp linker =
 				( SpotLinkerOp ) Inplaces.binary1( ops, linkerCl, model.getGraph(), target,
@@ -244,7 +244,7 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		}
 
 		currentOp = null;
-		model.getFeatureModel().declareFeature( linker.getLinkCostFeature().featureSpec(), linker.getLinkCostFeature() );
+		model.getFeatureModel().declareFeature( linker.getLinkCostFeature() );
 		final long end = System.currentTimeMillis();
 		logger.info( String.format( "Particle-linking completed in %.1f s.\n", ( end - start ) / 1000. ) );
 		final int nTracks = RootFinder.getRoots( model.getGraph() ).size();

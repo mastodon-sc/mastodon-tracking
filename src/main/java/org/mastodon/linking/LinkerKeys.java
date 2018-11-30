@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.mastodon.detection.DetectorKeys;
+import org.mastodon.feature.FeatureProjectionKey;
 
 public class LinkerKeys
 {
@@ -19,8 +20,8 @@ public class LinkerKeys
 
 	/**
 	 * Key for the parameter specifying the feature penalties when linking
-	 * particles. Expected values should be a <code>Map&lt;FeatureKey, Double&gt;</code>
-	 * instance.
+	 * particles. Expected values should be a
+	 * <code>Map&lt;FeatureKey, Double&gt;</code> instance.
 	 */
 	public static final String KEY_LINKING_FEATURE_PENALTIES = "LINKING_FEATURE_PENALTIES";
 
@@ -28,7 +29,7 @@ public class LinkerKeys
 	 * A default value for the {@value #KEY_LINKING_FEATURE_PENALTIES}
 	 * parameter.
 	 */
-	public static final Map<FeatureKey, Double> DEFAULT_LINKING_FEATURE_PENALTIES = new HashMap<>();
+	public static final Map< FeatureProjectionKey, Double > DEFAULT_LINKING_FEATURE_PENALTIES = new HashMap<>();
 
 	/**
 	 * Key for the parameter specifying whether we allow the detection of
@@ -68,8 +69,8 @@ public class LinkerKeys
 
 	/**
 	 * Key for the parameter specifying the feature penalties when detecting
-	 * gap-closing events. Expected values should be a <code>Map&lt;FeatureKey, Double&gt;</code>
-	 * instance.
+	 * gap-closing events. Expected values should be a
+	 * <code>Map&lt;FeatureKey, Double&gt;</code> instance.
 	 */
 	public static final String KEY_GAP_CLOSING_FEATURE_PENALTIES = "GAP_CLOSING_FEATURE_PENALTIES";
 
@@ -77,7 +78,7 @@ public class LinkerKeys
 	 * A default value for the {@value #KEY_GAP_CLOSING_FEATURE_PENALTIES}
 	 * parameter.
 	 */
-	public static final Map<FeatureKey, Double> DEFAULT_GAP_CLOSING_FEATURE_PENALTIES = new HashMap<>();
+	public static final Map< FeatureProjectionKey, Double > DEFAULT_GAP_CLOSING_FEATURE_PENALTIES = new HashMap<>();
 
 	/**
 	 * Key for the parameter specifying whether we allow the detection of
@@ -101,8 +102,8 @@ public class LinkerKeys
 
 	/**
 	 * Key for the parameter specifying the feature penalties when dealing with
-	 * merging events. Expected values should be a <code>Map&lt;FeatureKey, Double&gt;</code>
-	 * instance.
+	 * merging events. Expected values should be a
+	 * <code>Map&lt;FeatureKey, Double&gt;</code> instance.
 	 */
 	public static final String KEY_MERGING_FEATURE_PENALTIES = "MERGING_FEATURE_PENALTIES";
 
@@ -110,7 +111,7 @@ public class LinkerKeys
 	 * A default value for the {@value #KEY_MERGING_FEATURE_PENALTIES}
 	 * parameter.
 	 */
-	public static final Map<FeatureKey, Double> DEFAULT_MERGING_FEATURE_PENALTIES = new HashMap<>();
+	public static final Map< FeatureProjectionKey, Double > DEFAULT_MERGING_FEATURE_PENALTIES = new HashMap<>();
 
 	/**
 	 * Key for the parameter specifying whether we allow the detection of
@@ -139,8 +140,8 @@ public class LinkerKeys
 
 	/**
 	 * Key for the parameter specifying the feature penalties when dealing with
-	 * splitting events. Expected values should be a <code>Map&lt;FeatureKey, Double&gt;</code>
-	 * instance.
+	 * splitting events. Expected values should be a
+	 * <code>Map&lt;FeatureKey, Double&gt;</code> instance.
 	 */
 	public static final String KEY_SPLITTING_FEATURE_PENALTIES = "SPLITTING_FEATURE_PENALTIES";
 
@@ -148,7 +149,7 @@ public class LinkerKeys
 	 * A default value for the {@value #KEY_SPLITTING_FEATURE_PENALTIES}
 	 * parameter.
 	 */
-	public static final Map<FeatureKey, Double> DEFAULT_SPLITTING_FEATURE_PENALTIES = new HashMap<>();
+	public static final Map< FeatureProjectionKey, Double > DEFAULT_SPLITTING_FEATURE_PENALTIES = new HashMap<>();
 
 	/**
 	 * Key for the parameter specifying the factor used to compute alternative
@@ -194,11 +195,12 @@ public class LinkerKeys
 	public static final double DEFAULT_POSITION_SIGMA = DEFAULT_MAX_SEARCH_RADIUS / 10.;
 
 	/**
-	 * Key for the parameter that specifies whether linking should occur only on the
-	 * content of the selection model. If <code>false</code>, linking will be
-	 * performed on the whole model between the time-points specified by
+	 * Key for the parameter that specifies whether linking should occur only on
+	 * the content of the selection model. If <code>false</code>, linking will
+	 * be performed on the whole model between the time-points specified by
 	 * {@link DetectorKeys#KEY_MIN_TIMEPOINT} and
-	 * {@link DetectorKeys#KEY_MAX_TIMEPOINT}. Expected values are {@link Boolean}s.
+	 * {@link DetectorKeys#KEY_MAX_TIMEPOINT}. Expected values are
+	 * {@link Boolean}s.
 	 */
 	public static final String KEY_DO_LINK_SELECTION = "DO_LINK_SELECTION";
 

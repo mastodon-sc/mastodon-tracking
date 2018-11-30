@@ -25,10 +25,10 @@ import java.util.Map;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.collection.RefList;
 import org.mastodon.feature.FeatureModel;
+import org.mastodon.feature.FeatureProjectionKey;
 import org.mastodon.graph.Edge;
 import org.mastodon.graph.ReadOnlyGraph;
 import org.mastodon.graph.Vertex;
-import org.mastodon.linking.FeatureKey;
 import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.sequential.lap.costfunction.CostFunction;
 import org.mastodon.linking.sequential.lap.linker.SparseCostMatrix;
@@ -118,7 +118,7 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 		final Class< V > vertexClass = ( Class< V > ) graph.vertexRef().getClass();
 		// Gap closing.
 		@SuppressWarnings( "unchecked" )
-		final Map< FeatureKey, Double > gcFeaturePenalties = ( Map< FeatureKey, Double > ) settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES );
+		final Map< FeatureProjectionKey, Double > gcFeaturePenalties = ( Map< FeatureProjectionKey, Double > ) settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES );
 		final CostFunction< V, V > gcCostFunction = LinkingUtils.getCostFunctionFor( gcFeaturePenalties, featureModel, vertexClass );
 		final int maxFrameInterval = ( Integer ) settings.get( KEY_GAP_CLOSING_MAX_FRAME_GAP );
 		final double gcMaxDistance = ( Double ) settings.get( KEY_GAP_CLOSING_MAX_DISTANCE );
@@ -127,7 +127,7 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 
 		// Merging
 		@SuppressWarnings( "unchecked" )
-		final Map< FeatureKey, Double > mFeaturePenalties = ( Map< FeatureKey, Double > ) settings.get( KEY_MERGING_FEATURE_PENALTIES );
+		final Map< FeatureProjectionKey, Double > mFeaturePenalties = ( Map< FeatureProjectionKey, Double > ) settings.get( KEY_MERGING_FEATURE_PENALTIES );
 		final CostFunction< V, V > mCostFunction = LinkingUtils.getCostFunctionFor( mFeaturePenalties, featureModel, vertexClass );
 		final double mMaxDistance = ( Double ) settings.get( KEY_MERGING_MAX_DISTANCE );
 		final double mCostThreshold = mMaxDistance * mMaxDistance;
@@ -135,7 +135,7 @@ public class JaqamanSegmentCostMatrixCreator< V extends Vertex< E > & HasTimepoi
 
 		// Splitting
 		@SuppressWarnings( "unchecked" )
-		final Map< FeatureKey, Double > sFeaturePenalties = ( Map< FeatureKey, Double > ) settings.get( KEY_SPLITTING_FEATURE_PENALTIES );
+		final Map< FeatureProjectionKey, Double > sFeaturePenalties = ( Map< FeatureProjectionKey, Double > ) settings.get( KEY_SPLITTING_FEATURE_PENALTIES );
 		final CostFunction< V, V > sCostFunction = LinkingUtils.getCostFunctionFor( sFeaturePenalties, featureModel, vertexClass );
 		final boolean allowSplitting = ( Boolean ) settings.get( KEY_ALLOW_TRACK_SPLITTING );
 		final double sMaxDistance = ( Double ) settings.get( KEY_SPLITTING_MAX_DISTANCE );

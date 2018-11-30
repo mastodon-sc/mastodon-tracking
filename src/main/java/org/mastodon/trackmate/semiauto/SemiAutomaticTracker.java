@@ -125,19 +125,8 @@ public class SemiAutomaticTracker
 		 * register them.
 		 */
 
-		DetectionQualityFeature qualityFeature = ( DetectionQualityFeature ) model.getFeatureModel().getFeature( DetectionQualityFeature.KEY );
-		if ( null == qualityFeature )
-		{
-			qualityFeature = new DetectionQualityFeature( graph.vertices().getRefPool() );
-			model.getFeatureModel().declareFeature( qualityFeature.featureSpec(), qualityFeature );
-		}
-
-		LinkCostFeature linkCostFeature = ( LinkCostFeature ) model.getFeatureModel().getFeature( LinkCostFeature.KEY );
-		if ( null == linkCostFeature )
-		{
-			linkCostFeature = new LinkCostFeature( graph.edges().getRefPool() );
-			model.getFeatureModel().declareFeature( linkCostFeature.featureSpec(), linkCostFeature );
-		}
+		final DetectionQualityFeature qualityFeature = DetectionQualityFeature.getOrRegister( model.getFeatureModel(), graph.vertices().getRefPool() );
+		final LinkCostFeature linkCostFeature = LinkCostFeature.getOrRegister( model.getFeatureModel(), graph.edges().getRefPool() );
 
 		/*
 		 * Check settings map.

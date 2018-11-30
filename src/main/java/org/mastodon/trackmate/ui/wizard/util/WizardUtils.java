@@ -96,9 +96,10 @@ public class WizardUtils
 		return nSpots;
 	}
 
-	public static final ChartPanel createQualityHistogram(final Model model)
+	public static final ChartPanel createQualityHistogram( final Model model )
 	{
-		final DetectionQualityFeature qFeature = ( DetectionQualityFeature ) model.getFeatureModel().getFeature( DetectionQualityFeature.KEY );
+		final DetectionQualityFeature qFeature =
+				DetectionQualityFeature.getOrRegister( model.getFeatureModel(), model.getGraph().vertices().getRefPool() );
 		final double[] values = qFeature.values();
 		if ( values.length == 0 )
 			return null;

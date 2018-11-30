@@ -4,7 +4,7 @@ import java.util.Map;
 
 import org.mastodon.feature.FeatureModel;
 import org.mastodon.feature.FeatureProjection;
-import org.mastodon.linking.FeatureKey;
+import org.mastodon.feature.FeatureProjectionKey;
 import org.mastodon.linking.LinkingUtils;
 
 import net.imglib2.RealLocalizable;
@@ -45,9 +45,9 @@ public class FeaturePenaltiesCostFunction< V extends RealLocalizable > implement
 {
 	private final Map< FeatureProjection< V >, Double > projections;
 
-	public FeaturePenaltiesCostFunction( final Map< FeatureKey, Double > featurePenalties, final FeatureModel featureModel, final Class< V > clazz )
+	public FeaturePenaltiesCostFunction( final Map< FeatureProjectionKey, Double > featurePenalties, final FeatureModel featureModel )
 	{
-		this.projections = LinkingUtils.penaltyToProjectionMap( featurePenalties, featureModel, clazz );
+		this.projections = LinkingUtils.penaltyToProjectionMap( featurePenalties, featureModel );
 	}
 
 	@Override

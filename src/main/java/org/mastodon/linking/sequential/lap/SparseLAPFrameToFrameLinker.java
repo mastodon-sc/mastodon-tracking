@@ -22,8 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.mastodon.collection.RefDoubleMap;
 import org.mastodon.collection.RefRefMap;
+import org.mastodon.feature.FeatureProjectionKey;
 import org.mastodon.linking.EdgeCreator;
-import org.mastodon.linking.FeatureKey;
 import org.mastodon.linking.LinkingUtils;
 import org.mastodon.linking.sequential.AbstractSequentialParticleLinkerOp;
 import org.mastodon.linking.sequential.lap.costfunction.CostFunction;
@@ -128,7 +128,7 @@ public class SparseLAPFrameToFrameLinker< V extends HasTimepoint & RealLocalizab
 
 		// Prepare cost function
 		@SuppressWarnings( "unchecked" )
-		final Map< FeatureKey, Double > featurePenalties = ( Map< FeatureKey, Double > ) settings.get( KEY_LINKING_FEATURE_PENALTIES );
+		final Map< FeatureProjectionKey, Double > featurePenalties = ( Map< FeatureProjectionKey, Double > ) settings.get( KEY_LINKING_FEATURE_PENALTIES );
 		@SuppressWarnings( "unchecked" )
 		final Class< V > vertexClass = ( Class< V > ) refcol.createRef().getClass();
 		final CostFunction< V, V > costFunction = LinkingUtils.getCostFunctionFor( featurePenalties, featureModel, vertexClass );

@@ -61,6 +61,8 @@ import javax.swing.table.TableModel;
 import org.mastodon.feature.Feature;
 import org.mastodon.feature.FeatureModel;
 import org.mastodon.feature.FeatureProjection;
+import org.mastodon.feature.FeatureProjectionKey;
+import org.mastodon.feature.FeatureSpec;
 import org.mastodon.linking.sequential.lap.costfunction.CostFunction;
 import org.mastodon.linking.sequential.lap.costfunction.FeaturePenaltiesCostFunction;
 import org.mastodon.linking.sequential.lap.costfunction.SquareDistCostFunction;
@@ -76,13 +78,13 @@ public class LinkingUtils
 	 * STATIC METHODS - UTILS
 	 */
 
-	public static final < V extends RealLocalizable > CostFunction< V, V > getCostFunctionFor( final Map< FeatureKey, Double > featurePenalties, final FeatureModel featureModel, final Class< V > vertexClass )
+	public static final < V extends RealLocalizable > CostFunction< V, V > getCostFunctionFor( final Map< FeatureProjectionKey, Double > featurePenalties, final FeatureModel featureModel, final Class< V > vertexClass )
 	{
 		final CostFunction< V, V > costFunction;
 		if ( null == featurePenalties || featurePenalties.isEmpty() )
-			costFunction = new SquareDistCostFunction< >();
+			costFunction = new SquareDistCostFunction<>();
 		else
-			costFunction = new FeaturePenaltiesCostFunction<>( featurePenalties, featureModel, vertexClass );
+			costFunction = new FeaturePenaltiesCostFunction<>( featurePenalties, featureModel );
 		return costFunction;
 	}
 
@@ -122,16 +124,13 @@ public class LinkingUtils
 		return settings;
 	}
 
-	public static < V > Map< FeatureProjection< V >, Double > penaltyToProjectionMap( final Map< FeatureKey, Double > penalties, final FeatureModel featureModel, final Class< V > clazz )
+	public static < V > Map< FeatureProjection< V >, Double > penaltyToProjectionMap( final Map< FeatureProjectionKey, Double > penalties, final FeatureModel featureModel )
 	{
 		final Map< FeatureProjection< V >, Double > projections = new HashMap<>();
-
-		for ( final FeatureKey key : penalties.keySet() )
+		for ( final FeatureProjectionKey key : penalties.keySet() )
 		{
-			final Feature< ? > feature = featureModel.getFeature( key.featureKey );
-
 			@SuppressWarnings( "unchecked" )
-			final FeatureProjection< V > projection = ( FeatureProjection< V > ) feature.project( key.projectionKey );
+			final FeatureProjection< V > projection = ( FeatureProjection< V > ) getFeatureProjectionFromKey( key, featureModel );
 			if ( null == projection )
 				continue;
 
@@ -277,7 +276,7 @@ public class LinkingUtils
 		final Set fpKeys = fpMap.keySet();
 		for ( final Object fpKey : fpKeys )
 		{
-			if ( !( fpKey instanceof FeatureKey ) )
+			if ( !( fpKey instanceof FeatureProjectionKey ) )
 			{
 				ok = false;
 				errorHolder.append( "One key (" + fpKey.toString() + ") in the map is not of the right class.\n" +
@@ -564,7 +563,7 @@ public class LinkingUtils
 	 *
 	 * If one of the feature value cannot be found, this method returns
 	 * {@link Double#NaN}.
-	 * 
+	 *
 	 * @param <V>
 	 *            the type of vertices.
 	 * @param source
@@ -587,18 +586,23 @@ public class LinkingUtils
 			return Math.abs( a - b ) / ( Math.abs( a + b ) / 2 );
 	}
 
+	public static FeatureProjection< ? > getFeatureProjectionFromKey(final FeatureProjectionKey fk, final FeatureModel featureModel )
+	{
+		for ( final FeatureSpec< ?, ? > featureSpec : featureModel.getFeatureSpecs() )
+		{
+			final Feature< ? > feature = featureModel.getFeature( featureSpec );
+			for ( final FeatureProjection< ? > featureProjection : feature.projections() )
+				if (featureProjection.getKey().equals( fk ))
+					return featureProjection;
+		}
+		return null;
+	}
+
+	public static boolean isFeatureInModel( final FeatureProjectionKey fk, final FeatureModel featureModel )
+	{
+		return getFeatureProjectionFromKey( fk, featureModel ) != null;
+	}
+
 	private LinkingUtils()
 	{}
-
-	public static boolean isFeatureInModel( final FeatureKey fk, final FeatureModel featureModel )
-	{
-		final Feature< ? > feature = featureModel.getFeature( fk.featureKey );
-		if ( null == feature )
-			return false;
-		for ( final String projectionKey : feature.projectionKeys() )
-			if ( fk.projectionKey.equals( projectionKey ) )
-				return true;
-
-		return false;
-	}
 }
