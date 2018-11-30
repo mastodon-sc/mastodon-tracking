@@ -719,6 +719,8 @@ public class LAPLinkerConfigPanel extends JPanel
 		{
 			final Feature< ? > feature = featureModel.getFeature( featureSpec );
 			final Set< ? > projections = feature.projections();
+			if ( null == projections )
+				continue;
 			for ( final Object projection : projections )
 				featureKeys.add( ( ( FeatureProjection< ? > ) projection ).getKey() );
 		}

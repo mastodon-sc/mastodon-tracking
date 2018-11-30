@@ -591,6 +591,8 @@ public class LinkingUtils
 		for ( final FeatureSpec< ?, ? > featureSpec : featureModel.getFeatureSpecs() )
 		{
 			final Feature< ? > feature = featureModel.getFeature( featureSpec );
+			if ( null == feature.projections() )
+				continue;
 			for ( final FeatureProjection< ? > featureProjection : feature.projections() )
 				if (featureProjection.getKey().equals( fk ))
 					return featureProjection;
