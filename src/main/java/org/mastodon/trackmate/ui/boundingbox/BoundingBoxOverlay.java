@@ -14,6 +14,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
 
+import net.imglib2.FinalRealInterval;
 import net.imglib2.Interval;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -147,7 +148,8 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		final GeneralPath back = new GeneralPath();
 		final GeneralPath intersection = new GeneralPath();
 
-		final RealInterval interval = bbSource.getInterval();
+		final RealInterval bbInterval = bbSource.getInterval();
+		final RealInterval interval = enlarge( bbInterval );
 		final double ox = canvasWidth / 2;
 		final double oy = canvasHeight / 2;
 		synchronized ( viewerTransform )
@@ -206,6 +208,28 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 				}
 			}
 		}
+	}
+
+	/**
+	 * Enlarges the specified interval by +/- 0.5 to have bounds that fully
+	 * encompasses pixels inside the bounding-box.
+	 * 
+	 * @param interval
+	 *            the interval to enlarge.
+	 * @return a new, enlarged interval.
+	 */
+	private static final RealInterval enlarge( final RealInterval interval )
+	{
+		final double[] min = new double[ interval.numDimensions() ];
+		interval.realMin( min );
+		for ( int d = 0; d < min.length; d++ )
+			min[ d ] -= 0.5;
+		final double[] max = new double[ interval.numDimensions() ];
+		interval.realMax( max );
+		for ( int d = 0; d < max.length; d++ )
+			max[ d ] += 0.5;
+
+		return new FinalRealInterval( min, max );
 	}
 
 	@Override
