@@ -387,10 +387,18 @@ public class SemiAutomaticTracker
 
 						// Yes.
 						final Link edge;
-						if ( forward )
-							edge = graph.addEdge( source, target, eref ).init();
-						else
-							edge = graph.addEdge( target, source, eref ).init();
+						graph.getLock().writeLock().lock();
+						try
+						{
+							if ( forward )
+								edge = graph.addEdge( source, target, eref ).init();
+							else
+								edge = graph.addEdge( target, source, eref ).init();
+						}
+						finally
+						{
+							graph.getLock().writeLock().unlock();
+						}
 						graph.notifyGraphChanged();
 
 						final double cost = distance * distance;
@@ -425,14 +433,25 @@ public class SemiAutomaticTracker
 					 * We do NOT have an existing spot near out candidate.
 					 */
 
-					final Spot vref = graph.vertexRef();
-					final Link eref = graph.edgeRef();
-					target = graph.addVertex( vref ).init( tp, pos, radius );
+					graph.getLock().writeLock().lock();
 					final Link edge;
-					if ( forward )
-						edge = graph.addEdge( source, target, eref ).init();
-					else
-						edge = graph.addEdge( target, source, eref ).init();
+					try
+					{
+						final Spot vref = graph.vertexRef();
+						final Link eref = graph.edgeRef();
+						target = graph.addVertex( vref ).init( tp, pos, radius );
+						if ( forward )
+							edge = graph.addEdge( source, target, eref ).init();
+						else
+							edge = graph.addEdge( target, source, eref ).init();
+
+						graph.releaseRef( eref );
+						graph.releaseRef( vref );
+					}
+					finally
+					{
+						graph.getLock().writeLock().unlock();
+					}
 					graph.notifyGraphChanged();
 
 					double cost = 0.;
@@ -456,8 +475,6 @@ public class SemiAutomaticTracker
 						focusModel.focusVertex( target );
 
 					source.refTo( target );
-					graph.releaseRef( eref );
-					graph.releaseRef( vref );
 				}
 
 			}
