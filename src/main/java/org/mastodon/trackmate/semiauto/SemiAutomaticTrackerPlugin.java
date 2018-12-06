@@ -223,8 +223,10 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 					navigationHandler,
 					selectionModel,
 					subLogger );
-			tracker.compute( spots, settings, model );
-			subLogger.removeLogListener( loggingPanel );
+			new Thread( () -> {
+				tracker.compute( spots, settings, model );
+				subLogger.removeLogListener( loggingPanel );
+			}, "Mastodon semi-auto tracking" ).start();
 		}
 	};
 
