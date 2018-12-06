@@ -434,19 +434,16 @@ public class SemiAutomaticTracker
 					 */
 
 					graph.getLock().writeLock().lock();
+					final Link eref = graph.edgeRef();
+					final Spot vref = graph.vertexRef();
 					final Link edge;
 					try
 					{
-						final Spot vref = graph.vertexRef();
-						final Link eref = graph.edgeRef();
 						target = graph.addVertex( vref ).init( tp, pos, radius );
 						if ( forward )
 							edge = graph.addEdge( source, target, eref ).init();
 						else
 							edge = graph.addEdge( target, source, eref ).init();
-
-						graph.releaseRef( eref );
-						graph.releaseRef( vref );
 					}
 					finally
 					{
@@ -475,8 +472,9 @@ public class SemiAutomaticTracker
 						focusModel.focusVertex( target );
 
 					source.refTo( target );
+					graph.releaseRef( eref );
+					graph.releaseRef( vref );
 				}
-
 			}
 
 			log.info( " - Finished semi-automatic tracking for spot " + first.getLabel() + "." );
