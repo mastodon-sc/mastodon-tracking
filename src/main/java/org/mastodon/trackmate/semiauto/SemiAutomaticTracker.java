@@ -391,16 +391,17 @@ public class SemiAutomaticTracker
 							edge = graph.addEdge( source, target, eref ).init();
 						else
 							edge = graph.addEdge( target, source, eref ).init();
+						graph.notifyGraphChanged();
 
 						final double cost = distance * distance;
 						log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
 								source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint(), cost ) );
 						linkCostFeature.set( edge, cost );
 
-						if ( null != focusModel )
-							focusModel.focusVertex( target );
 						if ( null != navigationHandler )
 							navigationHandler.notifyNavigateToVertex( target );
+						if ( null != focusModel )
+							focusModel.focusVertex( target );
 					}
 					else
 					{
@@ -432,6 +433,7 @@ public class SemiAutomaticTracker
 						edge = graph.addEdge( source, target, eref ).init();
 					else
 						edge = graph.addEdge( target, source, eref ).init();
+					graph.notifyGraphChanged();
 
 					double cost = 0.;
 					for ( int d = 0; d < 3; d++ )
@@ -445,20 +447,19 @@ public class SemiAutomaticTracker
 					linkCostFeature.set( edge, cost );
 					qualityFeature.set( target, quality );
 
-					// Select new spot.
+					// Select, focus and navigate to new spot.
+					if ( null != navigationHandler )
+						navigationHandler.notifyNavigateToVertex( target );
 					if ( null != selectionModel )
 						selectionModel.setSelected( target, true );
 					if ( null != focusModel )
 						focusModel.focusVertex( target );
-					if ( null != navigationHandler )
-						navigationHandler.notifyNavigateToVertex( target );
 
 					source.refTo( target );
 					graph.releaseRef( eref );
 					graph.releaseRef( vref );
 				}
 
-				graph.notifyGraphChanged();
 			}
 
 			log.info( " - Finished semi-automatic tracking for spot " + first.getLabel() + "." );
