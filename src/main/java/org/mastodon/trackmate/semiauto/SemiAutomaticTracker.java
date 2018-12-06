@@ -30,6 +30,7 @@ import org.mastodon.detection.DetectorOp;
 import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.detection.mamut.DetectionQualityFeature;
 import org.mastodon.linking.mamut.LinkCostFeature;
+import org.mastodon.model.FocusModel;
 import org.mastodon.model.NavigationHandler;
 import org.mastodon.model.SelectionModel;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
@@ -75,11 +76,14 @@ public class SemiAutomaticTracker
 	@Parameter( type = ItemIO.INPUT )
 	private SharedBigDataViewerData data;
 
-	@Parameter
+	@Parameter( required = false )
 	private NavigationHandler< Spot, Link > navigationHandler;
 
-	@Parameter
+	@Parameter( required = false )
 	private SelectionModel< Spot, Link > selectionModel;
+
+	@Parameter( required = false )
+	private FocusModel< Spot, Link > focusModel;
 
 	@Parameter( required = false )
 	private Logger log;
@@ -393,6 +397,8 @@ public class SemiAutomaticTracker
 								source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint(), cost ) );
 						linkCostFeature.set( edge, cost );
 
+						if ( null != focusModel )
+							focusModel.focusVertex( target );
 						if ( null != navigationHandler )
 							navigationHandler.notifyNavigateToVertex( target );
 					}
@@ -439,12 +445,13 @@ public class SemiAutomaticTracker
 					linkCostFeature.set( edge, cost );
 					qualityFeature.set( target, quality );
 
-					if ( null != navigationHandler )
-						navigationHandler.notifyNavigateToVertex( target );
-
 					// Select new spot.
 					if ( null != selectionModel )
 						selectionModel.setSelected( target, true );
+					if ( null != focusModel )
+						focusModel.focusVertex( target );
+					if ( null != navigationHandler )
+						navigationHandler.notifyNavigateToVertex( target );
 
 					source.refTo( target );
 					graph.releaseRef( eref );

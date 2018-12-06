@@ -18,6 +18,7 @@ import org.mastodon.app.ui.ViewMenuBuilder.MenuItem;
 import org.mastodon.app.ui.settings.SettingsPanel;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.grouping.GroupHandle;
+import org.mastodon.model.FocusModel;
 import org.mastodon.model.NavigationHandler;
 import org.mastodon.model.SelectionModel;
 import org.mastodon.plugin.MastodonPlugin;
@@ -206,6 +207,7 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 			subLogger.addLogListener( loggingPanel );
 
 			final SelectionModel< Spot, Link > selectionModel = appModel.getAppModel().getSelectionModel();
+			final FocusModel< Spot, Link > focusModel = appModel.getAppModel().getFocusModel();
 			final Collection< Spot > selectedSpots = selectionModel.getSelectedVertices();
 			final Collection< Spot > spots = RefCollections.createRefList(
 					appModel.getAppModel().getModel().getGraph().vertices(), selectedSpots.size() );
@@ -222,6 +224,7 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 					data,
 					navigationHandler,
 					selectionModel,
+					focusModel,
 					subLogger );
 			new Thread( () -> {
 				tracker.compute( spots, settings, model );
