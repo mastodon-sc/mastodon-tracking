@@ -46,6 +46,7 @@ import org.mastodon.revised.model.mamut.Model;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.ModelOverlayProperties;
 import org.mastodon.revised.model.mamut.Spot;
+import org.mastodon.revised.ui.coloring.DefaultGraphColorGenerator;
 import org.mastodon.revised.ui.keymap.Keymap;
 import org.mastodon.revised.ui.keymap.KeymapManager;
 import org.mastodon.spatial.SpatialIndex;
@@ -266,7 +267,8 @@ public class WizardUtils
 					viewGraph,
 					highlightModelAdapter,
 					focusModelAdapter,
-					selectionModelAdapter );
+					selectionModelAdapter,
+					new DefaultGraphColorGenerator<>() );
 			viewer.getDisplay().addOverlayRenderer( tracksOverlay );
 			viewer.addRenderTransformListener( tracksOverlay );
 			viewer.addTimePointListener( tracksOverlay );
