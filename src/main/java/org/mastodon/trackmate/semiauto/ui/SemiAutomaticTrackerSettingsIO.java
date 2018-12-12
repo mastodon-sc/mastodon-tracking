@@ -82,7 +82,7 @@ public class SemiAutomaticTrackerSettingsIO
 			mapping.put( "allowIfOutgoingLinks", s.allowIfOutgoingLinks() );
 			mapping.put( "continueIfLinked", s.continueIfLinked() );
 
-			final Node node = representMapping( getTag(), mapping, false );
+			final Node node = representMapping( getTag(), mapping, getDefaultFlowStyle() );
 			return node;
 		}
 	}
