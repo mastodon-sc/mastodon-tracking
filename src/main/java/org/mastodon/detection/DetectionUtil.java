@@ -80,7 +80,7 @@ public class DetectionUtil
 	 */
 	public static final boolean isPresent( final List< SourceAndConverter< ? > > sources, final int setup, final int timepoint )
 	{
-		return  sources.get( setup ).getSpimSource().isPresent( timepoint );
+		return sources.get( setup ).getSpimSource().isPresent( timepoint );
 	}
 
 	/**
@@ -92,7 +92,7 @@ public class DetectionUtil
 	 *            the image to test presence of.
 	 * @return <code>true</code> if the image is not really there.
 	 */
-	public static final boolean isReallyPresent(final RandomAccessibleInterval< ? > img)
+	public static final boolean isReallyPresent( final RandomAccessibleInterval< ? > img )
 	{
 		final long[] dims = new long[ img.numDimensions() ];
 		img.dimensions( dims );
@@ -113,7 +113,7 @@ public class DetectionUtil
 	 * 0.
 	 *
 	 * @param sources
-	 *           the image data.
+	 *            the image data.
 	 * @param size
 	 *            the size of an object measured at resolution level 0, <b>in
 	 *            physical units</b>.
@@ -291,7 +291,7 @@ public class DetectionUtil
 	{
 		final FloatType val = new FloatType();
 		val.setReal( threshold );
-		final LocalNeighborhoodCheck< Point, FloatType > localNeighborhoodCheck = new LocalExtrema.MaximumCheck< >( val );
+		final LocalNeighborhoodCheck< Point, FloatType > localNeighborhoodCheck = new LocalExtrema.MaximumCheck<>( val );
 		final IntervalView< FloatType > extended = Views.interval( Views.extendMirrorSingle( source ), Intervals.expand( source, 1 ) );
 		final RectangleShape shape = new RectangleShape( 1, true );
 		final int numTasks = Runtime.getRuntime().availableProcessors() / 2;
@@ -315,7 +315,7 @@ public class DetectionUtil
 	 */
 	public static final Map< String, Object > getDefaultDetectorSettingsMap()
 	{
-		final Map< String, Object > settings = new HashMap< >();
+		final Map< String, Object > settings = new HashMap<>();
 		settings.put( KEY_MIN_TIMEPOINT, DEFAULT_MIN_TIMEPOINT );
 		settings.put( KEY_MAX_TIMEPOINT, DEFAULT_MAX_TIMEPOINT );
 		settings.put( KEY_SETUP_ID, DEFAULT_SETUP_ID );
@@ -355,13 +355,13 @@ public class DetectionUtil
 //		ok = ok & checkParameter( settings, KEY_ADD_BEHAVIOR, String.class, errorHolder );
 
 		// Check key presence.
-		final List< String > mandatoryKeys = new ArrayList< >();
+		final List< String > mandatoryKeys = new ArrayList<>();
 		mandatoryKeys.add( KEY_SETUP_ID );
 		mandatoryKeys.add( KEY_MIN_TIMEPOINT );
 		mandatoryKeys.add( KEY_MAX_TIMEPOINT );
 		mandatoryKeys.add( KEY_RADIUS );
 		mandatoryKeys.add( KEY_THRESHOLD );
-		final List< String > optionalKeys = new ArrayList< >();
+		final List< String > optionalKeys = new ArrayList<>();
 		optionalKeys.add( KEY_ADD_BEHAVIOR );
 		optionalKeys.add( KEY_ROI );
 		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, errorHolder );
@@ -379,16 +379,17 @@ public class DetectionUtil
 		return ok;
 	}
 
-	public static List< SourceAndConverter< ? > > loadData( final String bdvFile) throws SpimDataException
+	public static List< SourceAndConverter< ? > > loadData( final String bdvFile ) throws SpimDataException
 	{
-		// Try to emulate what SharedBigDataViewerData does, without the viewer thingies.
+		// Try to emulate what SharedBigDataViewerData does, without the viewer
+		// thingies.
 		final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( bdvFile );
 		final ArrayList< ConverterSetup > converterSetups = new ArrayList<>();
-		final ArrayList<SourceAndConverter< ? >> sources = new ArrayList<>();
+		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList<>();
 		BigDataViewer.initSetups( spimData, converterSetups, sources );
 		// Manual transformation.
 		final ManualTransformation manualTransformation = new ManualTransformation( sources );
-		if( bdvFile.startsWith( "http://" ) )
+		if ( bdvFile.startsWith( "http://" ) )
 		{
 			// load settings.xml from the BigDataServer
 			final String settings = bdvFile + "settings";
