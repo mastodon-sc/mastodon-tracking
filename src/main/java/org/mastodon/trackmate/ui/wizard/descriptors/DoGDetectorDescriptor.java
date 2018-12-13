@@ -112,6 +112,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 
 		final DoGDetectorPanel panel = ( DoGDetectorPanel ) targetPanel;
 		panel.preview.setEnabled( false );
+		final JLabelLogger previewLogger = new JLabelLogger( panel.lblInfo );
 		new Thread( "DogDetectorPanel preview thread" )
 		{
 			@Override
@@ -120,7 +121,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 				try
 				{
 					grabSettings();
-					final boolean ok = WizardUtils.executeDetectionPreview( localModel, settings, ops, currentTimepoint, logger, statusService );
+					final boolean ok = WizardUtils.executeDetectionPreview( localModel, settings, ops, currentTimepoint, previewLogger, statusService );
 					if ( !ok )
 						return;
 

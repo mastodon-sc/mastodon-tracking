@@ -1,7 +1,14 @@
 package org.mastodon.trackmate.ui.wizard.descriptors;
 
+import static org.mastodon.trackmate.ui.wizard.descriptors.LogPanel.ERROR_COLOR;
+import static org.mastodon.trackmate.ui.wizard.descriptors.LogPanel.NORMAL_COLOR;
+import static org.mastodon.trackmate.ui.wizard.descriptors.LogPanel.WARN_COLOR;
+
+import java.awt.Color;
 import java.util.Collection;
 import java.util.Map;
+
+import javax.swing.JLabel;
 
 import org.mastodon.detection.mamut.SpotDetectorOp;
 import org.mastodon.revised.mamut.WindowManager;
@@ -10,11 +17,15 @@ import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 import org.scijava.Context;
 import org.scijava.Contextual;
 import org.scijava.NullContextException;
+import org.scijava.log.AbstractLogService;
+import org.scijava.log.LogLevel;
+import org.scijava.log.LogMessage;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.SciJavaPlugin;
 
 public abstract class SpotDetectorDescriptor extends WizardPanelDescriptor implements SciJavaPlugin, Contextual
 {
+
 	@Parameter
 	private Context context;
 
@@ -52,4 +63,35 @@ public abstract class SpotDetectorDescriptor extends WizardPanelDescriptor imple
 	 * @return a default settings map.
 	 */
 	public abstract Map< String, Object > getDefaultSettings();
+
+	protected final static class JLabelLogger extends AbstractLogService
+	{
+
+		private final JLabel lbl;
+
+		protected JLabelLogger( final JLabel lbl )
+		{
+			this.lbl = lbl;
+		}
+
+		@Override
+		protected void messageLogged( final LogMessage message )
+		{
+			lbl.setText( message.text() );
+			final Color fg;
+			switch ( message.level() )
+			{
+			default:
+				fg = NORMAL_COLOR;
+				break;
+			case LogLevel.ERROR:
+				fg = ERROR_COLOR;
+				break;
+			case LogLevel.WARN:
+				fg = WARN_COLOR;
+				break;
+			}
+			lbl.setForeground( fg );
+		}
+	}
 }

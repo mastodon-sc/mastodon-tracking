@@ -53,7 +53,6 @@ import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.trackmate.Settings;
 import org.mastodon.trackmate.TrackMate;
 import org.scijava.app.StatusService;
-import org.scijava.log.LogService;
 import org.scijava.log.Logger;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.behaviour.util.Behaviours;
@@ -202,8 +201,7 @@ public class WizardUtils
 
 		if ( !ok )
 		{
-			final LogService log = ops.getContext().getService( LogService.class );
-			log.error( "Detection failed:\n" + trackmate.getErrorMessage() );
+			logger.error( "Detection failed:\n" + trackmate.getErrorMessage() );
 			return false;
 		}
 		return true;
