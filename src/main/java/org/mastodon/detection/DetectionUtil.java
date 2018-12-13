@@ -103,11 +103,68 @@ public class DetectionUtil
 	 * Determines the optimal resolution level for detection of an object of a
 	 * given size (in physical units).
 	 * <p>
-	 * This optimal resolution is the largest resolution level for which an
-	 * object with the specified size (measured at level 0) has an actual size
-	 * in pixels at least larger the specified limit. The size here is specified
-	 * in <b>physical units</b>. The calibration information is retrieved from
-	 * the spimData to estimate the object size in pixel units.
+	 * The size here is specified in <b>physical units</b>. The calibration
+	 * information is retrieved from the spimData to estimate the object size in
+	 * pixel units.
+	 * <p>
+	 *
+	 * Typically, even with LSFMs, the Z sampling can be much lower than in X
+	 * and Y. The pixel size in Z is them much larger than in X and Y. For
+	 * instance on a 25x water objective imaging on a 2048x2048 sCMOS camera the
+	 * pixel size in X, Y and Z are respectively
+	 * <code>[ 0.35, 0.35, 1.5 ] µm</code>. This is going to be a common case
+	 * for microscopists using modern cameras.
+	 * <p>
+	 * There is a factor 4 between X and Z pixel sizes. The BDV conversion tool
+	 * picks this up correctly, and proposes the following mipmap scales:
+	 *
+	 * <pre>
+	 *0: [ 1 1 1
+	 *1:   2 2 1
+	 *2:   4 4 1
+	 *3:   8 8 2 ]
+	 * </pre>
+	 *
+	 * If we are to detect nuclei that are about 3µm in radius, we would like
+	 * them to have be at most 2.5 pixels in all directions at the optimal
+	 * resolution level.
+	 * <p>
+	 * This algorithm deals with this by doing the following:
+	 * <ul>
+	 * <li>Iterate to level i.
+	 * <li>Compute the size of object in all dimensions.
+	 * <li>Iterate to dimension d.
+	 * <li>If the size of object at this dimension is smaller than the limit,
+	 * then we stop at this level, but only if:
+	 * <ul>
+	 * <li>we lower the size of the object in this dimension even more (compared
+	 * with previous level).
+	 * <li>all dimensions are below the limit for the first time.
+	 * </ul>
+	 * </ul>
+	 * With the previous example, the algorithm performs as follow:
+	 * <ul>
+	 * <li>Iterate to level 0.
+	 * <li>At this level, the size of my object is <code>[ 9.6, 9.6, 2.0 ]
+	 * pixels</code>.
+	 * <li>The Z dimension has a size 2.0 pixels, below 2.5 pixels. But:
+	 * <ul>
+	 * <li>this is the first time,
+	 * <li>and the other dimensions are above the limit.
+	 * </ul>
+	 * <li>Iterate to level 1.
+	 * <li>At this level, the size of my object is
+	 * <code>[ 4.8, 4.8, 2.0 ] pixels</code>.
+	 * <li>The Z dimension has a size 2.0 pixels, below 2.5 pixels. But:
+	 * <ul>
+	 * <li>this is NOT the first time, but we did not decrease its size more.
+	 * <li>and the other dimensions are still above the limit.
+	 * </ul>
+	 * <li>Iterate to level 2.
+	 * <li>At this level, the size of my object is
+	 * <code>[ 2.4, 2.4, 2.0 ] pixels.</code>
+	 * <li>All dimensions are below the limit -> we stop there.
+	 * </ul>
 	 * <p>
 	 * If the data does not ship multiple resolution levels, this methods return
 	 * 0.
@@ -132,22 +189,72 @@ public class DetectionUtil
 	{
 		final int numMipmapLevels = sources.get( setup ).getSpimSource().getNumMipmapLevels();
 		int level = 0;
+		final double[] previousSizeInPix = new double[ 3 ];
+		Arrays.fill( previousSizeInPix, Double.POSITIVE_INFINITY );
+		final boolean[] belowLimit = new boolean[ 3 ];
+		Arrays.fill( belowLimit, false );
 		while ( level < numMipmapLevels - 1 )
 		{
 			/*
-			 * Scan all axes. The "worst" one is the one with the largest scale.
-			 * If at this scale the spot is too small, then we stop.
+			 * There is probably a more compact way to implement this algorithm,
+			 * but this one expresses what we have in mind.
 			 */
 
 			final double[] calibration = getPhysicalCalibration( sources, timepoint, setup, level );
-			final double scale = Util.max( calibration );
-			final double sizeInPix = size / scale;
-			if ( sizeInPix < minSizePixel )
+			final double[] sizeInPix = new double[ 3 ];
+			for ( int d = 0; d < sizeInPix.length; d++ )
+			{
+				sizeInPix[ d ] = size / calibration[ d ];
+				// Are we below the limit?
+				if ( sizeInPix[ d ] < minSizePixel )
+				{
+					// Yes! Was it the case the previous level?
+					if ( belowLimit[ d ] )
+					{
+						// Yes! But with this level, are we getting even
+						// smaller?
+						if ( sizeInPix[ d ] < previousSizeInPix[ d ] )
+						{
+							// Yes! This is not ok. We stop at the previous
+							// level.
+							break;
+						}
+						else
+						{
+							/*
+							 * No. But know we are. If the others dimensions are
+							 * fine we are fine, but we won't allow going
+							 * smaller than this.
+							 */
+						}
+					}
+					// Remember that we are below limit for this dimension.
+					belowLimit[ d ] = true;
+				}
+				else
+				{
+					// We are not below limit. Let's go deeper.
+				}
+				previousSizeInPix[ d ] = sizeInPix[ d ];
+			}
+			// Now that we check all dimensions, are they all below limit?
+			if ( isAllTrue( belowLimit ) )
+			{
+				// Yes! We stop there.
 				break;
+			}
 
 			level++;
 		}
 		return level;
+	}
+
+	private static final boolean isAllTrue( final boolean[] array )
+	{
+		for ( final boolean b : array )
+			if ( !b )
+				return false;
+		return true;
 	}
 
 	/**
