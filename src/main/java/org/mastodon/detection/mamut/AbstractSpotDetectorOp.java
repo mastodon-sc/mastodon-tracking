@@ -89,15 +89,25 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 				detectionCreator, sources, settings );
 		detector.setLogger( log );
 		detector.setStatusService( statusService );
-		detector.mutate1( detectionCreator, sources );
-
-		final long end = System.currentTimeMillis();
-		processingTime = end - start;
-		ok = detector.isSuccessful();
-		if ( !ok )
-			errorMessage = detector.getErrorMessage();
-
-		this.detector = null;
+		try
+		{
+			detector.mutate1( detectionCreator, sources );
+			ok = detector.isSuccessful();
+			if ( !ok )
+				errorMessage = detector.getErrorMessage();
+		}
+		catch ( final OutOfMemoryError oome )
+		{
+			errorMessage = "Not enough memory to process the image.";
+			ok = false;
+			return;
+		}
+		finally
+		{
+			final long end = System.currentTimeMillis();
+			processingTime = end - start;
+			this.detector = null;
+		}
 	}
 
 	@Override
