@@ -15,6 +15,8 @@ import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
 import org.scijava.Cancelable;
 import org.scijava.ItemIO;
+import org.scijava.app.StatusService;
+import org.scijava.log.Logger;
 import org.scijava.plugin.Parameter;
 
 import net.imagej.ops.special.inplace.AbstractBinaryInplace1Op;
@@ -25,6 +27,9 @@ public abstract class AbstractSpotLinkerOp
 		extends AbstractBinaryInplace1Op< ModelGraph, SpatioTemporalIndex< Spot > >
 		implements SpotLinkerOp, Benchmark
 {
+
+	@Parameter
+	protected StatusService statusService;
 
 	@Parameter( type = ItemIO.INPUT )
 	protected Map< String, Object > settings;
@@ -37,6 +42,9 @@ public abstract class AbstractSpotLinkerOp
 	 */
 	@Parameter( type = ItemIO.BOTH, required = false )
 	protected LinkCostFeature linkCostFeature;
+
+	@Parameter( required = false )
+	protected Logger logger;
 
 	protected long processingTime;
 
@@ -66,6 +74,8 @@ public abstract class AbstractSpotLinkerOp
 					graph, spots,
 					settings, featureModel,
 					spotComparator(), edgeCreator );
+			linker.setLogger( logger );
+			linker.setStatusService( statusService );
 			this.cancelable = linker;
 			linker.mutate1( graph, spots );
 
@@ -162,6 +172,18 @@ public abstract class AbstractSpotLinkerOp
 	public String getCancelReason()
 	{
 		return cancelReason;
+	}
+
+	@Override
+	public void setLogger( final Logger logger )
+	{
+		this.logger = logger;
+	}
+
+	@Override
+	public void setStatusService( final StatusService statusService )
+	{
+		this.statusService = statusService;
 	}
 
 	private static final Comparator< Spot > SPOT_COMPARATOR = new Comparator< Spot >()

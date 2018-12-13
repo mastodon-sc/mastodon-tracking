@@ -11,6 +11,7 @@ import org.mastodon.linking.EdgeCreator;
 import org.mastodon.spatial.SpatioTemporalIndex;
 import org.scijava.ItemIO;
 import org.scijava.app.StatusService;
+import org.scijava.log.Logger;
 import org.scijava.plugin.Parameter;
 
 import net.imagej.ops.special.inplace.AbstractBinaryInplace1Op;
@@ -35,6 +36,9 @@ public abstract class AbstractGraphParticleLinkerOp< V extends  Vertex< E > & Re
 
 	@Parameter( type = ItemIO.INPUT )
 	protected EdgeCreator< V > edgeCreator;
+
+	@Parameter( required = false )
+	protected Logger logger;
 
 	@Parameter( type = ItemIO.OUTPUT )
 	protected String errorMessage;
@@ -64,5 +68,17 @@ public abstract class AbstractGraphParticleLinkerOp< V extends  Vertex< E > & Re
 	public String getCancelReason()
 	{
 		return cancelReason;
+	}
+
+	@Override
+	public void setLogger( final Logger logger )
+	{
+		this.logger = logger;
+	}
+
+	@Override
+	public void setStatusService( final StatusService statusService )
+	{
+		this.statusService = statusService;
 	}
 }

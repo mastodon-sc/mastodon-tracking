@@ -231,6 +231,8 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 						linkerSettings,
 						model.getFeatureModel(),
 						linkCostFeature );
+		linker.setLogger( logger );
+		linker.setStatusService( statusService );
 
 		logger.info( "Particle-linking with " + linkerCl.getSimpleName() + '\n' );
 		this.currentOp = linker;
