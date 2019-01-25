@@ -17,14 +17,16 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import net.imglib2.FinalInterval;
+import net.imglib2.Interval;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.util.Intervals;
+import net.imglib2.util.Util;
+
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
 import org.mastodon.revised.mamut.WindowManager;
 import org.mastodon.trackmate.Settings;
-import org.mastodon.trackmate.ui.boundingbox.BoundingBoxEditor;
-import org.mastodon.trackmate.ui.boundingbox.BoundingBoxEditor.BoxSourceType;
-import org.mastodon.trackmate.ui.boundingbox.BoxModePanel;
-import org.mastodon.trackmate.ui.boundingbox.DefaultBoundingBoxModel;
 import org.mastodon.trackmate.ui.wizard.WizardLogService;
 import org.mastodon.trackmate.ui.wizard.WizardPanelDescriptor;
 import org.scijava.Context;
@@ -35,18 +37,17 @@ import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
 import bdv.tools.boundingbox.BoundingBoxUtil;
+import bdv.tools.boundingbox.BoxDisplayModePanel;
 import bdv.tools.boundingbox.BoxSelectionPanel;
+import bdv.tools.boundingbox.TransformedBoxEditor;
+import bdv.tools.boundingbox.TransformedBoxEditor.BoxSourceType;
+import bdv.tools.boundingbox.TransformedBoxModel;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.tools.brightness.SliderPanel;
-import bdv.util.BoundedValue;
+import bdv.util.BoundedInterval;
 import bdv.util.ModifiableInterval;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerPanel;
-import net.imglib2.FinalInterval;
-import net.imglib2.Interval;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.util.Intervals;
-import net.imglib2.util.Util;
 
 public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Contextual
 {
@@ -56,11 +57,11 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 
 	private final WindowManager wm;
 
-	private BoundingBoxEditor boundingBoxEditor;
+	private TransformedBoxEditor boundingBoxEditor;
 
 	private ViewerFrameMamut viewFrame;
 
-	private static class MyBoundingBoxModel extends DefaultBoundingBoxModel
+	private static class MyBoundingBoxModel extends TransformedBoxModel
 	{
 		private final Interval maxInterval;
 
@@ -129,7 +130,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		 */
 		roi = getBoundingBoxModel();
 		roi.intervalChangedListeners().add( () -> {
-			panel.boxSelectionPanel.updateSliders( roi.getInterval() );
+			panel.boxSelectionPanel.updateSliders( roi.box().getInterval() );
 			if ( viewFrame != null )
 				viewFrame.getViewerPanel().getDisplay().repaint();
 		} );
@@ -137,20 +138,20 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		/*
 		 * We also have to recreate the selection panel linked to the new ROI.
 		 */
-		panel.boxSelectionPanel = new BoxSelectionPanel( roi, roi.getMaxInterval() );
+		panel.boxSelectionPanel = new BoxSelectionPanel( roi.box(), roi.getMaxInterval() );
 
 		/*
 		 * We reset time bounds.
 		 */
 
-		final int nTimepoints = wm.getAppModel().getMaxTimepoint() - wm.getAppModel().getMinTimepoint();
+		final int t0 = wm.getAppModel().getMinTimepoint();
+		final int t1 = wm.getAppModel().getMaxTimepoint();
+		panel.intervalT = new BoundedInterval( t0, t1, t0, t1, 0 );
 
-		panel.minT = new BoundedValue( 0, nTimepoints, 0 );
-		final SliderPanel tMinPanel = new SliderPanel( "t min", panel.minT, 1 );
+		final SliderPanel tMinPanel = new SliderPanel( "t min", panel.intervalT.getMinBoundedValue(), 1 );
 		tMinPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
 
-		panel.maxT = new BoundedValue( 0, nTimepoints, nTimepoints );
-		final SliderPanel tMaxPanel = new SliderPanel( "t max", panel.maxT, 1 );
+		final SliderPanel tMaxPanel = new SliderPanel( "t max", panel.intervalT.getMaxBoundedValue(), 1 );
 		tMaxPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
 
 		panel.boundsPanel.removeAll();
@@ -162,11 +163,11 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		setPanelEnabled( panel.boxModePanel, panel.useRoi.isSelected() );
 
 		panel.boxSelectionPanel.setBoundsInterval( roi.getMaxInterval() );
-		panel.boxSelectionPanel.updateSliders( roi.getInterval() );
+		panel.boxSelectionPanel.updateSliders( roi.box().getInterval() );
 
 		previousSetupID = setupID;
-		panel.minT.setCurrentValue( ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT ) );
-		panel.maxT.setCurrentValue( ( int ) settings.values.getDetectorSettings().get( KEY_MAX_TIMEPOINT ) );
+		panel.intervalT.getMinBoundedValue().setCurrentValue( ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT ) );
+		panel.intervalT.getMaxBoundedValue().setCurrentValue( ( int ) settings.values.getDetectorSettings().get( KEY_MAX_TIMEPOINT ) );
 		toggleBoundingBoxVisibility( panel.useRoi.isSelected() );
 	}
 
@@ -178,7 +179,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 		if ( panel.useRoi.isSelected() )
 		{
 			settings.values.getDetectorSettings().put( KEY_ROI, roi.getInterval() );
-			info = "Processing within ROI with bounds: " + Util.printInterval( roi.getInterval() ) + '\n';
+			info = "Processing within ROI with bounds: " + Util.printInterval( roi.box().getInterval() ) + '\n';
 		}
 		else
 		{
@@ -186,8 +187,8 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			info = "Processing whole image.\n";
 		}
 
-		settings.values.getDetectorSettings().put( KEY_MIN_TIMEPOINT, panel.minT.getCurrentValue() );
-		settings.values.getDetectorSettings().put( KEY_MAX_TIMEPOINT, panel.maxT.getCurrentValue() );
+		settings.values.getDetectorSettings().put( KEY_MIN_TIMEPOINT, panel.intervalT.getMinBoundedValue().getCurrentValue() );
+		settings.values.getDetectorSettings().put( KEY_MAX_TIMEPOINT, panel.intervalT.getMaxBoundedValue().getCurrentValue() );
 
 		toggleBoundingBoxVisibility( false );
 		log.log( info );
@@ -291,7 +292,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			final ViewerPanel viewer = viewFrame.getViewerPanel();
 			final SetupAssignments setupAssignments = wm.getAppModel().getSharedBdvData().getSetupAssignments();
 			final TriggerBehaviourBindings triggerBindings = viewFrame.getTriggerbindings();
-			boundingBoxEditor = new BoundingBoxEditor(
+			boundingBoxEditor = new TransformedBoxEditor(
 					keyconf,
 					viewer,
 					setupAssignments,
@@ -315,15 +316,13 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 
 		private BoxSelectionPanel boxSelectionPanel;
 
-		private final BoxModePanel boxModePanel;
+		private final BoxDisplayModePanel boxModePanel;
 
 		private final JPanel boundsPanel;
 
 		private final JCheckBox useRoi;
 
-		private BoundedValue minT;
-
-		private BoundedValue maxT;
+		private BoundedInterval intervalT;
 
 		private BoundingBoxPanel()
 		{
@@ -351,23 +350,19 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor implements Cont
 			add( useRoi, gbc );
 
 			gbc.gridy++;
-			this.boxSelectionPanel = new BoxSelectionPanel( roi, roi.getMaxInterval() );
+			this.boxSelectionPanel = new BoxSelectionPanel( roi.box(), roi.getMaxInterval() );
 
 			// Time panel
-			final int nTimepoints = wm.getAppModel().getMaxTimepoint() - wm.getAppModel().getMinTimepoint();
-			minT = new BoundedValue( 0, nTimepoints, 0 );
-			maxT = new BoundedValue( 0, nTimepoints, nTimepoints );
+			final int t0 = wm.getAppModel().getMinTimepoint();
+			final int t1 = wm.getAppModel().getMaxTimepoint();
+			intervalT = new BoundedInterval( t0, t1, t0, t1, 0 );
 
 			boundsPanel = new JPanel();
 			boundsPanel.setLayout( new BoxLayout( boundsPanel, BoxLayout.PAGE_AXIS ) );
 			add( boundsPanel, gbc );
 
 			gbc.gridy++;
-			boxModePanel = new BoxModePanel();
-			boxModePanel.modeChangeListeners().add( () -> {
-				if ( boundingBoxEditor != null )
-					boundingBoxEditor.setBoxDisplayMode( boxModePanel.getBoxDisplayMode() );
-			} );
+			boxModePanel = new BoxDisplayModePanel( boundingBoxEditor.boxDisplayMode() );
 			add( boxModePanel, gbc );
 		}
 	}
