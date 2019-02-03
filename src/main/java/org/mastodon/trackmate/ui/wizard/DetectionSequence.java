@@ -57,7 +57,6 @@ public class DetectionSequence implements WizardSequence
 		this.setupIdDecriptor = new SetupIdDecriptor( trackmate.getSettings(), spimData, logService );
 		setupIdDecriptor.setContext( windowManager.getContext() );
 		this.boundingBoxDescriptor = new BoundingBoxDescriptor( trackmate.getSettings(), windowManager, logService );
-		boundingBoxDescriptor.setContext( windowManager.getContext() );
 		this.chooseDetectorDescriptor = new ChooseDetectorDescriptor( trackmate, windowManager );
 		this.executeDetectionDescriptor = new ExecuteDetectionDescriptor( trackmate, logService.getPanel() );
 		this.current = init();
