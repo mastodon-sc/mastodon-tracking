@@ -141,7 +141,7 @@
 		<license.organizationName>Mastodon authors</license.organizationName>
 		<license.copyrightOwners>Tobias Pietzsch, Jean-Yves Tinevez</license.copyrightOwners>
 
-		<bigdataviewer-core.version>6.0.0</bigdataviewer-core.version>
+		<bigdataviewer-core.version>6.0.1</bigdataviewer-core.version>
 		<bigdataviewer-vistools.version>1.0.0-beta-13</bigdataviewer-vistools.version>
 
 		<!-- NB: Deploy releases to the ImageJ Maven repository. -->
