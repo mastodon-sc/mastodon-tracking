@@ -163,7 +163,7 @@ public class DetectionUtil
 	 * <li>Iterate to level 2.
 	 * <li>At this level, the size of my object is
 	 * <code>[ 2.4, 2.4, 2.0 ] pixels.</code>
-	 * <li>All dimensions are below the limit -> we stop there.
+	 * <li>All dimensions are below the limit -&gt; we stop there.
 	 * </ul>
 	 * <p>
 	 * If the data does not ship multiple resolution levels, this methods return
