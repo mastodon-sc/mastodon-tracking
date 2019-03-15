@@ -11,7 +11,7 @@
 
 	<groupId>net.trndy</groupId>
 	<artifactId>mastodon-tracking</artifactId>
-	<version>1.0.0-beta-5-SNAPSHOT</version>
+	<version>1.0.0-beta-5</version>
 
 	<name>Mastodon tracking</name>
 	<description>Basic tracking algorithms based on Mastodon data structures.</description>
@@ -126,7 +126,7 @@
 	<scm>
 		<connection>scm:git:git:github.com/TrNdy/mastodon-tracking</connection>
 		<developerConnection>scm:git:git@github.com:TrNdy/mastodon-tracking</developerConnection>
-		<tag>HEAD</tag>
+		<tag>mastodon-tracking-1.0.0-beta-5</tag>
 		<url>https://github.com/TrNdy/mastodon-tracking</url>
 	</scm>
 	<issueManagement>
