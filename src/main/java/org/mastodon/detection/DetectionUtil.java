@@ -17,6 +17,7 @@ import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 import static org.mastodon.linking.LinkingUtils.checkMapKeys;
 import static org.mastodon.linking.LinkingUtils.checkParameter;
 
+import bdv.viewer.Source;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
+import mpicbg.spim.data.sequence.VoxelDimensions;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
@@ -261,9 +263,6 @@ public class DetectionUtil
 	 * Returns the transformation that maps the image coordinates to the global
 	 * coordinate system for the specified time-point, setup id and resolution
 	 * level.
-	 * <p>
-	 * If the data does not ship multiple resolution levels, the {@code level}
-	 * parameter is ignored.
 	 *
 	 * @param sources
 	 *            the image data.
@@ -339,10 +338,34 @@ public class DetectionUtil
 	public static double[] getPhysicalCalibration( final List< SourceAndConverter< ? > > sources, final int timepoint, final int setup, final int level )
 	{
 		final AffineTransform3D transform = getTransform( sources, timepoint, setup, level );
-		final double[] calibration = new double[ transform.numDimensions() ];
+		final double physicalSizeOfGlobalUnit = getPhysicalSizeOfGlobalUnit( sources, timepoint, setup );
+
+		final double[] calibration = new double[ 3 ];
 		for ( int d = 0; d < calibration.length; d++ )
-			calibration[ d ] = Affine3DHelpers.extractScale( transform, d );
+			calibration[ d ] = physicalSizeOfGlobalUnit * Affine3DHelpers.extractScale( transform, d );
 		return calibration;
+	}
+
+	/**
+	 * Translate the physical size of the global coordinate system unit length,
+	 * as determined by the voxel dimensions of the given setup at the given timepoint.
+	 *
+	 * @param sources
+	 *            the image data.
+	 * @param timepoint
+	 *            the timepoint to query.
+	 * @param setup
+	 *            the setup id to query.
+	 * @return the physical size of the global coordinate system unit length.
+	 */
+	public static double getPhysicalSizeOfGlobalUnit( final List< SourceAndConverter< ? > > sources, final int timepoint, final int setup )
+	{
+		final Source< ? > spimSource = sources.get( setup ).getSpimSource();
+		final VoxelDimensions voxelDimensions = spimSource.getVoxelDimensions();
+		final double pixelWidth = ( voxelDimensions == null ) ? 1 : voxelDimensions.dimension( 0 );
+
+		final AffineTransform3D transform = getTransform( sources, timepoint, setup, 0 );
+		return pixelWidth / Affine3DHelpers.extractScale( transform, 0 );
 	}
 
 	/**

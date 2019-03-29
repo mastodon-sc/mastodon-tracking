@@ -147,6 +147,7 @@ public class DoGDetectorOp
 			 */
 
 			final double[] calibration = DetectionUtil.getPhysicalCalibration( sources, tp, setup, level );
+			final double physicalSizeOfGlobalUnit = DetectionUtil.getPhysicalSizeOfGlobalUnit( sources, tp, setup );
 			final int stepsPerOctave = 4;
 			final double k = Math.pow( 2.0, 1.0 / stepsPerOctave );
 			final double sigma = radius / Math.sqrt( zeroMin.numDimensions() );
@@ -186,7 +187,7 @@ public class DoGDetectorOp
 					 */
 					p3d.setPosition( p );
 					transform.apply( p3d, sp );
-					detectionCreator.createDetection( pos, radius, normalizedValue );
+					detectionCreator.createDetection( pos, radius / physicalSizeOfGlobalUnit, normalizedValue );
 				}
 			}
 			finally
