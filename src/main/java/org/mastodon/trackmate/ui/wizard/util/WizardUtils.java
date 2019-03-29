@@ -238,6 +238,7 @@ public class WizardUtils
 			final ViewerPanelMamut viewer = bdv.getViewer();
 			InitializeViewerState.initTransform( viewer );
 			viewFrame = bdv.getViewerFrame();
+			viewFrame.setSettingsPanelVisible( false );
 
 			final BoundingSphereRadiusStatistics radiusStats = new BoundingSphereRadiusStatistics( model );
 			final OverlayGraphWrapper< Spot, Link > viewGraph = new OverlayGraphWrapper< >(

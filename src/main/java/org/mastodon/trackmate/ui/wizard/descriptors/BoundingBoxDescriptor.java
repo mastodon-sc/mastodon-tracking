@@ -215,6 +215,8 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 		{
 			panel.useRoi.setSelected( null != settings.values.getDetectorSettings().get( KEY_ROI ) );
 		}
+		previousSetupID = setupID;
+		toggleBoundingBox( panel.useRoi.isSelected() );
 	}
 
 	@Override
