@@ -41,6 +41,8 @@ import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.spatial.SpatioTemporalIndex;
+import org.mastodon.tracking.RandomMotionTracker;
+import org.mastodon.tracking.Tracker;
 import org.mastodon.util.EllipsoidInsideTest;
 import org.scijava.Cancelable;
 import org.scijava.ItemIO;
@@ -56,6 +58,7 @@ import net.imagej.ops.special.computer.AbstractBinaryComputerOp;
 import net.imagej.ops.special.inplace.Inplaces;
 import net.imglib2.FinalInterval;
 import net.imglib2.Point;
+import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.neighborsearch.NearestNeighborSearch;
 import net.imglib2.position.transform.Round;
@@ -163,14 +166,14 @@ public class SemiAutomaticTracker
 		 * Units.
 		 */
 
-		final String units =  sources.get( setup ).getSpimSource().getVoxelDimensions().unit();
+		final String units = sources.get( setup ).getSpimSource().getVoxelDimensions().unit();
 
 		/*
 		 * First and last time-points.
 		 */
 
 		final int minTimepoint = 0;
-		final int maxTimepoint = data.getNumTimepoints() -1;
+		final int maxTimepoint = data.getNumTimepoints() - 1;
 
 		/*
 		 * Loop over each spot input.
@@ -181,6 +184,17 @@ public class SemiAutomaticTracker
 
 		INPUT: for ( final Spot first : input )
 		{
+
+			/*
+			 * Initialize tracker for this spot.
+			 */
+
+			final Tracker tracker = initializeTracker( first, graph );
+
+			/*
+			 * Loop over time.
+			 */
+
 			final int firstTimepoint = first.getTimepoint();
 			int tp = firstTimepoint;
 			final Spot source = model.getGraph().vertexRef();
@@ -217,135 +231,32 @@ public class SemiAutomaticTracker
 					threshold = 0.;
 
 				/*
-				 * Build ROI to process.
-				 */
-				final double[] calibration = DetectionUtil.getPhysicalCalibration( sources, tp, setup, 0 );
-				final AffineTransform3D transform = DetectionUtil.getTransform( sources, tp, setup, 0 );
-				final Point center = new Point( 3 );
-				transform.applyInverse( new Round<>( center ), source );
-				final long x = center.getLongPosition( 0 );
-				final long y = center.getLongPosition( 1 );
-				final long z = center.getLongPosition( 2 );
-				final long rx = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 0 ] );
-				final long ry = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 1 ] );
-				final long rz = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 2 ] );
-				final long[] min = new long[] { x - rx, y - ry, z - rz };
-				final long[] max = new long[] { x + rx, y + ry, z + rz };
-				final FinalInterval roi = new FinalInterval( min, max );
-
-				/*
-				 * User built-in detector.
+				 * Predict around what position to look for a candidate.
 				 */
 
-				final List< Detection > detections = new ArrayList<>();
-				final DetectionCreatorFactory detectionCreator = new DetectionCreatorFactory()
-				{
-
-					@Override
-					public DetectionCreator create( final int timepoint )
-					{
-						return new DetectionCreator()
-						{
-
-							@Override
-							public void preAddition()
-							{}
-
-							@Override
-							public void postAddition()
-							{}
-
-							@Override
-							public void createDetection( final double[] pos, final double radius, final double quality )
-							{
-								detections.add( new Detection( pos, quality ) );
-							}
-						};
-					}
-				};
-
-				// Configure detector.
-				final Map<String, Object> detectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
-				detectorSettings.put( KEY_RADIUS, Double.valueOf( radius ) );
-				detectorSettings.put( KEY_THRESHOLD, Double.valueOf( threshold ) );
-				detectorSettings.put( KEY_SETUP_ID, Integer.valueOf( setup ) );
-				detectorSettings.put( KEY_MIN_TIMEPOINT, Integer.valueOf( tp ) );
-				detectorSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( tp ) );
-				detectorSettings.put( KEY_ROI, roi );
-				final DetectorOp detector = ( DetectorOp ) Inplaces.binary1( ops(), DoGDetectorOp.class,
-						detectionCreator, sources, detectorSettings  );
-				detector.mutate1( detectionCreator, sources );
-
-				if ( detections.isEmpty() )
-				{
-					log.info( String.format( " - No target spot found at t=%d for spot %s above desired quality threshold.",
-							tp, source.getLabel() ) );
-					continue INPUT;
-				}
+				final RealLocalizable predict = tracker.predict();
 
 				/*
-				 * Find a suitable candidate with largest quality.
-				 */
-
-				// Sort peaks by quality.
-				detections.sort( detectionComparator );
-
-				boolean found = false;
-				Detection candidate = null;
-				double sqDist = 0.;
-				for ( final Detection p : detections )
-				{
-					// Compute square distance.
-					sqDist = 0.;
-					for ( int d = 0; d < source.numDimensions(); d++ )
-					{
-						final double dx = p.getDoublePosition( d ) - source.getDoublePosition( d );
-						sqDist += dx * dx;
-					}
-
-					if ( sqDist < distanceFactor * distanceFactor * radius * radius )
-					{
-						found = true;
-						candidate = p;
-						break;
-					}
-				}
-
-				if ( !found )
-				{
-					log.info( String.format(
-							" - Suitable spot found at t=%d, but outside the tolerance radius for spot %s (at a distance of %.1f %s).",
-							tp, source.getLabel(), Math.sqrt( sqDist ), units ) );
-					log.info( " - Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
-					continue INPUT;
-				}
-
-				// Deselect source spot.
-				if ( null != selectionModel )
-					selectionModel.setSelected( source, false );
-
-				/*
-				 * Check whether candidate is close to an existing spot.
+				 * Do we have an existing spot around this location, and do we
+				 * have the right to link to it?
 				 */
 
 				spatioTemporalIndex.readLock().lock();
 				Spot target = null;
-				double distance = 0.;
 				try
 				{
 					final SpatialIndex< Spot > spatialIndex = spatioTemporalIndex.getSpatialIndex( tp );
 					final NearestNeighborSearch< Spot > nn = spatialIndex.getNearestNeighborSearch();
-					nn.search( candidate );
+					nn.search( predict );
 					target = nn.getSampler().get();
-					distance = nn.getDistance();
 				}
 				finally
 				{
 					spatioTemporalIndex.readLock().unlock();
 				}
 
-				final double[] pos = new double[ candidate.numDimensions()];
-				candidate.localize( pos );
+				final double[] pos = new double[ 3 ];
+				predict.localize( pos );
 				if ( target != null && ( test.isPointInside( pos, target ) || test.isCenterWithin( target, pos, radius ) ) )
 				{
 
@@ -370,6 +281,7 @@ public class SemiAutomaticTracker
 					final boolean connected = forward
 							? graph.getEdge( source, target, eref ) != null
 							: graph.getEdge( target, source, eref ) != null;
+
 					if ( !connected )
 					{
 						// They are not connected.
@@ -394,6 +306,7 @@ public class SemiAutomaticTracker
 								edge = graph.addEdge( source, target, eref ).init();
 							else
 								edge = graph.addEdge( target, source, eref ).init();
+
 						}
 						finally
 						{
@@ -401,7 +314,7 @@ public class SemiAutomaticTracker
 						}
 						graph.notifyGraphChanged();
 
-						final double cost = distance * distance;
+						final double cost = tracker.costTo( target );
 						log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
 								source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint(), cost ) );
 						linkCostFeature.set( edge, cost );
@@ -423,14 +336,119 @@ public class SemiAutomaticTracker
 						}
 					}
 
-					source.refTo( target );
+					// Update tracker with the new target.
+					tracker.update( target );
+
+					// Deselect source spot.
+					if ( null != selectionModel )
+						selectionModel.setSelected( source, false );
+					// Select, focus and navigate to new spot.
+					if ( null != navigationHandler )
+						navigationHandler.notifyNavigateToVertex( target );
+					if ( null != selectionModel )
+						selectionModel.setSelected( target, true );
+					if ( null != focusModel )
+						focusModel.focusVertex( target );
+
+					// Target becomes source and we loop over next time-point.
 					graph.releaseRef( eref );
+					source.refTo( target );
+					continue TIME;
 				}
 				else
 				{
 
 					/*
-					 * We do NOT have an existing spot near out candidate.
+					 * There is no candidate around the predicted position, or
+					 * we do not have the right to link to it. We therefore have
+					 * to search for candidates from the image.
+					 */
+
+					/*
+					 * Build ROI to process.
+					 */
+
+					final double[] calibration = DetectionUtil.getPhysicalCalibration( sources, tp, setup, 0 );
+					final AffineTransform3D transform = DetectionUtil.getTransform( sources, tp, setup, 0 );
+					final Point center = new Point( 3 );
+					transform.applyInverse( new Round<>( center ), predict );
+					final long x = center.getLongPosition( 0 );
+					final long y = center.getLongPosition( 1 );
+					final long z = center.getLongPosition( 2 );
+					final long rx = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 0 ] );
+					final long ry = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 1 ] );
+					final long rz = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 2 ] );
+					final long[] min = new long[] { x - rx, y - ry, z - rz };
+					final long[] max = new long[] { x + rx, y + ry, z + rz };
+					final FinalInterval roi = new FinalInterval( min, max );
+
+					/*
+					 * User built-in detector.
+					 */
+
+					final List< Detection > detections = new ArrayList<>();
+					final DetectionCreatorFactory detectionCreator = createDetectionCreatorFactoryFor( detections );
+
+					// Configure detector.
+					final Map< String, Object > detectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
+					detectorSettings.put( KEY_RADIUS, Double.valueOf( radius ) );
+					detectorSettings.put( KEY_THRESHOLD, Double.valueOf( threshold ) );
+					detectorSettings.put( KEY_SETUP_ID, Integer.valueOf( setup ) );
+					detectorSettings.put( KEY_MIN_TIMEPOINT, Integer.valueOf( tp ) );
+					detectorSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( tp ) );
+					detectorSettings.put( KEY_ROI, roi );
+					final DetectorOp detector = ( DetectorOp ) Inplaces.binary1( ops(), DoGDetectorOp.class,
+							detectionCreator, sources, detectorSettings );
+					detector.mutate1( detectionCreator, sources );
+
+					if ( detections.isEmpty() )
+					{
+						log.info( String.format( " - No target spot found at t=%d for spot %s above desired quality threshold.",
+								tp, source.getLabel() ) );
+						continue INPUT;
+					}
+
+					/*
+					 * Find a suitable candidate with largest quality.
+					 */
+
+					// Sort peaks by quality.
+					detections.sort( detectionComparator );
+
+					boolean found = false;
+					Detection candidate = null;
+					double sqDist = 0.;
+					for ( final Detection p : detections )
+					{
+						// Compute square distance.
+						sqDist = 0.;
+						for ( int d = 0; d < source.numDimensions(); d++ )
+						{
+							final double dx = p.getDoublePosition( d ) - source.getDoublePosition( d );
+							sqDist += dx * dx;
+						}
+
+						if ( sqDist < distanceFactor * distanceFactor * radius * radius )
+						{
+							found = true;
+							candidate = p;
+							break;
+						}
+					}
+
+					if ( !found )
+					{
+						log.info( String.format(
+								" - Suitable spot found at t=%d, but outside the tolerance radius for spot %s (at a distance of %.1f %s).",
+								tp, source.getLabel(), Math.sqrt( sqDist ), units ) );
+						log.info( " - Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
+						continue INPUT;
+					}
+
+					candidate.localize( pos );
+
+					/*
+					 * Let's keep this candidate.
 					 */
 
 					graph.getLock().writeLock().lock();
@@ -449,20 +467,22 @@ public class SemiAutomaticTracker
 					{
 						graph.getLock().writeLock().unlock();
 					}
+
 					graph.notifyGraphChanged();
 
-					double cost = 0.;
-					for ( int d = 0; d < 3; d++ )
-					{
-						final double dx = source.getDoublePosition( d ) - target.getDoublePosition( d );
-						cost += dx * dx;
-					}
+					final double cost = tracker.costTo( target );
 					final double quality = candidate.quality;
 					log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
 							source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint(), cost ) );
 					linkCostFeature.set( edge, cost );
 					qualityFeature.set( target, quality );
 
+					// Update tracker with the new target.
+					tracker.update( target );
+
+					// Deselect source spot.
+					if ( null != selectionModel )
+						selectionModel.setSelected( source, false );
 					// Select, focus and navigate to new spot.
 					if ( null != navigationHandler )
 						navigationHandler.notifyNavigateToVertex( target );
@@ -472,6 +492,7 @@ public class SemiAutomaticTracker
 						focusModel.focusVertex( target );
 
 					source.refTo( target );
+
 					graph.releaseRef( eref );
 					graph.releaseRef( vref );
 				}
@@ -485,6 +506,51 @@ public class SemiAutomaticTracker
 		 */
 
 		ok = true;
+	}
+
+	/**
+	 * Returns a new {@link DetectionCreatorFactory} that will have detections
+	 * to the specified list.
+	 *
+	 * @param detections
+	 *            the list to add detections to.
+	 * @return a new {@link DetectionCreatorFactory}.
+	 */
+	private DetectionCreatorFactory createDetectionCreatorFactoryFor( final List< Detection > detections )
+	{
+		return new DetectionCreatorFactory()
+		{
+
+			@Override
+			public DetectionCreator create( final int timepoint )
+			{
+				return new DetectionCreator()
+				{
+
+					@Override
+					public void preAddition()
+					{}
+
+					@Override
+					public void postAddition()
+					{}
+
+					@Override
+					public void createDetection( final double[] pos, final double radius, final double quality )
+					{
+						detections.add( new Detection( pos, quality ) );
+					}
+				};
+			}
+		};
+	}
+
+	private Tracker initializeTracker( final Spot first, final ModelGraph graph )
+	{
+		// TODO For now we simply return the brownian motion one.
+		final RandomMotionTracker tracker = new RandomMotionTracker( 3 );
+		tracker.update( first );
+		return tracker;
 	}
 
 	@Override
@@ -537,11 +603,22 @@ public class SemiAutomaticTracker
 	{
 		private final double quality;
 
-		public Detection(final double[] pos, final double quality)
+		public Detection( final double[] pos, final double quality )
 		{
 			super( pos );
 			this.quality = quality;
 		}
+
+		@Override
+		public String toString()
+		{
+			final StringBuilder sb = new StringBuilder( "(" );
+			for ( int i = 0; i < numDimensions(); i++ )
+				sb.append( String.format( "%.1f, ", position[ i ] ) );
+			sb.append( String.format( "quality = %.1f)", quality ) );
+			return sb.toString();
+		}
+
 	}
 
 }
