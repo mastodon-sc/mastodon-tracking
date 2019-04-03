@@ -144,7 +144,8 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 		return Arrays.asList(
 				makeFullMenuItem( MamutMenuBuilder.item( PERFORM_SEMI_AUTO_TRACKING_ACTION ) ),
 				makeFullMenuItem( MamutMenuBuilder.item( CANCEL_SEMI_AUTO_TRACKING_ACTION ) ),
-				makeFullMenuItem( MamutMenuBuilder.item( CONFIGURE_SEMI_AUTO_TRACKING_ACTION ) ) );
+				makeFullMenuItem( MamutMenuBuilder.item( CONFIGURE_SEMI_AUTO_TRACKING_ACTION ) ),
+				makeFullMenuItem( MamutMenuBuilder.separator() ) );
 	}
 
 	private static final MenuItem makeFullMenuItem( final MenuItem item )
