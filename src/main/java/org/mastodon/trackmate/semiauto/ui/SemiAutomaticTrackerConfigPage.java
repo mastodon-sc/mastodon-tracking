@@ -15,11 +15,11 @@ import org.mastodon.util.Listeners.SynchronizedList;
 public class SemiAutomaticTrackerConfigPage extends SelectAndEditProfileSettingsPage< StyleProfile< SemiAutomaticTrackerSettings > >
 {
 
-	public SemiAutomaticTrackerConfigPage( final String treePath, final SemiAutomaticTrackerSettingsManager settingsManager, final SharedBigDataViewerData data, final GroupHandle groupHandle, final Action trackAction )
+	public SemiAutomaticTrackerConfigPage( final String treePath, final SemiAutomaticTrackerSettingsManager settingsManager, final SharedBigDataViewerData data, final GroupHandle groupHandle, final Action trackAction, final Action cancelAction )
 	{
 		super( treePath,
 				new StyleProfileManager<>( settingsManager, new SemiAutomaticTrackerSettingsManager( false ) ),
-				new SemiAutomaticTrackerSettingsEditPanel( settingsManager.getDefaultStyle(), data, groupHandle, trackAction ) );
+				new SemiAutomaticTrackerSettingsEditPanel( settingsManager.getDefaultStyle(), data, groupHandle, trackAction, cancelAction ) );
 	}
 
 	static class SemiAutomaticTrackerSettingsEditPanel implements SemiAutomaticTrackerSettings.UpdateListener, SelectAndEditProfileSettingsPage.ProfileEditPanel< StyleProfile< SemiAutomaticTrackerSettings > >
@@ -33,10 +33,10 @@ public class SemiAutomaticTrackerConfigPage extends SelectAndEditProfileSettings
 
 		private final SynchronizedList< ModificationListener > modificationListeners;
 
-		public SemiAutomaticTrackerSettingsEditPanel( final SemiAutomaticTrackerSettings initialSettings, final SharedBigDataViewerData data, final GroupHandle groupHandle, final Action trackAction )
+		public SemiAutomaticTrackerSettingsEditPanel( final SemiAutomaticTrackerSettings initialSettings, final SharedBigDataViewerData data, final GroupHandle groupHandle, final Action trackAction, final Action cancelAction )
 		{
 			editedSettings = initialSettings.copy( "Edited" );
-			settingsPanel = new SemiAutomaticTrackerConfigPanel( data, editedSettings, groupHandle, trackAction );
+			settingsPanel = new SemiAutomaticTrackerConfigPanel( data, editedSettings, groupHandle, trackAction, cancelAction );
 			modificationListeners = new Listeners.SynchronizedList<>();
 			editedSettings.updateListeners().add( this );
 		}

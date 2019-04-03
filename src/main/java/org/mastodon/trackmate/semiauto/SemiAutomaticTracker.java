@@ -204,7 +204,10 @@ public class SemiAutomaticTracker
 			{
 				// Are we canceled?
 				if ( isCanceled() )
+				{
+					log.warn( "Canceled: " + getCancelReason() );
 					return;
+				}
 
 				tp = ( forward ? tp + 1 : tp - 1 );
 

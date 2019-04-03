@@ -45,7 +45,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 	private static final String DISTANCE_FACTOR_TOOLTIP = "<html><p width=\"500\">"
 			+ "Parameter that specifies the tolerance on distance for "
 			+ "discovered spots. A target spot may be linked to the source spot only if "
-			+ " they are not father than the source spot radius times this factor."
+			+ " they are not farther than the source spot radius times this factor."
 			+ "</p></html>";
 
 	private static final String N_TIMEPOINTS_TOOLTIP = "<html><p width=\"500\">"
@@ -83,7 +83,12 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 			+ "target spots. "
 			+ "</p></html>";
 
-	public SemiAutomaticTrackerConfigPanel( final SharedBigDataViewerData data, final SemiAutomaticTrackerSettings editedSettings, final GroupHandle groupHandle, final Action trackAction )
+	public SemiAutomaticTrackerConfigPanel(
+			final SharedBigDataViewerData data,
+			final SemiAutomaticTrackerSettings editedSettings,
+			final GroupHandle groupHandle,
+			final Action trackAction,
+			final Action cancelAction )
 	{
 		final int nTimePoints = ( null == data )
 				? 100
@@ -307,7 +312,15 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 
 		if (null != trackAction)
 		{
+			if (null != cancelAction)
+			{
+				final JButton btnCancel = new JButton( cancelAction );
+				btnCancel.setText( "Cancel" );
+				panelButtons.add( btnCancel );
+			}
+
 			final JButton btnTrack = new JButton( trackAction );
+			btnTrack.setText( "Track" );
 			panelButtons.add( btnTrack );
 		}
 

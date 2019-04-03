@@ -34,6 +34,7 @@ import org.mastodon.revised.ui.keymap.CommandDescriptions;
 import org.mastodon.trackmate.semiauto.ui.SemiAutomaticTrackerConfigPage;
 import org.mastodon.trackmate.semiauto.ui.SemiAutomaticTrackerSettings;
 import org.mastodon.trackmate.semiauto.ui.SemiAutomaticTrackerSettingsManager;
+import org.scijava.Cancelable;
 import org.scijava.Context;
 import org.scijava.log.LogService;
 import org.scijava.log.Logger;
@@ -51,12 +52,13 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 {
 
 	public static final String[] MENU_PATH = new String[] { "Plugins", "TrackMate" };
-	private static final String ACTION_1 = "semi-automatic tracking";
-	private static final String ACTION_2 = "config semi-automatic tracking";
-	private static final String ACTION_3 = "log semi-automatic tracking";
-
-	private static final String[] ACTION_1_KEYS = new String[] { "ctrl T" };
-	private static final String[] ACTION_2_KEYS = new String[] { "not mapped" };
+	private static final String PERFORM_SEMI_AUTO_TRACKING_ACTION = "semi-automatic tracking";
+	private static final String CANCEL_SEMI_AUTO_TRACKING_ACTION = "cancel semi-automatic tracking";
+	private static final String CONFIGURE_SEMI_AUTO_TRACKING_ACTION = "config semi-automatic tracking";
+	private static final String SHOW_LOGGING_PANEL_ACTION = "log semi-automatic tracking";
+	private static final String[] PERFORM_SEMI_AUTO_TRACKING_KEYS = new String[] { "ctrl T" };
+	private static final String[] CANCEL_SEMI_AUTO_TRACKING_KEYS = new String[] { "ctrl shift T" };
+	private static final String[] CONFIGURE_SEMI_AUTO_TRACKING_KEYS = new String[] { "not mapped" };
 
 	@Parameter
 	private OpService ops;
@@ -76,8 +78,17 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 	private JDialog dialog;
 
 	private NavigationHandler< Spot, Link > navigationHandler;
+
 	private LoggingPanel loggingPanel;
+
 	private JDialog loggingDialog;
+
+	/**
+	 * Reference to a {@link Cancelable} created by the semi-auto tracker
+	 * action, so that we can call {@link Cancelable#cancel(String)} from
+	 * another action.
+	 */
+	private Cancelable cancelable;
 
 	public SemiAutomaticTrackerPlugin()
 	{
@@ -87,8 +98,9 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 
 	static
 	{
-		menuTexts.put( ACTION_1, "Semi-automatic tracking" );
-		menuTexts.put( ACTION_2, "Configure semi-automatic tracker" );
+		menuTexts.put( PERFORM_SEMI_AUTO_TRACKING_ACTION, "Semi-automatic tracking" );
+		menuTexts.put( CANCEL_SEMI_AUTO_TRACKING_ACTION, "Cancel semi-automatic tracking" );
+		menuTexts.put( CONFIGURE_SEMI_AUTO_TRACKING_ACTION, "Configure semi-automatic tracker" );
 	}
 
 	/*
@@ -105,8 +117,18 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 		@Override
 		public void getCommandDescriptions( final CommandDescriptions descriptions )
 		{
-			descriptions.add( ACTION_1, ACTION_1_KEYS, "Execute semi-automatic tracking, using the spots currently in the selection." );
-			descriptions.add( ACTION_2, ACTION_2_KEYS, "Toggle the smi-automatic tracking configuration panel." );
+			descriptions.add(
+					PERFORM_SEMI_AUTO_TRACKING_ACTION,
+					PERFORM_SEMI_AUTO_TRACKING_KEYS,
+					"Execute semi-automatic tracking, using the spots currently in the selection." );
+			descriptions.add(
+					CANCEL_SEMI_AUTO_TRACKING_ACTION,
+					CANCEL_SEMI_AUTO_TRACKING_KEYS,
+					"Cancel the current semi-automatic tracking process." );
+			descriptions.add(
+					CONFIGURE_SEMI_AUTO_TRACKING_ACTION,
+					CONFIGURE_SEMI_AUTO_TRACKING_KEYS,
+					"Displays the semi-automatic tracking configuration panel." );
 		}
 	}
 
@@ -120,8 +142,9 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 	public List< MenuItem > getMenuItems()
 	{
 		return Arrays.asList(
-				makeFullMenuItem( MamutMenuBuilder.item( ACTION_1 ) ),
-				makeFullMenuItem( MamutMenuBuilder.item( ACTION_2 ) ) );
+				makeFullMenuItem( MamutMenuBuilder.item( PERFORM_SEMI_AUTO_TRACKING_ACTION ) ),
+				makeFullMenuItem( MamutMenuBuilder.item( CANCEL_SEMI_AUTO_TRACKING_ACTION ) ),
+				makeFullMenuItem( MamutMenuBuilder.item( CONFIGURE_SEMI_AUTO_TRACKING_ACTION ) ) );
 	}
 
 	private static final MenuItem makeFullMenuItem( final MenuItem item )
@@ -135,8 +158,9 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 	@Override
 	public void installGlobalActions( final Actions actions )
 	{
-		actions.namedAction( performSemiAutoTrackAction, ACTION_1_KEYS );
-		actions.namedAction( toggleConfigDialogVisibility, ACTION_2_KEYS );
+		actions.namedAction( performSemiAutoTrackAction, PERFORM_SEMI_AUTO_TRACKING_KEYS );
+		actions.namedAction( cancelSemiAutoTrackAction, CANCEL_SEMI_AUTO_TRACKING_KEYS );
+		actions.namedAction( toggleConfigDialogVisibility, CONFIGURE_SEMI_AUTO_TRACKING_KEYS );
 	}
 
 	@Override
@@ -157,7 +181,13 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 
 		final SharedBigDataViewerData data = appModel.getAppModel().getSharedBdvData();
 		final SemiAutomaticTrackerSettingsManager styleManager = new SemiAutomaticTrackerSettingsManager();
-		final SemiAutomaticTrackerConfigPage page = new SemiAutomaticTrackerConfigPage( "Settings", styleManager, data, groupHandle, performSemiAutoTrackAction )
+		final SemiAutomaticTrackerConfigPage page = new SemiAutomaticTrackerConfigPage(
+				"Settings",
+				styleManager,
+				data,
+				groupHandle,
+				performSemiAutoTrackAction,
+				cancelSemiAutoTrackAction )
 		{
 			@Override
 			public void apply()
@@ -174,7 +204,7 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 
 		dialog = new JDialog( ( Frame ) null, "Semi-automatic tracker settings" );
 		dialog.getContentPane().add( settings, BorderLayout.CENTER );
-		settings.onOk( () -> dialog.setVisible( false )  );
+		settings.onOk( () -> dialog.setVisible( false ) );
 		settings.onCancel( () -> dialog.setVisible( false ) );
 
 		dialog.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
@@ -189,7 +219,7 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 		dialog.pack();
 	}
 
-	private final AbstractNamedAction performSemiAutoTrackAction = new AbstractNamedAction( ACTION_1 )
+	private final AbstractNamedAction performSemiAutoTrackAction = new AbstractNamedAction( PERFORM_SEMI_AUTO_TRACKING_ACTION )
 	{
 		private static final long serialVersionUID = 1L;
 
@@ -200,7 +230,7 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 				return;
 
 			showLogDialog.actionPerformed( e );
-			if (null == log)
+			if ( null == log )
 				log = logService;
 
 			final Logger subLogger = log.subLogger( "Semi-auto tracker" );
@@ -226,14 +256,31 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 					selectionModel,
 					focusModel,
 					subLogger );
+			cancelable = tracker;
 			new Thread( () -> {
 				tracker.compute( spots, settings, model );
 				subLogger.removeLogListener( loggingPanel );
+				cancelable = null;
 			}, "Mastodon semi-auto tracking" ).start();
 		}
 	};
 
-	private final AbstractNamedAction toggleConfigDialogVisibility = new AbstractNamedAction( ACTION_2 )
+	private final AbstractNamedAction cancelSemiAutoTrackAction = new AbstractNamedAction( CANCEL_SEMI_AUTO_TRACKING_ACTION )
+	{
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			if (null != cancelable)
+			{
+				cancelable.cancel( "User canceled semi-automatic tracking." );
+				cancelable = null;
+			}
+		}
+	};
+
+	private final AbstractNamedAction toggleConfigDialogVisibility = new AbstractNamedAction( CONFIGURE_SEMI_AUTO_TRACKING_ACTION )
 	{
 
 		private static final long serialVersionUID = 1L;
@@ -247,7 +294,7 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 		}
 	};
 
-	private final AbstractNamedAction showLogDialog = new AbstractNamedAction( ACTION_3 )
+	private final AbstractNamedAction showLogDialog = new AbstractNamedAction( SHOW_LOGGING_PANEL_ACTION )
 	{
 
 		private static final long serialVersionUID = 1L;
