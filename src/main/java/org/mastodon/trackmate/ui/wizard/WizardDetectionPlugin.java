@@ -14,7 +14,7 @@ import bdv.viewer.SourceAndConverter;
 @Plugin( type = WizardDetectionPlugin.class )
 public class WizardDetectionPlugin extends WizardPlugin
 {
-	private static final String RUN_WIZARD = "[trackmate] run detection wizard";
+	private static final String RUN_WIZARD = "run spot detection wizard";
 
 	private static final String[] RUN_WIZARD_KEYS = new String[] { "not mapped" };
 
@@ -22,7 +22,7 @@ public class WizardDetectionPlugin extends WizardPlugin
 
 	public WizardDetectionPlugin()
 	{
-		super( RUN_WIZARD, "Detection...", "Plugins > TrackMate", RUN_WIZARD_KEYS );
+		super( RUN_WIZARD, "Detection...", "Plugins > Tracking", RUN_WIZARD_KEYS );
 	}
 
 	@Override

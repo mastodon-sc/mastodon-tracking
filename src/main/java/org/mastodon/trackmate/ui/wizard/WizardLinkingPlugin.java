@@ -20,13 +20,13 @@ import bdv.viewer.SourceAndConverter;
 @Plugin( type = WizardLinkingPlugin.class )
 public class WizardLinkingPlugin extends WizardPlugin
 {
-	private static final String ACTION_NAME = "[trackmate] run linking wizard";
+	private static final String ACTION_NAME = "run spot linking wizard";
 
 	private static final String COMMAND_NAME = "Linking...";
 
 	private static final String[] KEYSTROKES = new String[] { "not mapped" };
 
-	private static final String MENU_PATH = "Plugins > TrackMate";
+	private static final String MENU_PATH = "Plugins > Tracking";
 
 	private final static Settings settings = new Settings();
 	static

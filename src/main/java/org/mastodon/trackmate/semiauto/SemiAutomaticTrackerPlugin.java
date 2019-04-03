@@ -51,7 +51,7 @@ import net.imagej.ops.special.computer.Computers;
 public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 {
 
-	public static final String[] MENU_PATH = new String[] { "Plugins", "TrackMate" };
+	public static final String[] MENU_PATH = new String[] { "Plugins", "Tracking" };
 	private static final String PERFORM_SEMI_AUTO_TRACKING_ACTION = "semi-automatic tracking";
 	private static final String CANCEL_SEMI_AUTO_TRACKING_ACTION = "cancel semi-automatic tracking";
 	private static final String CONFIGURE_SEMI_AUTO_TRACKING_ACTION = "config semi-automatic tracking";
