@@ -36,9 +36,14 @@ public class SemiAutomaticTrackerConfigPage extends SelectAndEditProfileSettings
 		public SemiAutomaticTrackerSettingsEditPanel( final SemiAutomaticTrackerSettings initialSettings, final SharedBigDataViewerData data, final GroupHandle groupHandle, final Action trackAction, final Action cancelAction )
 		{
 			editedSettings = initialSettings.copy( "Edited" );
-			settingsPanel = new SemiAutomaticTrackerConfigPanel( data, editedSettings, groupHandle, trackAction, cancelAction );
+			settingsPanel = new SemiAutomaticTrackerConfigPanel( data, editedSettings, groupHandle );
 			modificationListeners = new Listeners.SynchronizedList<>();
 			editedSettings.updateListeners().add( this );
+
+			settingsPanel.btnCancel.setAction( cancelAction );
+			settingsPanel.btnCancel.setText( "Cancel" );
+			settingsPanel.btnTrack.setAction( trackAction );
+			settingsPanel.btnTrack.setText( "Track" );
 		}
 
 		@Override

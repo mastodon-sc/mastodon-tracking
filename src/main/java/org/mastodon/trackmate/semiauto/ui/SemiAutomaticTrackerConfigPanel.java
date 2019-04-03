@@ -10,7 +10,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ItemListener;
 
-import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -83,12 +82,20 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 			+ "target spots. "
 			+ "</p></html>";
 
+	/**
+	 * The cancel button.
+	 */
+	final JButton btnCancel;
+
+	/**
+	 * The track button.
+	 */
+	final JButton btnTrack;
+
 	public SemiAutomaticTrackerConfigPanel(
 			final SharedBigDataViewerData data,
 			final SemiAutomaticTrackerSettings editedSettings,
-			final GroupHandle groupHandle,
-			final Action trackAction,
-			final Action cancelAction )
+			final GroupHandle groupHandle )
 	{
 		final int nTimePoints = ( null == data )
 				? 100
@@ -308,21 +315,14 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		panelButtons.setLayout( new BoxLayout( panelButtons, BoxLayout.X_AXIS ) );
 
 		final Component horizontalGlue = Box.createHorizontalGlue();
+		final JLabel warning = new JLabel("Please click 'Apply' before tracking to use current settings.");
+		warning.setFont( getFont().deriveFont( Font.ITALIC ).deriveFont( getFont().getSize2D() - 4f ) );
+		panelButtons.add( warning );
 		panelButtons.add( horizontalGlue );
-
-		if (null != trackAction)
-		{
-			if (null != cancelAction)
-			{
-				final JButton btnCancel = new JButton( cancelAction );
-				btnCancel.setText( "Cancel" );
-				panelButtons.add( btnCancel );
-			}
-
-			final JButton btnTrack = new JButton( trackAction );
-			btnTrack.setText( "Track" );
-			panelButtons.add( btnTrack );
-		}
+		this.btnCancel = new JButton( "Cancel" );
+		panelButtons.add( btnCancel );
+		this.btnTrack = new JButton("Track");
+		panelButtons.add( btnTrack );
 
 		final UpdateListener refresher = () -> {
 			comboBox.setSelectedSetupID( editedSettings.getSetupID() );

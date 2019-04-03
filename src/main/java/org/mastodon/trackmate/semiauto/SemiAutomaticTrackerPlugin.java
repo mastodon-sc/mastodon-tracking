@@ -258,9 +258,13 @@ public class SemiAutomaticTrackerPlugin implements MastodonPlugin
 					subLogger );
 			cancelable = tracker;
 			new Thread( () -> {
+				cancelSemiAutoTrackAction.setEnabled( true );
+				setEnabled( false );
 				tracker.compute( spots, settings, model );
 				subLogger.removeLogListener( loggingPanel );
 				cancelable = null;
+				setEnabled( true );
+				cancelSemiAutoTrackAction.setEnabled( false );
 			}, "Mastodon semi-auto tracking" ).start();
 		}
 	};
