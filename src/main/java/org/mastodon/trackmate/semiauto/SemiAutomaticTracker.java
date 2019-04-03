@@ -43,7 +43,6 @@ import org.mastodon.spatial.SpatialIndex;
 import org.mastodon.spatial.SpatioTemporalIndex;
 import org.mastodon.tracking.RandomMotionTracker;
 import org.mastodon.tracking.Tracker;
-import org.mastodon.util.EllipsoidInsideTest;
 import org.scijava.Cancelable;
 import org.scijava.ItemIO;
 import org.scijava.log.LogService;
@@ -180,7 +179,6 @@ public class SemiAutomaticTracker
 		 */
 
 		final double[][] cov = new double[ 3 ][ 3 ];
-		final EllipsoidInsideTest test = new EllipsoidInsideTest();
 
 		INPUT: for ( final Spot first : input )
 		{
@@ -243,12 +241,14 @@ public class SemiAutomaticTracker
 
 				spatioTemporalIndex.readLock().lock();
 				Spot target = null;
+				final double distance;
 				try
 				{
 					final SpatialIndex< Spot > spatialIndex = spatioTemporalIndex.getSpatialIndex( tp );
 					final NearestNeighborSearch< Spot > nn = spatialIndex.getNearestNeighborSearch();
 					nn.search( predict );
 					target = nn.getSampler().get();
+					distance = nn.getDistance();
 				}
 				finally
 				{
@@ -257,7 +257,7 @@ public class SemiAutomaticTracker
 
 				final double[] pos = new double[ 3 ];
 				predict.localize( pos );
-				if ( target != null && ( test.isPointInside( pos, target ) || test.isCenterWithin( target, pos, radius ) ) )
+				if ( target != null  && ( distance < distanceFactor * radius ) )
 				{
 
 					/*
