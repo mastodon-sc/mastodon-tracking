@@ -22,8 +22,6 @@ import java.util.stream.StreamSupport;
 import org.mastodon.linking.EdgeCreator;
 import org.mastodon.linking.sequential.SequentialParticleLinkerOp;
 import org.mastodon.linking.sequential.kalman.KalmanLinker;
-import org.mastodon.properties.DoublePropertyMap;
-import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
@@ -99,11 +97,10 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 			spots.readLock().unlock();
 		}
 
-		final DoublePropertyMap< Link > pm = new DoublePropertyMap<>( graph.edges(), Double.NaN );
 		if ( null == linkCostFeature )
 			linkCostFeature = new LinkCostFeature( graph.edges().getRefPool() );
 
-		final EdgeCreator< Spot > edgeCreator = edgeCreator( graph, pm );
+		final EdgeCreator< Spot > edgeCreator = edgeCreator( graph );
 
 		@SuppressWarnings( { "rawtypes", "unchecked" } )
 		SequentialParticleLinkerOp< Spot > linker = ( SequentialParticleLinkerOp ) Inplaces.binary1( ops(), KalmanLinker.class,
