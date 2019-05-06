@@ -8,7 +8,6 @@ import org.mastodon.linking.EdgeCreator;
 import org.mastodon.linking.ParticleLinker;
 import org.mastodon.linking.graph.GraphParticleLinkerOp;
 import org.mastodon.linking.sequential.SequentialParticleLinkerOp;
-import org.mastodon.properties.DoublePropertyMap;
 import org.mastodon.revised.model.mamut.Link;
 import org.mastodon.revised.model.mamut.ModelGraph;
 import org.mastodon.revised.model.mamut.Spot;
@@ -62,8 +61,7 @@ public abstract class AbstractSpotLinkerOp
 
 		final long start = System.currentTimeMillis();
 
-		final DoublePropertyMap< Link > pm = new DoublePropertyMap<>( graph.edges(), Double.NaN );
-		final EdgeCreator< Spot > edgeCreator = edgeCreator( graph, pm );
+		final EdgeCreator< Spot > edgeCreator = edgeCreator( graph );
 
 		if ( GraphParticleLinkerOp.class.isAssignableFrom( cl ) )
 		{
@@ -108,9 +106,9 @@ public abstract class AbstractSpotLinkerOp
 		cancelable = null;
 	}
 
-	protected EdgeCreator< Spot > edgeCreator( final ModelGraph graph, final DoublePropertyMap< Link > pm )
+	protected EdgeCreator< Spot > edgeCreator( final ModelGraph graph )
 	{
-		return new MyEdgeCreator( graph, pm );
+		return new MyEdgeCreator( graph, linkCostFeature );
 	}
 
 	protected Comparator< Spot > spotComparator()
@@ -203,12 +201,12 @@ public abstract class AbstractSpotLinkerOp
 
 		private final Link ref;
 
-		private final DoublePropertyMap< Link > pm;
+		private final LinkCostFeature linkCostFeature;
 
-		public MyEdgeCreator( final ModelGraph graph, final DoublePropertyMap< Link > pm )
+		public MyEdgeCreator( final ModelGraph graph, final LinkCostFeature linkCostFeature )
 		{
 			this.graph = graph;
-			this.pm = pm;
+			this.linkCostFeature = linkCostFeature;
 			this.ref = graph.edgeRef();
 		}
 
@@ -216,7 +214,7 @@ public abstract class AbstractSpotLinkerOp
 		public void createEdge( final Spot source, final Spot target, final double edgeCost )
 		{
 			final Link link = graph.addEdge( source, target, ref ).init();
-			pm.set( link, edgeCost );
+			linkCostFeature.set( link, edgeCost );
 		}
 
 		@Override
