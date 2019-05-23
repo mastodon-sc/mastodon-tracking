@@ -142,6 +142,19 @@ public class DoGDetectorOp
 				interval = Intervals.intersect( transformedRoi, zeroMin );
 			}
 
+			// Ensure that the interval size is at least 3 in all dimensions.
+			final long[] min = new long[interval.numDimensions()];
+			interval.min( min );
+			final long[] max = new long[interval.numDimensions()];
+			interval.max( max );
+			for ( int d = 0; d < interval.numDimensions(); d++ )
+				if ( interval.dimension( d ) < 3 )
+				{
+					min[ d ]--;
+					max[ d ]++;
+				}
+			final FinalInterval minInterval = new FinalInterval( min, max );
+
 			/*
 			 * Process image.
 			 */
@@ -157,7 +170,7 @@ public class DoGDetectorOp
 
 			final DogDetection< FloatType > dog = new DogDetection<>(
 					source,
-					interval,
+					minInterval,
 					calibration,
 					sigmaSmaller,
 					sigmaLarger,
