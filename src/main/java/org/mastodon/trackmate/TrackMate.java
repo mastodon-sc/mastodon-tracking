@@ -141,8 +141,8 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		logger.info( String.format( "Detection completed in %.1f s.\n", ( end - start ) / 1000. ) );
 		logger.info( "There is now " + graph.vertices().size() + " spots.\n" );
 
-		graph.notifyGraphChanged();
 		model.setUndoPoint();
+		graph.notifyGraphChanged();
 
 		return true;
 	}
@@ -252,6 +252,7 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		final int nTracks = RootFinder.getRoots( model.getGraph() ).size();
 		logger.info( String.format( "There is now %d tracks.\n", nTracks ) );
 
+		model.setUndoPoint();
 		model.getGraph().notifyGraphChanged();
 		return true;
 	}
