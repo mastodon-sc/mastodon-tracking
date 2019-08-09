@@ -1,5 +1,6 @@
 package org.mastodon.detection;
 
+import static org.mastodon.detection.DetectorKeys.KEY_DETECTION_TYPE;
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
@@ -74,6 +75,7 @@ public class DoGDetectorOp
 		final double radius = ( double ) settings.get( KEY_RADIUS );
 		final double threshold = ( double ) settings.get( KEY_THRESHOLD );
 		final Interval roi = ( Interval ) settings.get( KEY_ROI );
+		final DetectionType detectionType = DetectionType.getOrDefault( ( String ) settings.get( KEY_DETECTION_TYPE ), DetectionType.MINIMA );
 
 		statusService.showStatus( "DoG detection." );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
@@ -153,7 +155,8 @@ public class DoGDetectorOp
 			final double sigma = radius / Math.sqrt( zeroMin.numDimensions() );
 			final double sigmaSmaller = sigma;
 			final double sigmaLarger = k * sigmaSmaller;
-			final double normalization = 1.0 / ( sigmaLarger / sigmaSmaller - 1.0 );
+			final double normalization = ( ( detectionType == DetectionType.MAXIMA ) ? 1.0 : -1.0 )
+					/ ( sigmaLarger / sigmaSmaller - 1.0 );
 
 			final DogDetection< FloatType > dog = new DogDetection<>(
 					source,
@@ -161,7 +164,7 @@ public class DoGDetectorOp
 					calibration,
 					sigmaSmaller,
 					sigmaLarger,
-					ExtremaType.MINIMA,
+					( detectionType == DetectionType.MAXIMA ) ? ExtremaType.MAXIMA : ExtremaType.MINIMA,
 					threshold,
 					true );
 			dog.setExecutorService( threadService.getExecutorService() );
@@ -179,7 +182,7 @@ public class DoGDetectorOp
 				for ( final RefinedPeak< Point > p : refinedPeaks )
 				{
 					final double value = p.getValue();
-					final double normalizedValue = -value * normalization;
+					final double normalizedValue = value * normalization;
 
 					/*
 					 * In case p is 2D we pass it to a 3D RealPoint to work
