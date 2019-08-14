@@ -1,6 +1,7 @@
 package org.mastodon.detection;
 
 import static org.mastodon.detection.DetectorKeys.DEFAULT_ADD_BEHAVIOR;
+import static org.mastodon.detection.DetectorKeys.DEFAULT_DETECTION_TYPE;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_RADIUS;
@@ -8,6 +9,7 @@ import static org.mastodon.detection.DetectorKeys.DEFAULT_ROI;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_SETUP_ID;
 import static org.mastodon.detection.DetectorKeys.DEFAULT_THRESHOLD;
 import static org.mastodon.detection.DetectorKeys.KEY_ADD_BEHAVIOR;
+import static org.mastodon.detection.DetectorKeys.KEY_DETECTION_TYPE;
 import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
@@ -453,6 +455,7 @@ public class DetectionUtil
 		settings.put( KEY_THRESHOLD, DEFAULT_THRESHOLD );
 		settings.put( KEY_ROI, DEFAULT_ROI );
 		settings.put( KEY_ADD_BEHAVIOR, DEFAULT_ADD_BEHAVIOR );
+		settings.put( KEY_DETECTION_TYPE, DEFAULT_DETECTION_TYPE );
 		return settings;
 	}
 
@@ -494,6 +497,7 @@ public class DetectionUtil
 		final List< String > optionalKeys = new ArrayList<>();
 		optionalKeys.add( KEY_ADD_BEHAVIOR );
 		optionalKeys.add( KEY_ROI );
+		optionalKeys.add( KEY_DETECTION_TYPE );
 		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, errorHolder );
 
 		// Check min & max time-point.
