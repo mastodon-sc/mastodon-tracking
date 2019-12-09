@@ -193,7 +193,8 @@ public class LoGDetectorOp
 						ra.setPosition( refinedPeak.getOriginalPeak() );
 						final double q = ra.get().getRealDouble();
 
-						p3d.setPosition( refinedPeak );
+						for ( int d = 0; d < refinedPeak.numDimensions(); d++ )
+							p3d.setPosition( refinedPeak.getDoublePosition( d ), d );
 						transform.apply( p3d, point );
 						detectionCreator.createDetection( pos, radius, q );
 					}

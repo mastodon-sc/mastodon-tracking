@@ -19,7 +19,6 @@ import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 import static org.mastodon.linking.LinkingUtils.checkMapKeys;
 import static org.mastodon.linking.LinkingUtils.checkParameter;
 
-import bdv.viewer.Source;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -30,7 +29,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
-import mpicbg.spim.data.sequence.VoxelDimensions;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
@@ -41,8 +39,10 @@ import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.brightness.ConverterSetup;
 import bdv.tools.transformation.ManualTransformation;
 import bdv.util.Affine3DHelpers;
+import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
 import mpicbg.spim.data.SpimDataException;
+import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.Point;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
@@ -101,6 +101,25 @@ public class DetectionUtil
 		final long[] dims = new long[ img.numDimensions() ];
 		img.dimensions( dims );
 		return Arrays.stream( dims ).max().orElse( -1l ) > 1;
+	}
+
+	/**
+	 * Returns the number of dimensions of the specified source. Useful to
+	 * determine whether we are dealing with 2D or 3D datesets.
+	 *
+	 * @param sources
+	 *            the image data.
+	 * @param setup
+	 *            the setup id.
+	 * @param timepoint
+	 *            the time-point.
+	 * @param level
+	 *            the resolution level.
+	 * @return the number of dimensions.
+	 */
+	public static final int numDimensions( final List< SourceAndConverter< ? > > sources, final int setup, final int timepoint )
+	{
+		 return Views.dropSingletonDimensions( sources.get( setup ).getSpimSource().getSource( timepoint, 0 ) ).numDimensions();
 	}
 
 	/**
@@ -193,9 +212,10 @@ public class DetectionUtil
 	{
 		final int numMipmapLevels = sources.get( setup ).getSpimSource().getNumMipmapLevels();
 		int level = 0;
-		final double[] previousSizeInPix = new double[ 3 ];
+		final int nDims = numDimensions( sources, setup, timepoint );
+		final double[] previousSizeInPix = new double[ nDims ];
 		Arrays.fill( previousSizeInPix, Double.POSITIVE_INFINITY );
-		final boolean[] belowLimit = new boolean[ 3 ];
+		final boolean[] belowLimit = new boolean[ nDims ];
 		Arrays.fill( belowLimit, false );
 		while ( level < numMipmapLevels - 1 )
 		{
@@ -205,7 +225,7 @@ public class DetectionUtil
 			 */
 
 			final double[] calibration = getPhysicalCalibration( sources, timepoint, setup, level );
-			final double[] sizeInPix = new double[ 3 ];
+			final double[] sizeInPix = new double[ calibration.length ];
 			for ( int d = 0; d < sizeInPix.length; d++ )
 			{
 				sizeInPix[ d ] = size / calibration[ d ];
@@ -342,7 +362,8 @@ public class DetectionUtil
 		final AffineTransform3D transform = getTransform( sources, timepoint, setup, level );
 		final double physicalSizeOfGlobalUnit = getPhysicalSizeOfGlobalUnit( sources, timepoint, setup );
 
-		final double[] calibration = new double[ 3 ];
+		final int nDims = numDimensions( sources, setup, timepoint );
+		final double[] calibration = new double[ nDims  ];
 		for ( int d = 0; d < calibration.length; d++ )
 			calibration[ d ] = physicalSizeOfGlobalUnit * Affine3DHelpers.extractScale( transform, d );
 		return calibration;

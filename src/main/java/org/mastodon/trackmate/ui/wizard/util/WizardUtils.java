@@ -5,11 +5,14 @@ import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 
 import java.awt.Font;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseListener;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Map;
+
+import javax.swing.AbstractAction;
 
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.axis.NumberTickUnitSource;
@@ -30,6 +33,7 @@ import org.mastodon.grouping.GroupManager;
 import org.mastodon.model.DefaultFocusModel;
 import org.mastodon.model.DefaultHighlightModel;
 import org.mastodon.model.DefaultSelectionModel;
+import org.mastodon.revised.bdv.BehaviourTransformEventHandlerMamut;
 import org.mastodon.revised.bdv.BigDataViewerMamut;
 import org.mastodon.revised.bdv.NavigationActionsMamut;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
@@ -281,6 +285,30 @@ public class WizardUtils
 			NavigationActionsMamut.install( viewActions, viewer );
 			viewer.getTransformEventHandler().install( viewBehaviours );
 
+			// Fine-tune 2D data case.
+			if ( BehaviourTransformEventHandlerMamut.is2D( shared.getSources(), shared.getNumTimepoints() ) )
+			{
+				// Move transform at exactly z = 0.
+				final AffineTransform3D t = new AffineTransform3D();
+				viewer.getState().getViewerTransform( t );
+				t.set( 0., 2, 3 );
+				viewer.setCurrentViewerTransform( t );
+
+				// Blocks some actions that make no sense for 2D data.
+				final AbstractAction blockerAction =
+						new AbstractAction( "Do nothing" )
+						{
+
+							private static final long serialVersionUID = 1L;
+
+							@Override
+							public void actionPerformed( final ActionEvent e )
+							{}
+						};
+				viewActions.getActionMap().put( "align ZY plane", blockerAction );
+				viewActions.getActionMap().put( "align XZ plane", blockerAction );
+			}
+
 			viewFrame.setVisible( true );
 		}
 		viewFrame.toFront();
@@ -302,6 +330,7 @@ public class WizardUtils
 		if ( sources == null )
 			return "No data.";
 
+		final int nDims = DetectionUtil.numDimensions( sources, setupID, 0 );
 		final Source< ? > source = sources.get( setupID ).getSpimSource();
 		final RandomAccessibleInterval< ? > ra0 = source.getSource( 0, 0 );
 		final long[] size = new long[ ra0.numDimensions() ];
@@ -310,10 +339,15 @@ public class WizardUtils
 		final StringBuilder str = new StringBuilder();
 
 		str.append( "  - name: " + source.getName() + "\n" );
-		str.append( "  - size: " + size[ 0 ] + " x " + size[ 1 ] + " x " + size[ 2 ] + "\n" );
+		str.append( "  - size: " + size[ 0 ] );
+		for ( int d = 1; d < nDims; d++ )
+			str.append( " x " + size[ d ] );
+		str.append( "\n" );
 		final VoxelDimensions voxelSize = source.getVoxelDimensions();
-		str.append( "  - voxel size: " + voxelSize.dimension( 0 ) + " x " + voxelSize.dimension( 1 ) + " x "
-				+ voxelSize.dimension( 2 ) + " " + voxelSize.unit() + "\n" );
+		str.append( "  - voxel size: " + voxelSize.dimension( 0 ) );
+		for ( int d = 1; d < nDims; d++ )
+			str.append( " x " + voxelSize.dimension( d ) );
+		str.append( " " + voxelSize.unit() + "\n" );
 
 		final int numMipmapLevels = source.getNumMipmapLevels();
 		if ( numMipmapLevels > 1 )
@@ -382,9 +416,9 @@ public class WizardUtils
 		final double[] calibration = DetectionUtil.getPhysicalCalibration( sources, timepoint, setupID, level );
 		final String units = getSpatialUnits( sources, setupID );
 
-		final double rx = radius / calibration[ 0 ];
-		final double ry = radius / calibration[ 1 ];
-		final double rz = radius / calibration[ 2 ];
+		final double[] rxs = new double[ DetectionUtil.numDimensions( sources, setupID, timepoint ) ];
+		for ( int d = 0; d < rxs.length; d++ )
+			rxs[ d ] = radius / calibration[ d ];
 
 		final StringBuilder str = new StringBuilder();
 		str.append( "Configured detector with parameters:\n" );
@@ -401,9 +435,9 @@ public class WizardUtils
 		{
 			str.append( String.format( "  - equivalent radius = %.1f %s in pixels:\n", radius, units ) );
 		}
-		str.append( String.format( "      - %.1f pixels in X.\n", rx ) );
-		str.append( String.format( "      - %.1f pixels in Y.\n", ry ) );
-		str.append( String.format( "      - %.1f pixels in Z.\n", rz ) );
+		final String[] axisLabels = new String[] { "X", "Y", "Z" };
+		for ( int d = 0; d < rxs.length; d++ )
+			str.append( String.format( "      - %.1f pixels in %s.\n", rxs[ d ], axisLabels[ d ] ) );
 		return str.toString();
 	}
 

@@ -201,7 +201,8 @@ public class DoGDetectorOp
 					 * In case p is 2D we pass it to a 3D RealPoint to work
 					 * nicely with the 3D transform.
 					 */
-					p3d.setPosition( p );
+					for ( int d = 0; d < p.numDimensions(); d++ )
+						p3d.setPosition( p.getDoublePosition( d ), d );
 					transform.apply( p3d, sp );
 					detectionCreator.createDetection( pos, radius / physicalSizeOfGlobalUnit, normalizedValue );
 				}

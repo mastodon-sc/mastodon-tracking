@@ -372,18 +372,30 @@ public class SemiAutomaticTracker
 					 */
 
 					final double[] calibration = DetectionUtil.getPhysicalCalibration( sources, tp, setup, 0 );
+					final int nDims = calibration.length;
 					final AffineTransform3D transform = DetectionUtil.getTransform( sources, tp, setup, 0 );
 					final Point center = new Point( 3 );
 					transform.applyInverse( new Round<>( center ), predict );
 					final long x = center.getLongPosition( 0 );
 					final long y = center.getLongPosition( 1 );
-					final long z = center.getLongPosition( 2 );
 					final long rx = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 0 ] );
 					final long ry = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 1 ] );
-					final long rz = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 2 ] );
-					final long[] min = new long[] { x - rx, y - ry, z - rz };
-					final long[] max = new long[] { x + rx, y + ry, z + rz };
-					final FinalInterval roi = new FinalInterval( min, max );
+
+					final FinalInterval roi;
+					if ( nDims == 3 )
+					{
+						final long z = center.getLongPosition( 2 );
+						final long rz = ( long ) Math.ceil( neighborhoodFactor * radius / calibration[ 2 ] );
+						final long[] min = new long[] { x - rx, y - ry, z - rz };
+						final long[] max = new long[] { x + rx, y + ry, z + rz };
+						roi = new FinalInterval( min, max );
+					}
+					else
+					{
+						final long[] min = new long[] { x - rx, y - ry };
+						final long[] max = new long[] { x + rx, y + ry };
+						roi = new FinalInterval( min, max );
+					}
 
 					/*
 					 * User built-in detector.
