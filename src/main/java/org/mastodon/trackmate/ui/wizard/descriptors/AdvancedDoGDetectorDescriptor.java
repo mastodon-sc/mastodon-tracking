@@ -1,6 +1,7 @@
 package org.mastodon.trackmate.ui.wizard.descriptors;
 
 import static org.mastodon.detection.DetectorKeys.KEY_ADD_BEHAVIOR;
+import static org.mastodon.detection.DetectorKeys.KEY_DETECTION_TYPE;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
 import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
@@ -34,6 +35,7 @@ import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorKeys;
 import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.detection.mamut.AdvancedDoGDetectorMamut;
+import org.mastodon.detection.DetectionType;
 import org.mastodon.detection.mamut.MamutDetectionCreatorFactories;
 import org.mastodon.detection.mamut.MamutDetectionCreatorFactories.DetectionBehavior;
 import org.mastodon.detection.mamut.SpotDetectorOp;
@@ -99,6 +101,7 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 		detectorSettings.put( KEY_RADIUS, ( ( Number ) panel.diameter.getValue() ).doubleValue() / 2. );
 		detectorSettings.put( KEY_THRESHOLD, ( ( Number ) panel.threshold.getValue() ).doubleValue() );
 		detectorSettings.put( KEY_ADD_BEHAVIOR, ( ( DetectionBehavior ) panel.behaviorCB.getSelectedItem() ).name() );
+		detectorSettings.put( KEY_DETECTION_TYPE, ( ( DetectionType ) panel.detectionTypeCB.getSelectedItem() ).name() );
 	}
 
 	@SuppressWarnings( { "rawtypes", "unchecked" } )
@@ -234,6 +237,8 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 			{}
 		}
 
+		final DetectionType detectionType = DetectionType.getOrDefault( ( String ) detectorSettings.get( KEY_DETECTION_TYPE ), DetectionType.MINIMA );
+
 		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
 		final String unit = settings.values.getSources().get( setupID ).getSpimSource().getVoxelDimensions().unit();
 
@@ -241,6 +246,7 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 		panel.threshold.setValue( threshold );
 		panel.lblDiameterUnit.setText( unit );
 		panel.behaviorCB.setSelectedItem( detectionBehavior );
+		panel.detectionTypeCB.setSelectedItem( detectionType );
 	}
 
 	@Override
@@ -253,6 +259,8 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 	{
 
 		private static final long serialVersionUID = 1L;
+
+		private final JComboBox< DetectionType > detectionTypeCB;
 
 		private final JFormattedTextField diameter;
 
@@ -287,10 +295,22 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 			title.setFont( getFont().deriveFont( Font.BOLD ) );
 			add( title, gbc );
 
+			// Detection Type.
+			final JLabel lblMinMax = new JLabel( "Detect:", JLabel.RIGHT );
+			gbc.gridy++;
+			gbc.gridwidth = 1;
+			gbc.anchor = GridBagConstraints.BASELINE_TRAILING;
+			add( lblMinMax, gbc );
+
+			this.detectionTypeCB = new JComboBox<>( DetectionType.values() );
+			gbc.gridx++;
+			gbc.anchor = GridBagConstraints.CENTER;
+			add( detectionTypeCB, gbc );
+
 			// Diameter.
 			final JLabel lblDiameter = new JLabel( "Estimated diameter:", JLabel.RIGHT );
 			gbc.gridy++;
-			gbc.gridwidth = 1;
+			gbc.gridx = 0;
 			gbc.anchor = GridBagConstraints.BASELINE_TRAILING;
 			add( lblDiameter, gbc );
 

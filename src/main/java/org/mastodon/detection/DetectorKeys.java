@@ -42,6 +42,18 @@ public class DetectorKeys
 	public static final int DEFAULT_MAX_TIMEPOINT = 0;
 
 	/**
+	 * Key for the parameter specifying whether to detect maxima or minima.
+	 * Expected values are {@link String}s defining a behavior that can be
+	 * interpreted by the detector implementation (e.g., "MAXIMA", "MINIMA").
+	 */
+	public static final String KEY_DETECTION_TYPE = "DETECTION_TYPE";
+
+	/**
+	 * Default value for the {@link #DEFAULT_DETECTION_TYPE} parameter.
+	 */
+	public static final String DEFAULT_DETECTION_TYPE = null;
+
+	/**
 	 * Key for the parameter specifying what is the expected radius of
 	 * particles, in units of the global coordinate system. Expected value must
 	 * be {@link Double}s larger than 0.
