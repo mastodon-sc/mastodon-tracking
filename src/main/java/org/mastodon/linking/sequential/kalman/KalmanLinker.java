@@ -252,6 +252,8 @@ public class KalmanLinker< V extends RealLocalizable >
 
 			// Use the spot in the next frame has measurements.
 			final RefList< V > measurements = generateSpotList( tp, spots, refcol );
+			orphanSpots = RefCollections.createRefList( orphanSpots, measurements.size() );
+			orphanSpots.addAll( measurements );
 			if ( !predictions.isEmpty() && !measurements.isEmpty() )
 			{
 				// Only link measurements to predictions if we have predictions.
@@ -278,8 +280,6 @@ public class KalmanLinker< V extends RealLocalizable >
 				final RefDoubleMap< Prediction > assignmentCosts = linker.getAssignmentCosts();
 
 				// Deal with found links.
-				orphanSpots = RefCollections.createRefList( orphanSpots, measurements.size() );
-				orphanSpots.addAll( measurements );
 
 				edgeCreator.preAddition();
 				try
