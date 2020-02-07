@@ -2,7 +2,6 @@ package org.mastodon.trackmate;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,16 +37,6 @@ public class PluginProvider< K extends SciJavaPlugin > extends AbstractContextua
 	{
 		final PluginService pluginService = context().getService( PluginService.class );
 		final List< PluginInfo< K > > infos = pluginService.getPluginsOfType( cl );
-
-		final Comparator< PluginInfo< K > > priorityComparator = new Comparator< PluginInfo< K > >()
-		{
-			@Override
-			public int compare( final PluginInfo< K > o1, final PluginInfo< K > o2 )
-			{
-				return o1.getPriority() > o2.getPriority() ? 1 : o1.getPriority() < o2.getPriority() ? -1 : 0;
-			}
-		};
-		Collections.sort( infos, priorityComparator.reversed() );
 
 		this.keys = new ArrayList<>( infos.size() );
 		this.visibleKeys = new ArrayList<>( infos.size() );
