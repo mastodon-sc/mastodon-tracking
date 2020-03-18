@@ -5,21 +5,21 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>27.0.1</version>
+		<version>28.0.0</version>
 		<relativePath />
 	</parent>
 
-	<groupId>net.trndy</groupId>
+	<groupId>org.mastodon</groupId>
 	<artifactId>mastodon-tracking</artifactId>
 	<version>1.0.0-beta-6-SNAPSHOT</version>
 
 	<name>Mastodon tracking</name>
 	<description>Basic tracking algorithms based on Mastodon data structures.</description>
-	<url>https://github.com/TrNdy/mastodon-tracking</url>
+	<url>https://github.com/mastodon-sc/mastodon-tracking</url>
 	<inceptionYear>2017</inceptionYear>
 	<organization>
-		<name>TrNdy</name>
-		<url>http://trndy.org</url>
+		<name>Mastodon Science</name>
+		<url>http://mastodon.org</url>
 	</organization>
 	<licenses>
 		<license>
@@ -40,6 +40,7 @@
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>bigdataviewer-core</artifactId>
+			
 		</dependency>
 		<dependency>
 			<groupId>sc.fiji</groupId>
@@ -53,9 +54,9 @@
 		<!-- Mastodon deps -->
 
 		<dependency>
-			<groupId>net.trackmate</groupId>
-			<artifactId>trackmate</artifactId>
-			<version>1.0.0-beta-14-SNAPSHOT</version>
+			<groupId>org.mastodon</groupId>
+			<artifactId>mastodon</artifactId>
+			<version>1.0.0-beta-14</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mastodon</groupId>
@@ -124,22 +125,22 @@
 	</mailingLists>
 
 	<scm>
-		<connection>scm:git:git:github.com/TrNdy/mastodon-tracking</connection>
-		<developerConnection>scm:git:git@github.com:TrNdy/mastodon-tracking</developerConnection>
+		<connection>scm:git:git:github.com/mastodon-sc/mastodon-tracking</connection>
+		<developerConnection>scm:git:git@github.com:mastodon-sc/mastodon-tracking</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/TrNdy/mastodon-tracking</url>
+		<url>https://github.com/mastodon-sc/mastodon-tracking</url>
 	</scm>
 	<issueManagement>
 		<system>GitHub</system>
-		<url>https://github.com/TrNdy/mastodon-tracking/issues</url>
+		<url>https://github.com/mastodon-sc/mastodon-tracking/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>Travis CI</system>
-		<url>https://travis-ci.org/TrNdy/mastodon-tracking</url>
+		<url>https://travis-ci.com/mastodon-sc/mastodon-tracking</url>
 	</ciManagement>
 
 	<properties>
-		<package-name>org.trndy</package-name>
+		<package-name>org.mastodon</package-name>
 		<!-- <enforcer.skip>true</enforcer.skip> -->
 		<license.licenseName>not licensed yet</license.licenseName>
 		<license.projectName>mastodon-tracking</license.projectName>
