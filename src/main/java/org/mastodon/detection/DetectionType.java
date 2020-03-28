@@ -1,7 +1,5 @@
 package org.mastodon.detection;
 
-import java.util.Map;
-
 /**
  * Specify whether intensity maxima or minima should be detected.
  */
@@ -12,7 +10,7 @@ public enum DetectionType
 
 	private final String str;
 
-	DetectionType( String str )
+	DetectionType( final String str )
 	{
 		this.str = str;
 	}
