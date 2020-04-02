@@ -91,11 +91,15 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 		roi = getBoundingBoxModel();
 		roi.intervalChangedListeners().add( () -> viewFrame.getViewerPanel().getDisplay().repaint() );
 
+		// setup ID
+		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
+
 		// Editor.
 		boundingBoxEditor = new TransformedBoxEditor(
 				wm.getAppModel().getKeymap().getConfig(),
 				viewFrame.getViewerPanel(),
-				wm.getAppModel().getSharedBdvData().getSetupAssignments(),
+				wm.getAppModel().getSharedBdvData().getConverterSetups(),
+				setupID,
 				viewFrame.getTriggerbindings(),
 				roi,
 				"ROI",

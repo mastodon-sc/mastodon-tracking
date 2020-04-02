@@ -33,7 +33,6 @@ import org.mastodon.grouping.GroupManager;
 import org.mastodon.model.DefaultFocusModel;
 import org.mastodon.model.DefaultHighlightModel;
 import org.mastodon.model.DefaultSelectionModel;
-import org.mastodon.revised.bdv.BehaviourTransformEventHandlerMamut;
 import org.mastodon.revised.bdv.BigDataViewerMamut;
 import org.mastodon.revised.bdv.NavigationActionsMamut;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
@@ -282,11 +281,11 @@ public class WizardUtils
 			final Behaviours viewBehaviours = new Behaviours( keymap.getConfig(), keyConfigContexts );
 			viewBehaviours.install( viewFrame.getTriggerbindings(), "view" );
 
-			NavigationActionsMamut.install( viewActions, viewer );
+			NavigationActionsMamut.install( viewActions, viewer, shared.is2D() );
 			viewer.getTransformEventHandler().install( viewBehaviours );
 
 			// Fine-tune 2D data case.
-			if ( BehaviourTransformEventHandlerMamut.is2D( shared.getSources(), shared.getNumTimepoints() ) )
+			if ( shared.is2D() )
 			{
 				// Move transform at exactly z = 0.
 				final AffineTransform3D t = new AffineTransform3D();
