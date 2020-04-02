@@ -6,11 +6,6 @@ import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import net.imglib2.Interval;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.util.Intervals;
-
 import org.mastodon.project.MamutProject;
 import org.mastodon.project.MamutProjectIO;
 import org.mastodon.revised.bdv.ViewerFrameMamut;
@@ -25,8 +20,13 @@ import org.scijava.ui.behaviour.util.Actions;
 
 import bdv.tools.boundingbox.BoxSelectionOptions;
 import bdv.tools.boundingbox.TransformedBoxSelectionDialog;
+import bdv.viewer.ConverterSetups;
 import bdv.viewer.Source;
-import bdv.viewer.state.ViewerState;
+import bdv.viewer.ViewerState;
+import net.imglib2.Interval;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.util.Intervals;
 
 /**
  * Example of how to make a bounding box dialog.
@@ -52,7 +52,7 @@ public class BoundingBoxDialog
 		final Context context = new Context();
 		final WindowManager windowManager = new WindowManager( context );
 		final ProjectManager projectManager = windowManager.getProjectManager();
-		final MamutProject project = new MamutProjectIO().load( "/Users/pietzsch/workspace/Mastodon/TrackMate3/samples/mamutproject" );
+		final MamutProject project = new MamutProjectIO().load( "../mastodon/samples/mamutproject" );
 		projectManager.open( project );
 		final MamutViewBdv[] bdv = new MamutViewBdv[ 1 ];
 		SwingUtilities.invokeAndWait( () -> {
@@ -66,7 +66,7 @@ public class BoundingBoxDialog
 		 * Compute an initial interval from the specified setup id.
 		 */
 		final int setupID = 0;
-		final ViewerState state = viewer.getState();
+		final ViewerState state = viewer.state();
 		final Source< ? > source = state.getSources().get( setupID ).getSpimSource();
 		final int numTimepoints = state.getNumTimepoints();
 		int tp = 0;
@@ -84,10 +84,12 @@ public class BoundingBoxDialog
 		}
 		if ( null == interval )
 			interval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
-
+		
+		final ConverterSetups converterSetups = windowManager.getAppModel().getSharedBdvData().getConverterSetups();
 		final JDialog dialog = new TransformedBoxSelectionDialog(
 				viewer,
-				windowManager.getAppModel().getSharedBdvData().getSetupAssignments(),
+				converterSetups,
+				setupID,
 				keyconf,
 				viewerFrame.getTriggerbindings(),
 				sourceTransform,
