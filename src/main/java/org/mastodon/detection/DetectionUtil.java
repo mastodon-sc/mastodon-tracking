@@ -113,8 +113,6 @@ public class DetectionUtil
 	 *            the setup id.
 	 * @param timepoint
 	 *            the time-point.
-	 * @param level
-	 *            the resolution level.
 	 * @return the number of dimensions.
 	 */
 	public static final int numDimensions( final List< SourceAndConverter< ? > > sources, final int setup, final int timepoint )
