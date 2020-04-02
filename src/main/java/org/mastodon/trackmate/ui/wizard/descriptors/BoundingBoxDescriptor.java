@@ -30,6 +30,7 @@ import bdv.tools.boundingbox.BoxSelectionPanel;
 import bdv.tools.boundingbox.TransformedBoxEditor;
 import bdv.tools.boundingbox.TransformedBoxEditor.BoxSourceType;
 import bdv.tools.boundingbox.TransformedBoxModel;
+import bdv.tools.brightness.SetupAssignments;
 import bdv.tools.brightness.SliderPanel;
 import bdv.util.BoundedInterval;
 import bdv.util.ModifiableInterval;
@@ -91,15 +92,13 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 		roi = getBoundingBoxModel();
 		roi.intervalChangedListeners().add( () -> viewFrame.getViewerPanel().getDisplay().repaint() );
 
-		// setup ID
-		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
-
 		// Editor.
+		final int boxSetupId = SetupAssignments.getUnusedSetupId( wm.getAppModel().getSharedBdvData().getSetupAssignments() );
 		boundingBoxEditor = new TransformedBoxEditor(
 				wm.getAppModel().getKeymap().getConfig(),
 				viewFrame.getViewerPanel(),
 				wm.getAppModel().getSharedBdvData().getConverterSetups(),
-				setupID,
+				boxSetupId,
 				viewFrame.getTriggerbindings(),
 				roi,
 				"ROI",

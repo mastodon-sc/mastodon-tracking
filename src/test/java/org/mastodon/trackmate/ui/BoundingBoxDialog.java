@@ -20,6 +20,7 @@ import org.scijava.ui.behaviour.util.Actions;
 
 import bdv.tools.boundingbox.BoxSelectionOptions;
 import bdv.tools.boundingbox.TransformedBoxSelectionDialog;
+import bdv.tools.brightness.SetupAssignments;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerState;
@@ -84,12 +85,13 @@ public class BoundingBoxDialog
 		}
 		if ( null == interval )
 			interval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
-		
+
 		final ConverterSetups converterSetups = windowManager.getAppModel().getSharedBdvData().getConverterSetups();
+		final int boxSetupId = SetupAssignments.getUnusedSetupId( windowManager.getAppModel().getSharedBdvData().getSetupAssignments() );
 		final JDialog dialog = new TransformedBoxSelectionDialog(
 				viewer,
 				converterSetups,
-				setupID,
+				boxSetupId,
 				keyconf,
 				viewerFrame.getTriggerbindings(),
 				sourceTransform,

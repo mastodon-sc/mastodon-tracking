@@ -5,14 +5,11 @@ import static org.mastodon.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 
 import java.awt.Font;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseListener;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Map;
-
-import javax.swing.AbstractAction;
 
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.axis.NumberTickUnitSource;
@@ -283,31 +280,6 @@ public class WizardUtils
 
 			NavigationActionsMamut.install( viewActions, viewer, shared.is2D() );
 			viewer.getTransformEventHandler().install( viewBehaviours );
-
-			// Fine-tune 2D data case.
-			if ( shared.is2D() )
-			{
-				// Move transform at exactly z = 0.
-				final AffineTransform3D t = new AffineTransform3D();
-				viewer.getState().getViewerTransform( t );
-				t.set( 0., 2, 3 );
-				viewer.setCurrentViewerTransform( t );
-
-				// Blocks some actions that make no sense for 2D data.
-				final AbstractAction blockerAction =
-						new AbstractAction( "Do nothing" )
-						{
-
-							private static final long serialVersionUID = 1L;
-
-							@Override
-							public void actionPerformed( final ActionEvent e )
-							{}
-						};
-				viewActions.getActionMap().put( "align ZY plane", blockerAction );
-				viewActions.getActionMap().put( "align XZ plane", blockerAction );
-			}
-
 			viewFrame.setVisible( true );
 		}
 		viewFrame.toFront();
