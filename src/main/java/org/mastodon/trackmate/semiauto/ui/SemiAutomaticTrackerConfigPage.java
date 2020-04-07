@@ -9,8 +9,8 @@ import org.mastodon.app.ui.settings.style.StyleProfile;
 import org.mastodon.app.ui.settings.style.StyleProfileManager;
 import org.mastodon.grouping.GroupHandle;
 import org.mastodon.revised.bdv.SharedBigDataViewerData;
-import org.mastodon.util.Listeners;
-import org.mastodon.util.Listeners.SynchronizedList;
+import org.scijava.listeners.Listeners;
+import org.scijava.listeners.Listeners.SynchronizedList;
 
 public class SemiAutomaticTrackerConfigPage extends SelectAndEditProfileSettingsPage< StyleProfile< SemiAutomaticTrackerSettings > >
 {
