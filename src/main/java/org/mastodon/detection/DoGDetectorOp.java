@@ -161,8 +161,7 @@ public class DoGDetectorOp
 			 * Process image.
 			 */
 
-			final double[] calibration = DetectionUtil.getPhysicalCalibration( sources, tp, setup, level );
-			final double physicalSizeOfGlobalUnit = DetectionUtil.getPhysicalSizeOfGlobalUnit( sources, tp, setup );
+
 			final int stepsPerOctave = 4;
 			final double k = Math.pow( 2.0, 1.0 / stepsPerOctave );
 			final double sigma = radius / Math.sqrt( zeroMin.numDimensions() );
@@ -171,10 +170,11 @@ public class DoGDetectorOp
 			final double normalization = ( ( detectionType == DetectionType.MAXIMA ) ? 1.0 : -1.0 )
 					/ ( sigmaLarger / sigmaSmaller - 1.0 );
 
+			final double[] pixelSize = DetectionUtil.getPixelSize( sources, tp, setup, level );
 			final DogDetection< FloatType > dog = new DogDetection<>(
 					source,
 					minInterval,
-					calibration,
+					pixelSize,
 					sigmaSmaller,
 					sigmaLarger,
 					( detectionType == DetectionType.MAXIMA ) ? ExtremaType.MAXIMA : ExtremaType.MINIMA,
@@ -204,7 +204,7 @@ public class DoGDetectorOp
 					for ( int d = 0; d < p.numDimensions(); d++ )
 						p3d.setPosition( p.getDoublePosition( d ), d );
 					transform.apply( p3d, sp );
-					detectionCreator.createDetection( pos, radius / physicalSizeOfGlobalUnit, normalizedValue );
+					detectionCreator.createDetection( pos, radius, normalizedValue );
 				}
 			}
 			finally

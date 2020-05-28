@@ -139,8 +139,8 @@ public class LoGDetectorOp
 			 * Filter image.
 			 */
 
-			final double[] calibration = DetectionUtil.getPhysicalCalibration( sources, tp, setup, level );
-			final RandomAccessibleInterval< FloatType > kernel = createLoGKernel( radius, zeroMin.numDimensions(), calibration );
+			final double[] pixelSize = DetectionUtil.getPixelSize( sources, tp, setup, level );
+			final RandomAccessibleInterval< FloatType > kernel = createLoGKernel( radius, zeroMin.numDimensions(), pixelSize );
 			@SuppressWarnings( "rawtypes" )
 			final IntervalView source = Views.interval( zeroMin, interval );
 
@@ -158,7 +158,7 @@ public class LoGDetectorOp
 			 * is scaled differently across X, Y and Z.
 			 */
 			final double sigma = radius / Math.sqrt( img.numDimensions() );
-			final double sigmaPixels = sigma / calibration[ 0 ];
+			final double sigmaPixels = sigma / pixelSize[ 0 ];
 			final FloatType C = new FloatType( ( float ) ( 1. / Math.PI / sigmaPixels / sigmaPixels ) );
 			Views.iterable( output ).forEach( ( e ) -> e.div( C ) );
 

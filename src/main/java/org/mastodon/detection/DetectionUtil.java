@@ -39,10 +39,8 @@ import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.brightness.ConverterSetup;
 import bdv.tools.transformation.ManualTransformation;
 import bdv.util.Affine3DHelpers;
-import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
 import mpicbg.spim.data.SpimDataException;
-import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.Point;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
@@ -117,7 +115,7 @@ public class DetectionUtil
 	 */
 	public static final int numDimensions( final List< SourceAndConverter< ? > > sources, final int setup, final int timepoint )
 	{
-		 return Views.dropSingletonDimensions( sources.get( setup ).getSpimSource().getSource( timepoint, 0 ) ).numDimensions();
+		return Views.dropSingletonDimensions( sources.get( setup ).getSpimSource().getSource( timepoint, 0 ) ).numDimensions();
 	}
 
 	/**
@@ -222,20 +220,20 @@ public class DetectionUtil
 			 * but this one expresses what we have in mind.
 			 */
 
-			final double[] calibration = getPhysicalCalibration( sources, timepoint, setup, level );
-			final double[] sizeInPix = new double[ calibration.length ];
-			for ( int d = 0; d < sizeInPix.length; d++ )
+			final double[] sizeThisLevel = new double[ nDims ];
+			for ( int d = 0; d < sizeThisLevel.length; d++ )
 			{
-				sizeInPix[ d ] = size / calibration[ d ];
+				final AffineTransform3D transform = getTransform( sources, timepoint, setup, level );
+				sizeThisLevel[ d ] = size / Affine3DHelpers.extractScale( transform, 0 );
 				// Are we below the limit?
-				if ( sizeInPix[ d ] < minSizePixel )
+				if ( sizeThisLevel[ d ] < minSizePixel )
 				{
 					// Yes! Was it the case the previous level?
 					if ( belowLimit[ d ] )
 					{
 						// Yes! But with this level, are we getting even
 						// smaller?
-						if ( sizeInPix[ d ] < previousSizeInPix[ d ] )
+						if ( sizeThisLevel[ d ] < previousSizeInPix[ d ] )
 						{
 							// Yes! This is not ok. We stop at the previous
 							// level.
@@ -257,7 +255,7 @@ public class DetectionUtil
 				{
 					// We are not below limit. Let's go deeper.
 				}
-				previousSizeInPix[ d ] = sizeInPix[ d ];
+				previousSizeInPix[ d ] = sizeThisLevel[ d ];
 			}
 			// Now that we check all dimensions, are they all below limit?
 			if ( isAllTrue( belowLimit ) )
@@ -335,58 +333,30 @@ public class DetectionUtil
 	}
 
 	/**
-	 * Returns the physical calibration of the specified setup at the specified
-	 * resolution level.
+	 * Returns the pixel sizes of the specified setup at the specified
+	 * resolution level, in units of the global coordinate system.
 	 * <p>
-	 * The physical calibration is the pixel size in whatever physical units,
-	 * for each axis, possibly scaled by the resolution level. If the specified
-	 * spimData does not have multiple resolution level, or if the specifed
-	 * resolution level does not exist, then the physical calibration at level 0
-	 * is returned.
+	 * If the specified spimData does not have multiple resolution level, or if
+	 * the specified resolution level does not exist, then the pixel sizes at
+	 * level 0 is returned.
 	 *
 	 * @param sources
 	 *            the image data.
 	 * @param timepoint
-	 *            the timepoint to query.
+	 *            the time-point to query.
 	 * @param setup
 	 *            the setup id to query.
 	 * @param level
 	 *            the resolution level.
-	 * @return a new <code>double[]</code> array containing the pixel physical
-	 *         size.
+	 * @return a new <code>double[]</code> array containing the pixel size.
 	 */
-	public static double[] getPhysicalCalibration( final List< SourceAndConverter< ? > > sources, final int timepoint, final int setup, final int level )
+	public static double[] getPixelSize( final List< SourceAndConverter< ? > > sources, final int timepoint, final int setup, final int level )
 	{
 		final AffineTransform3D transform = getTransform( sources, timepoint, setup, level );
-		final double physicalSizeOfGlobalUnit = getPhysicalSizeOfGlobalUnit( sources, timepoint, setup );
-
-		final int nDims = numDimensions( sources, setup, timepoint );
-		final double[] calibration = new double[ nDims  ];
-		for ( int d = 0; d < calibration.length; d++ )
-			calibration[ d ] = physicalSizeOfGlobalUnit * Affine3DHelpers.extractScale( transform, d );
-		return calibration;
-	}
-
-	/**
-	 * Translate the physical size of the global coordinate system unit length,
-	 * as determined by the voxel dimensions of the given setup at the given timepoint.
-	 *
-	 * @param sources
-	 *            the image data.
-	 * @param timepoint
-	 *            the timepoint to query.
-	 * @param setup
-	 *            the setup id to query.
-	 * @return the physical size of the global coordinate system unit length.
-	 */
-	public static double getPhysicalSizeOfGlobalUnit( final List< SourceAndConverter< ? > > sources, final int timepoint, final int setup )
-	{
-		final Source< ? > spimSource = sources.get( setup ).getSpimSource();
-		final VoxelDimensions voxelDimensions = spimSource.getVoxelDimensions();
-		final double pixelWidth = ( voxelDimensions == null ) ? 1 : voxelDimensions.dimension( 0 );
-
-		final AffineTransform3D transform = getTransform( sources, timepoint, setup, 0 );
-		return pixelWidth / Affine3DHelpers.extractScale( transform, 0 );
+		final double[] pixelSize = new double[ numDimensions( sources, setup, timepoint ) ];
+		for ( int d = 0; d < pixelSize.length; d++ )
+			pixelSize[ d ] = Affine3DHelpers.extractScale( transform, d );
+		return pixelSize;
 	}
 
 	/**
