@@ -31,11 +31,11 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import org.jfree.chart.ChartPanel;
+import org.mastodon.detection.DetectionType;
 import org.mastodon.detection.DetectionUtil;
 import org.mastodon.detection.DetectorKeys;
 import org.mastodon.detection.DoGDetectorOp;
 import org.mastodon.detection.mamut.AdvancedDoGDetectorMamut;
-import org.mastodon.detection.DetectionType;
 import org.mastodon.detection.mamut.MamutDetectionCreatorFactories;
 import org.mastodon.detection.mamut.MamutDetectionCreatorFactories.DetectionBehavior;
 import org.mastodon.detection.mamut.SpotDetectorOp;
@@ -141,7 +141,7 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 
 		final SharedBigDataViewerData shared = windowManager.getAppModel().getSharedBdvData();
 		viewFrame = WizardUtils.previewFrame( viewFrame, shared, localModel );
-		final int currentTimepoint = viewFrame.getViewerPanel().getState().getCurrentTimepoint();
+		final int currentTimepoint = viewFrame.getViewerPanel().state().getCurrentTimepoint();
 
 		final AdvancedDoGDetectorPanel panel = ( AdvancedDoGDetectorPanel ) targetPanel;
 		panel.preview.setEnabled( false );

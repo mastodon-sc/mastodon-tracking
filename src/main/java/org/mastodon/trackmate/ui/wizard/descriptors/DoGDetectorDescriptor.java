@@ -110,7 +110,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 
 		final SharedBigDataViewerData shared = windowManager.getAppModel().getSharedBdvData();
 		viewFrame = WizardUtils.previewFrame( viewFrame, shared, localModel );
-		final int currentTimepoint = viewFrame.getViewerPanel().getState().getCurrentTimepoint();
+		final int currentTimepoint = viewFrame.getViewerPanel().state().getCurrentTimepoint();
 
 		final DoGDetectorPanel panel = ( DoGDetectorPanel ) targetPanel;
 		panel.preview.setEnabled( false );
