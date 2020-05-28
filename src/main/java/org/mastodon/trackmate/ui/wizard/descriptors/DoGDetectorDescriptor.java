@@ -4,7 +4,6 @@ import static org.mastodon.detection.DetectorKeys.KEY_ADD_BEHAVIOR;
 import static org.mastodon.detection.DetectorKeys.KEY_DETECTION_TYPE;
 import static org.mastodon.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.detection.DetectorKeys.KEY_RADIUS;
-import static org.mastodon.detection.DetectorKeys.KEY_SETUP_ID;
 import static org.mastodon.detection.DetectorKeys.KEY_THRESHOLD;
 
 import java.awt.Font;
@@ -223,8 +222,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 		else
 			threshold = ( double ) objThreshold;
 
-		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
-		final String unit = settings.values.getSources().get( setupID ).getSpimSource().getVoxelDimensions().unit();
+		final String unit = "pixels";
 
 		panel.diameter.setValue( diameter );
 		panel.threshold.setValue( threshold );

@@ -118,10 +118,7 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 			jScrollPaneMain.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
 			jScrollPaneMain.getVerticalScrollBar().setUnitIncrement( 24 );
 
-			final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
-			final List< SourceAndConverter< ? > > sources = settings.values.getSources();
-			final Source< ? > source = sources.get( setupID.intValue() ).getSpimSource();
-			final String units = source.getVoxelDimensions().unit();
+			final String units = "pixels";
 			this.configPanel = new LAPLinkerConfigPanel( "LAP linker.", units, model.getFeatureModel(), Spot.class );
 			jScrollPaneMain.setViewportView( configPanel );
 		}

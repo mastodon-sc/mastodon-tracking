@@ -146,10 +146,7 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 			final SelectOnFocusListener onFocusListener = new SelectOnFocusListener();
 			final PluginInfo< SciJavaPlugin > pluginInfo = pluginService.getPlugin( KalmanLinkerMamut.class );
 
-			final Integer setupID = ( Integer ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_SETUP_ID );
-			final List< SourceAndConverter< ? > > sources = settings.values.getSources();
-			final Source< ? > source = sources.get( setupID.intValue() ).getSpimSource();
-			final String units = source.getVoxelDimensions().unit();
+			final String units = "pixels";
 
 			final GridBagLayout layout = new GridBagLayout();
 			layout.columnWidths = new int[] { 80, 80, 40 };

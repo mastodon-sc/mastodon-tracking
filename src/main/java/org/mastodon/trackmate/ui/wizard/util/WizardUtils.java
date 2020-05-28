@@ -62,7 +62,6 @@ import bdv.tools.InitializeViewerState;
 import bdv.util.Affine3DHelpers;
 import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
-import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imagej.ops.OpService;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -314,11 +313,6 @@ public class WizardUtils
 		for ( int d = 1; d < nDims; d++ )
 			str.append( " x " + size[ d ] );
 		str.append( "\n" );
-		final VoxelDimensions voxelSize = source.getVoxelDimensions();
-		str.append( "  - voxel size: " + voxelSize.dimension( 0 ) );
-		for ( int d = 1; d < nDims; d++ )
-			str.append( " x " + voxelSize.dimension( d ) );
-		str.append( " " + voxelSize.unit() + "\n" );
 
 		final int numMipmapLevels = source.getNumMipmapLevels();
 		if ( numMipmapLevels > 1 )
@@ -338,23 +332,6 @@ public class WizardUtils
 			str.append( " - single-resolution image.\n" );
 		}
 		return str.toString();
-	}
-
-	/**
-	 * Returns the physical units in which spatial coordinates are stored.
-	 *
-	 * @param sources
-	 *            the image data.
-	 * @param setupID
-	 *            the id of the setup to query.
-	 * @return the spatial units.
-	 */
-	public static final String getSpatialUnits( final List< SourceAndConverter< ? > > sources, final int setupID )
-	{
-		final String units = ( null != sources )
-				? sources.get( setupID ).getSpimSource().getVoxelDimensions().unit()
-				: "pixels";
-		return units;
 	}
 
 	/**
@@ -384,12 +361,12 @@ public class WizardUtils
 		final double sy = Affine3DHelpers.extractScale( mipmapTransform, 1 );
 		final double sz = Affine3DHelpers.extractScale( mipmapTransform, 2 );
 
-		final double[] calibration = DetectionUtil.getPhysicalCalibration( sources, timepoint, setupID, level );
-		final String units = getSpatialUnits( sources, setupID );
+		final double[] pixelSize = DetectionUtil.getPixelSize( sources, timepoint, setupID, level );
+		final String units = "pixels";
 
 		final double[] rxs = new double[ DetectionUtil.numDimensions( sources, setupID, timepoint ) ];
 		for ( int d = 0; d < rxs.length; d++ )
-			rxs[ d ] = radius / calibration[ d ];
+			rxs[ d ] = radius / pixelSize[ d ];
 
 		final StringBuilder str = new StringBuilder();
 		str.append( "Configured detector with parameters:\n" );
