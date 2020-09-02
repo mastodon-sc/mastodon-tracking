@@ -1,14 +1,14 @@
-package org.mastodon.tracking.motionmodel;
+package org.mastodon.tracking.linking.motionmodel;
 
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 
-public class RandomMotionTracker implements Tracker
+public class RandomMotionModel implements MotionModel
 {
 
 	private final RealPoint current;
 
-	public RandomMotionTracker(final int numDimensions)
+	public RandomMotionModel(final int numDimensions)
 	{
 		this.current = new RealPoint( numDimensions );
 	}

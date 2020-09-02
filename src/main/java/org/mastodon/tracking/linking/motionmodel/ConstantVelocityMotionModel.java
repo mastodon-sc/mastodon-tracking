@@ -1,11 +1,11 @@
-package org.mastodon.tracking.motionmodel;
+package org.mastodon.tracking.linking.motionmodel;
 
 import org.mastodon.tracking.linking.sequential.kalman.CVMKalmanFilter;
 
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 
-public class ConstantVelocityTracker implements Tracker
+public class ConstantVelocityMotionModel implements MotionModel
 {
 
 	private RealPoint current;
@@ -20,7 +20,7 @@ public class ConstantVelocityTracker implements Tracker
 
 	private final double[] pos = new double[ 3 ];
 
-	public ConstantVelocityTracker( final double positionProcessStd, final double velocityProcessStd, final double positionMeasurementStd )
+	public ConstantVelocityMotionModel( final double positionProcessStd, final double velocityProcessStd, final double positionMeasurementStd )
 	{
 		this.positionProcessStd = positionProcessStd;
 		this.velocityProcessStd = velocityProcessStd;

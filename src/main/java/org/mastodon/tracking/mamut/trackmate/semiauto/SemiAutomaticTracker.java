@@ -37,10 +37,10 @@ import org.mastodon.tracking.detection.DetectionCreatorFactory;
 import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.detection.DetectorOp;
 import org.mastodon.tracking.detection.DoGDetectorOp;
+import org.mastodon.tracking.linking.motionmodel.MotionModel;
+import org.mastodon.tracking.linking.motionmodel.RandomMotionModel;
 import org.mastodon.tracking.mamut.detection.DetectionQualityFeature;
 import org.mastodon.tracking.mamut.linking.LinkCostFeature;
-import org.mastodon.tracking.motionmodel.RandomMotionTracker;
-import org.mastodon.tracking.motionmodel.Tracker;
 import org.mastodon.views.bdv.SharedBigDataViewerData;
 import org.mastodon.views.bdv.overlay.util.JamaEigenvalueDecomposition;
 import org.scijava.Cancelable;
@@ -188,7 +188,7 @@ public class SemiAutomaticTracker
 			 * Initialize tracker for this spot.
 			 */
 
-			final Tracker tracker = initializeTracker( first, graph );
+			final MotionModel tracker = initializeTracker( first, graph );
 
 			/*
 			 * Loop over time.
@@ -561,10 +561,10 @@ public class SemiAutomaticTracker
 		};
 	}
 
-	private Tracker initializeTracker( final Spot first, final ModelGraph graph )
+	private MotionModel initializeTracker( final Spot first, final ModelGraph graph )
 	{
 		// TODO For now we simply return the brownian motion one.
-		final RandomMotionTracker tracker = new RandomMotionTracker( 3 );
+		final RandomMotionModel tracker = new RandomMotionModel( 3 );
 		tracker.update( first );
 		return tracker;
 	}

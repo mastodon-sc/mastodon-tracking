@@ -1,4 +1,4 @@
-package org.mastodon.tracking.motionmodel;
+package org.mastodon.tracking.linking.motionmodel;
 
 import net.imglib2.RealLocalizable;
 
@@ -8,7 +8,7 @@ import net.imglib2.RealLocalizable;
  * @author Jean-Yves Tinevez
  *
  */
-public interface Tracker
+public interface MotionModel
 {
 
 	/**
