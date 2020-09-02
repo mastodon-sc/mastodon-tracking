@@ -1,0 +1,25 @@
+package org.mastodon.tracking.mamut.trackmate.wizard;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.mastodon.tracking.mamut.trackmate.wizard.ListWizardSequence;
+import org.mastodon.tracking.mamut.trackmate.wizard.Wizard;
+import org.mastodon.tracking.mamut.trackmate.wizard.WizardPanelDescriptor;
+import org.scijava.Context;
+
+public class WizardExample
+{
+
+	public static void main( final String[] args )
+	{
+		final List< WizardPanelDescriptor > l = new ArrayList<>();
+		l.add( new Descriptor1() );
+		l.add( new Descriptor2() );
+		l.add( new Descriptor3() );
+		final ListWizardSequence sequence = new ListWizardSequence( l );
+		final Wizard wizard = new Wizard();
+		new Context().inject( wizard );
+		wizard.show( sequence, "Simple example" );
+	}
+}
