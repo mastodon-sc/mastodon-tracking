@@ -15,13 +15,6 @@ import org.mastodon.graph.ListenableReadOnlyGraph;
 import org.mastodon.graph.Vertex;
 import org.mastodon.graph.algorithm.Assigner;
 import org.mastodon.model.SelectionModel;
-import org.mastodon.spatial.HasTimepoint;
-import org.mastodon.spatial.SpatialIndex;
-import org.mastodon.spatial.SpatialIndexImp;
-import org.mastodon.spatial.SpatioTemporalIndex;
-import org.mastodon.spatial.SpatioTemporalIndexImp;
-import org.mastodon.spatial.VertexPositionChangeProvider;
-import org.mastodon.spatial.VertexPositionListener;
 
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.map.hash.TIntObjectHashMap;

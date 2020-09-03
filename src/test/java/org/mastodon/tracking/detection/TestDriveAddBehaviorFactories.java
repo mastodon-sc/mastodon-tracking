@@ -15,7 +15,6 @@ import javax.swing.UnsupportedLookAndFeelException;
 import org.mastodon.mamut.WindowManager;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.project.MamutProject;
-import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.mamut.detection.AdvancedDoGDetectorMamut;
 import org.mastodon.tracking.mamut.detection.DoGDetectorMamut;
 import org.mastodon.tracking.mamut.detection.MamutDetectionCreatorFactories.DetectionBehavior;

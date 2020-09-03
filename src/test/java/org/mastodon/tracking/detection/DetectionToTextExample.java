@@ -15,10 +15,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.mastodon.tracking.detection.DetectionCreatorFactory;
-import org.mastodon.tracking.detection.DetectionUtil;
-import org.mastodon.tracking.detection.DetectorOp;
-import org.mastodon.tracking.detection.DoGDetectorOp;
 import org.scijava.Context;
 
 import bdv.viewer.SourceAndConverter;

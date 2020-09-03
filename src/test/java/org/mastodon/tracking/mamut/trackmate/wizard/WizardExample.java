@@ -3,9 +3,6 @@ package org.mastodon.tracking.mamut.trackmate.wizard;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.mastodon.tracking.mamut.trackmate.wizard.ListWizardSequence;
-import org.mastodon.tracking.mamut.trackmate.wizard.Wizard;
-import org.mastodon.tracking.mamut.trackmate.wizard.WizardPanelDescriptor;
 import org.scijava.Context;
 
 public class WizardExample
