@@ -41,6 +41,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.Util;
 
+@SuppressWarnings( "deprecation" )
 public class BoundingBoxDescriptor extends WizardPanelDescriptor
 {
 

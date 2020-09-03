@@ -35,6 +35,7 @@ import net.imglib2.util.Intervals;
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
  */
+@SuppressWarnings( "deprecation" )
 public class BoundingBoxDialog
 {
 	static final String TOGGLE_BOUNDING_BOX = "toggle bounding-box";
