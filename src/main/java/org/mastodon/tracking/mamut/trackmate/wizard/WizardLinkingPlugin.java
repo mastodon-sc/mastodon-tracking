@@ -13,6 +13,9 @@ import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.linking.LinkingUtils;
 import org.mastodon.tracking.mamut.trackmate.Settings;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
+import org.mastodon.ui.keymap.CommandDescriptionProvider;
+import org.mastodon.ui.keymap.CommandDescriptions;
+import org.mastodon.ui.keymap.KeyConfigContexts;
 import org.scijava.plugin.Plugin;
 
 import bdv.viewer.SourceAndConverter;
@@ -64,5 +67,23 @@ public class WizardLinkingPlugin extends WizardPlugin
 		trackmate.setLogger( wizard.getLogService() );
 		trackmate.setStatusService( wizard.getLogService() );
 		return new LinkingSequence( trackmate, windowManager, wizard.getLogService() );
+	}
+
+	/*
+	 * Command descriptions for the detection wizard.
+	 */
+	@Plugin( type = CommandDescriptionProvider.class )
+	public static class Descriptions extends CommandDescriptionProvider
+	{
+		public Descriptions()
+		{
+			super( KeyConfigContexts.MASTODON );
+		}
+
+		@Override
+		public void getCommandDescriptions( final CommandDescriptions descriptions )
+		{
+			descriptions.add( ACTION_NAME, KEYSTROKES, "Launch the linking wizard." );
+		}
 	}
 }
