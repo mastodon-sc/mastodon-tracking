@@ -82,6 +82,14 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 			+ "target spots. "
 			+ "</p></html>";
 
+	private static final String DETECT_SPOT_TOOLTIP = "<html><p width=\"500\"> "
+			+ "Parameter that specifies whether we will perform spot "
+			+ "detection. If <code>false</code>, the semi-automatic tracker will stop if "
+			+ "no existing spots cannot be found as target for linking. If "
+			+ "<code>true</code>, the detection process will be run on the neighborhood "
+			+ "to create spots to link to from the image data. "
+			+ "</p></html>";
+
 	/**
 	 * The cancel button.
 	 */
@@ -103,9 +111,9 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 
 		final GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] { 0, 0, 0 };
-		gridBagLayout.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		gridBagLayout.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		gridBagLayout.columnWeights = new double[] { 0.0, 1.0, Double.MIN_VALUE };
-		gridBagLayout.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, Double.MIN_VALUE };
+		gridBagLayout.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, Double.MIN_VALUE };
 		setLayout( gridBagLayout );
 
 		final JLabel lblDetection = new JLabel( "Detection." );
@@ -282,13 +290,24 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_chckbxContinueTracking.gridy = 11;
 		add( chckbxContinueTracking, gbc_chckbxContinueTracking );
 
+		final JCheckBox chckbxDetectSpot = new JCheckBox("Run detection if existing spot cannot be found?");
+		chckbxDetectSpot.setToolTipText( DETECT_SPOT_TOOLTIP );
+		chckbxDetectSpot.addItemListener( ( e ) -> editedSettings.setDetectSpot( chckbxDetectSpot.isSelected() ) );
+		final GridBagConstraints gbc_chckbxDetectSpot = new GridBagConstraints();
+		gbc_chckbxDetectSpot.anchor = GridBagConstraints.WEST;
+		gbc_chckbxDetectSpot.gridwidth = 2;
+		gbc_chckbxDetectSpot.insets = new Insets(5, 5, 5, 5);
+		gbc_chckbxDetectSpot.gridx = 0;
+		gbc_chckbxDetectSpot.gridy = 12;
+		add(chckbxDetectSpot, gbc_chckbxDetectSpot);
+
 		final JLabel lblNavigation = new JLabel( "Navigation." );
 		lblNavigation.setFont( lblNavigation.getFont().deriveFont( lblNavigation.getFont().getStyle() | Font.BOLD ) );
 		final GridBagConstraints gbc_lblNavigation = new GridBagConstraints();
 		gbc_lblNavigation.gridwidth = 2;
 		gbc_lblNavigation.insets = new Insets( 0, 0, 5, 0 );
 		gbc_lblNavigation.gridx = 0;
-		gbc_lblNavigation.gridy = 12;
+		gbc_lblNavigation.gridy = 13;
 		add( lblNavigation, gbc_lblNavigation );
 
 		if ( null != groupHandle )
@@ -310,7 +329,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbc_panelButtons.insets = new Insets( 5, 5, 0, 0 );
 		gbc_panelButtons.fill = GridBagConstraints.HORIZONTAL;
 		gbc_panelButtons.gridx = 0;
-		gbc_panelButtons.gridy = 14;
+		gbc_panelButtons.gridy = 15;
 		add( panelButtons, gbc_panelButtons );
 		panelButtons.setLayout( new BoxLayout( panelButtons, BoxLayout.X_AXIS ) );
 
@@ -335,6 +354,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 			chckbxLinkIncoming.setSelected( editedSettings.allowIfIncomingLinks() );
 			chckbxLinkOutgoing.setSelected( editedSettings.allowIfOutgoingLinks() );
 			chckbxContinueTracking.setSelected( editedSettings.continueIfLinked() );
+			chckbxDetectSpot.setSelected( editedSettings.detectSpot() );
 			repaint();
 		};
 		final ItemListener disabler = ( e ) -> {

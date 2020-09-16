@@ -31,6 +31,7 @@ public class SemiAutomaticTrackerKeys
 		settings.put( KEY_ALLOW_LINKING_IF_HAS_INCOMING, DEFAULT_ALLOW_LINKING_IF_HAS_INCOMING );
 		settings.put( KEY_ALLOW_LINKING_IF_HAS_OUTGOING, DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING );
 		settings.put( KEY_CONTINUE_IF_LINK_EXISTS, DEFAULT_CONTINUE_IF_LINK_EXISTS );
+		settings.put( KEY_DETECT_SPOT, DEFAULT_DETECT_SPOT );
 		return settings;
 	}
 
@@ -65,6 +66,7 @@ public class SemiAutomaticTrackerKeys
 		ok = ok & checkParameter( settings, KEY_ALLOW_LINKING_IF_HAS_INCOMING, Boolean.class, errorHolder );
 		ok = ok & checkParameter( settings, KEY_ALLOW_LINKING_IF_HAS_OUTGOING, Boolean.class, errorHolder );
 		ok = ok & checkParameter( settings, KEY_CONTINUE_IF_LINK_EXISTS, Boolean.class, errorHolder );
+		ok = ok & checkParameter( settings, KEY_DETECT_SPOT, Boolean.class, errorHolder );
 
 		// Check key presence.
 		final List< String > mandatoryKeys = new ArrayList< String >();
@@ -77,6 +79,7 @@ public class SemiAutomaticTrackerKeys
 		mandatoryKeys.add( KEY_ALLOW_LINKING_IF_HAS_INCOMING );
 		mandatoryKeys.add( KEY_ALLOW_LINKING_IF_HAS_OUTGOING );
 		mandatoryKeys.add( KEY_CONTINUE_IF_LINK_EXISTS );
+		mandatoryKeys.add( KEY_DETECT_SPOT );
 		final List< String > optionalKeys = new ArrayList< String >();
 		optionalKeys.add( KEY_RESOLUTION_LEVEL );
 		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, errorHolder );
@@ -253,6 +256,20 @@ public class SemiAutomaticTrackerKeys
 	 * Default value for the {@link #KEY_RESOLUTION_LEVEL} parameter.
 	 */
 	public static final Integer DEFAULT_RESOLUTION_LEVEL = null;
+
+	/**
+	 * Key for the parameter that specifies whether we will perform spot
+	 * detection. If <code>false</code>, the semi-automatic tracker will stop if
+	 * no existing spots cannot be found as target for linking. If
+	 * <code>true</code>, the detection process will be run on the neighborhood
+	 * to create spots to link to from the image data.
+	 */
+	public static final String KEY_DETECT_SPOT = "DETECT_SPOT";
+
+	/**
+	 * Default value for the {@link #KEY_DETECT_SPOT} parameter.
+	 */
+	public static final boolean DEFAULT_DETECT_SPOT = true;
 
 	/** Minimal size of neighborhoods, in spot diameter units. */
 	public static final double NEIGHBORHOOD_FACTOR = 2.;

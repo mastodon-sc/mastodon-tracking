@@ -6,6 +6,7 @@ import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTracke
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_ALLOW_LINKING_TO_EXISTING;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_CONTINUE_IF_LINK_EXISTS;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_DETECT_SPOT;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_DISTANCE_FACTOR;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_FORWARD_IN_TIME;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_N_TIMEPOINTS;
@@ -14,6 +15,7 @@ import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTracke
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_ALLOW_LINKING_IF_HAS_OUTGOING;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_ALLOW_LINKING_TO_EXISTING;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_CONTINUE_IF_LINK_EXISTS;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_DETECT_SPOT;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_DISTANCE_FACTOR;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_FORWARD_IN_TIME;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_N_TIMEPOINTS;
@@ -59,6 +61,8 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 
 	private boolean continueIfLinked;
 
+	private boolean detectSpot;
+
 	private static final SemiAutomaticTrackerSettings defSats;
 	static
 	{
@@ -72,6 +76,7 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 		defSats.allowIfIncomingLinks = DEFAULT_ALLOW_LINKING_IF_HAS_INCOMING;
 		defSats.allowIfOutgoingLinks = DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING;
 		defSats.continueIfLinked = DEFAULT_CONTINUE_IF_LINK_EXISTS;
+		defSats.detectSpot = DEFAULT_DETECT_SPOT;
 		defSats.name = "Forward";
 	}
 
@@ -88,6 +93,7 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 		backSats.allowIfIncomingLinks = Boolean.valueOf( true );
 		backSats.allowIfOutgoingLinks = Boolean.valueOf( true );
 		backSats.continueIfLinked = Boolean.valueOf( false );
+		backSats.detectSpot = DEFAULT_DETECT_SPOT;
 		backSats.name = "Backtracking";
 	}
 
@@ -133,6 +139,7 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 		this.allowIfIncomingLinks = stas.allowIfIncomingLinks;
 		this.allowIfOutgoingLinks = stas.allowIfOutgoingLinks;
 		this.continueIfLinked = stas.continueIfLinked;
+		this.detectSpot = stas.detectSpot;
 		notifyListeners();
 	}
 
@@ -148,6 +155,7 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 		map.put( KEY_ALLOW_LINKING_IF_HAS_INCOMING, Boolean.valueOf( allowIfIncomingLinks ) );
 		map.put( KEY_ALLOW_LINKING_IF_HAS_OUTGOING, Boolean.valueOf( allowIfOutgoingLinks ) );
 		map.put( KEY_CONTINUE_IF_LINK_EXISTS, Boolean.valueOf( continueIfLinked ) );
+		map.put( KEY_DETECT_SPOT, Boolean.valueOf( detectSpot ) );
 		return map;
 	}
 
@@ -273,6 +281,20 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 		if ( this.continueIfLinked != continueIfLinked )
 		{
 			this.continueIfLinked = continueIfLinked;
+			notifyListeners();
+		}
+	}
+
+	public boolean detectSpot()
+	{
+		return detectSpot;
+	}
+
+	public void setDetectSpot( final boolean detectSpot )
+	{
+		if ( this.detectSpot != detectSpot )
+		{
+			this.detectSpot = detectSpot;
 			notifyListeners();
 		}
 	}

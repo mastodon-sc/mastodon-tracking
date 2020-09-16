@@ -1,5 +1,15 @@
 package org.mastodon.tracking.mamut.trackmate.semiauto.ui;
 
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_ALLOW_LINKING_IF_HAS_INCOMING;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_ALLOW_LINKING_TO_EXISTING;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_CONTINUE_IF_LINK_EXISTS;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_DETECT_SPOT;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_DISTANCE_FACTOR;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_FORWARD_IN_TIME;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_N_TIMEPOINTS;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_QUALITY_FACTOR;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -81,6 +91,7 @@ public class SemiAutomaticTrackerSettingsIO
 			mapping.put( "allowIfIncomingLinks", s.allowIfIncomingLinks() );
 			mapping.put( "allowIfOutgoingLinks", s.allowIfOutgoingLinks() );
 			mapping.put( "continueIfLinked", s.continueIfLinked() );
+			mapping.put( "detectSpot", s.detectSpot() );
 
 			final Node node = representMapping( getTag(), mapping, getDefaultFlowStyle() );
 			return node;
@@ -103,17 +114,18 @@ public class SemiAutomaticTrackerSettingsIO
 				final String name = ( String ) mapping.get( "name" );
 				final SemiAutomaticTrackerSettings s = SemiAutomaticTrackerSettings.defaultSettings().copy( name );
 
-				s.setName( ( String ) mapping.get( "name") );
+				s.setName( ( String ) mapping.getOrDefault( "name", "NameNotFound" ) );
 
-				s.setSetupID( ( int ) mapping.get( "setupID" ) );
-				s.setQualityFactor( ( double ) mapping.get( "qualityFactor" ) );
-				s.setDistanceFactor( ( double ) mapping.get( "distanceFactor" ) );
-				s.setNTimepoints( ( int ) mapping.get( "nTimepoints" ) );
-				s.setForwardInTime( ( boolean ) mapping.get( "forwardInTime" ) );
-				s.setAllowLinkingToExisting( ( boolean ) mapping.get( "allowLinkingToExisting" ) );
-				s.setAllowIfIncomingLinks( ( boolean ) mapping.get( "allowIfIncomingLinks" ) );
-				s.setAllowIfOutgoingLinks( ( boolean ) mapping.get( "allowIfOutgoingLinks" ) );
-				s.setContinueIfLinked( ( boolean ) mapping.get( "continueIfLinked" ) );
+				s.setSetupID( ( int ) mapping.getOrDefault( "setupID", 0 ) );
+				s.setQualityFactor( ( double ) mapping.getOrDefault( "qualityFactor", DEFAULT_QUALITY_FACTOR ) );
+				s.setDistanceFactor( ( double ) mapping.getOrDefault( "distanceFactor", DEFAULT_DISTANCE_FACTOR ) );
+				s.setNTimepoints( ( int ) mapping.getOrDefault( "nTimepoints", DEFAULT_N_TIMEPOINTS ) );
+				s.setForwardInTime( ( boolean ) mapping.getOrDefault( "forwardInTime", DEFAULT_FORWARD_IN_TIME ) );
+				s.setAllowLinkingToExisting( ( boolean ) mapping.getOrDefault( "allowLinkingToExisting", DEFAULT_ALLOW_LINKING_TO_EXISTING ) );
+				s.setAllowIfIncomingLinks( ( boolean ) mapping.getOrDefault( "allowIfIncomingLinks", DEFAULT_ALLOW_LINKING_IF_HAS_INCOMING ) );
+				s.setAllowIfOutgoingLinks( ( boolean ) mapping.getOrDefault( "allowIfOutgoingLinks", DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING ) );
+				s.setContinueIfLinked( ( boolean ) mapping.getOrDefault( "continueIfLinked", DEFAULT_CONTINUE_IF_LINK_EXISTS ) );
+				s.setDetectSpot( ( boolean ) mapping.getOrDefault( "detectSpot", DEFAULT_DETECT_SPOT ) );
 
 				return s;
 			}

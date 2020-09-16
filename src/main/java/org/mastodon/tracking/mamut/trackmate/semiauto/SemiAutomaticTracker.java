@@ -361,7 +361,7 @@ public class SemiAutomaticTracker
 					source.refTo( target );
 					continue TIME;
 				}
-				else
+				else if ( detectSpots )
 				{
 
 					/*
@@ -513,6 +513,15 @@ public class SemiAutomaticTracker
 
 					graph.releaseRef( eref );
 					graph.releaseRef( vref );
+				}
+				else
+				{
+					/*
+					 * Could not find an existing spot and cannot create new
+					 * one. We have to stop.
+					 */
+					log.info( " - No spot to link to. Stopping semi-automatic tracking for spot " + first.getLabel() + "." );
+					continue INPUT;
 				}
 			}
 
