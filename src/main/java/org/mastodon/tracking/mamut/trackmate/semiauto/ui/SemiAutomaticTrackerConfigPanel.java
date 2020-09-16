@@ -318,7 +318,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 			gbc_groupLocksPanel.insets = new Insets( 0, 0, 5, 0 );
 			gbc_groupLocksPanel.fill = GridBagConstraints.BOTH;
 			gbc_groupLocksPanel.gridx = 0;
-			gbc_groupLocksPanel.gridy = 13;
+			gbc_groupLocksPanel.gridy = 14;
 			add( groupLocksPanel, gbc_groupLocksPanel );
 		}
 
