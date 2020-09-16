@@ -10,6 +10,7 @@ import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTracke
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_ALLOW_LINKING_IF_HAS_OUTGOING;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_ALLOW_LINKING_TO_EXISTING;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_CONTINUE_IF_LINK_EXISTS;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_DETECT_SPOT;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_DISTANCE_FACTOR;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_FORWARD_IN_TIME;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_N_TIMEPOINTS;
@@ -160,6 +161,7 @@ public class SemiAutomaticTracker
 		final boolean allowLinkingIfOutgoing = ( boolean ) settings.get( KEY_ALLOW_LINKING_IF_HAS_OUTGOING );
 		final boolean continueIfLinkExists = ( boolean ) settings.get( KEY_CONTINUE_IF_LINK_EXISTS );
 		final double neighborhoodFactor = Math.max( NEIGHBORHOOD_FACTOR, distanceFactor + 1. );
+		final boolean detectSpots = ( boolean ) settings.get( KEY_DETECT_SPOT );
 
 		/*
 		 * Units.
@@ -185,10 +187,10 @@ public class SemiAutomaticTracker
 
 
 			/*
-			 * Initialize tracker for this spot.
+			 * Initialize motion-model for this spot.
 			 */
 
-			final MotionModel tracker = initializeTracker( first, graph );
+			final MotionModel motionModel = initializeMotionModel( first, graph );
 
 			/*
 			 * Loop over time.
@@ -236,7 +238,7 @@ public class SemiAutomaticTracker
 				 * Predict around what position to look for a candidate.
 				 */
 
-				final RealLocalizable predict = tracker.predict();
+				final RealLocalizable predict = motionModel.predict();
 
 				/*
 				 * Do we have an existing spot around this location, and do we
@@ -318,7 +320,7 @@ public class SemiAutomaticTracker
 						}
 						graph.notifyGraphChanged();
 
-						final double cost = tracker.costTo( target );
+						final double cost = motionModel.costTo( target );
 						log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
 								source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint(), cost ) );
 						linkCostFeature.set( edge, cost );
@@ -341,7 +343,7 @@ public class SemiAutomaticTracker
 					}
 
 					// Update tracker with the new target.
-					tracker.update( target );
+					motionModel.update( target );
 
 					// Deselect source spot.
 					if ( null != selectionModel )
@@ -486,7 +488,7 @@ public class SemiAutomaticTracker
 
 					graph.notifyGraphChanged();
 
-					final double cost = tracker.costTo( target );
+					final double cost = motionModel.costTo( target );
 					final double quality = candidate.quality;
 					log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
 							source.getLabel(), source.getTimepoint(), target.getLabel(), target.getTimepoint(), cost ) );
@@ -494,7 +496,7 @@ public class SemiAutomaticTracker
 					qualityFeature.set( target, quality );
 
 					// Update tracker with the new target.
-					tracker.update( target );
+					motionModel.update( target );
 
 					// Deselect source spot.
 					if ( null != selectionModel )
@@ -561,7 +563,7 @@ public class SemiAutomaticTracker
 		};
 	}
 
-	private MotionModel initializeTracker( final Spot first, final ModelGraph graph )
+	private MotionModel initializeMotionModel( final Spot first, final ModelGraph graph )
 	{
 		// TODO For now we simply return the brownian motion one.
 		final RandomMotionModel tracker = new RandomMotionModel( 3 );
