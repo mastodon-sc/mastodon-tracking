@@ -5,15 +5,13 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>28.0.0</version>
-		<relativePath />
+		<version>29.2.1</version>
 	</parent>
 
-	<groupId>org.mastodon</groupId>
 	<artifactId>mastodon-tracking</artifactId>
 	<version>1.0.0-beta-7-SNAPSHOT</version>
 
-	<name>Mastodon tracking</name>
+	<name>Mastodon Tracking</name>
 	<description>Basic tracking algorithms based on Mastodon data structures.</description>
 	<url>https://github.com/mastodon-sc/mastodon-tracking</url>
 	<inceptionYear>2017</inceptionYear>
@@ -55,7 +53,7 @@
 		<dependency>
 			<groupId>org.mastodon</groupId>
 			<artifactId>mastodon</artifactId>
-			<version>1.0.0-beta-16</version>
+			<version>${mastodon.version}</version>
 		</dependency>
 
 		<!-- JFreeChart deps -->
@@ -131,21 +129,32 @@
 	<properties>
 		<package-name>org.mastodon</package-name>
 
-		<!-- <enforcer.skip>true</enforcer.skip> -->
-
 		<license.licenseName>not licensed yet</license.licenseName>
 		<license.projectName>mastodon-tracking</license.projectName>
 		<license.organizationName>Mastodon authors</license.organizationName>
 		<license.copyrightOwners>Tobias Pietzsch, Jean-Yves Tinevez</license.copyrightOwners>
-
-		<bigdataviewer-core.version>9.0.1</bigdataviewer-core.version>
-		<bigdataviewer-vistools.version>1.0.0-beta-20</bigdataviewer-vistools.version>
-		<spim_data.version>2.2.4</spim_data.version>
-		<ui-behaviour.version>2.0.1</ui-behaviour.version>
+		
+		<mastodon.version>1.0.0-beta-17-SNAPSHOT</mastodon.version>
+		
+		<!-- Allow building with JDK > 1.8 -->
+		<scijava.jvm.build.version>[1.8.0-101,)</scijava.jvm.build.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
 	</properties>
+
+	<profiles>
+		<profile>
+			<!-- Target JDK1.8 for build. -->
+			<id>java-8</id>
+			<activation>
+				<jdk>1.8</jdk>
+			</activation>
+			<properties>
+				<maven.compiler.release />
+			</properties>
+		</profile>
+	</profiles>
 
 	<developers>
 		<developer>

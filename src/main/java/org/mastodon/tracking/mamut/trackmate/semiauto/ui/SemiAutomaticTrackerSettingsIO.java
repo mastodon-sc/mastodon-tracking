@@ -1,0 +1,139 @@
+package org.mastodon.tracking.mamut.trackmate.semiauto.ui;
+
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_ALLOW_LINKING_IF_HAS_INCOMING;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_ALLOW_LINKING_TO_EXISTING;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_CONTINUE_IF_LINK_EXISTS;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_DETECT_SPOT;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_DISTANCE_FACTOR;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_FORWARD_IN_TIME;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_N_TIMEPOINTS;
+import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_QUALITY_FACTOR;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.mastodon.io.yaml.AbstractWorkaroundConstruct;
+import org.mastodon.io.yaml.WorkaroundConstructor;
+import org.mastodon.io.yaml.WorkaroundRepresent;
+import org.mastodon.io.yaml.WorkaroundRepresenter;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.nodes.MappingNode;
+import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.Tag;
+import org.yaml.snakeyaml.representer.Representer;
+
+/**
+ * Facilities to dump / load {@link SemiAutomaticTrackerSettings} to / from a YAML file.
+ *
+ * @author Jean-Yves Tinevez
+ *
+ */
+public class SemiAutomaticTrackerSettingsIO
+{
+	private static class SemiAutomaticTrackerSettingsRepresenter extends WorkaroundRepresenter
+	{
+		public SemiAutomaticTrackerSettingsRepresenter()
+		{
+			putRepresent( new RepresentSemiAutomaticTrackerSettings( this ) );
+		}
+	}
+
+	private static class SemiAutomaticTrackerSettingsConstructor extends WorkaroundConstructor
+	{
+		public SemiAutomaticTrackerSettingsConstructor()
+		{
+			super( Object.class );
+			putConstruct( new ConstructSemiAutomaticTrackerSettings( this ) );
+		}
+	}
+
+	/**
+	 * Returns a YAML instance that can dump / load a collection of
+	 * {@link SemiAutomaticTrackerSettings} to / from a .yaml file.
+	 *
+	 * @return a new YAML instance.
+	 */
+	static Yaml createYaml()
+	{
+		final DumperOptions dumperOptions = new DumperOptions();
+		final Representer representer = new SemiAutomaticTrackerSettingsRepresenter();
+		final Constructor constructor = new SemiAutomaticTrackerSettingsConstructor();
+		final Yaml yaml = new Yaml( constructor, representer, dumperOptions );
+		return yaml;
+	}
+
+	private static final Tag SEMIAUTOTRACKERSETTINGS_TAG = new Tag( "!semiautomatictrackersettings" );
+
+	private static class RepresentSemiAutomaticTrackerSettings extends WorkaroundRepresent
+	{
+		public RepresentSemiAutomaticTrackerSettings( final WorkaroundRepresenter r )
+		{
+			super( r, SEMIAUTOTRACKERSETTINGS_TAG, SemiAutomaticTrackerSettings.class );
+		}
+
+		@Override
+		public Node representData( final Object data )
+		{
+			final SemiAutomaticTrackerSettings s = ( SemiAutomaticTrackerSettings ) data;
+			final Map< String, Object > mapping = new LinkedHashMap< >();
+
+			mapping.put( "name", s.getName() );
+
+			mapping.put( "setupID", s.getSetupID() );
+			mapping.put( "qualityFactor", s.getQualityFactor() );
+			mapping.put( "distanceFactor", s.getDistanceFactor() );
+			mapping.put( "nTimepoints", s.getnTimepoints() );
+			mapping.put( "forwardInTime", s.isForwardInTime() );
+			mapping.put( "allowLinkingToExisting", s.allowLinkingToExisting() );
+			mapping.put( "allowIfIncomingLinks", s.allowIfIncomingLinks() );
+			mapping.put( "allowIfOutgoingLinks", s.allowIfOutgoingLinks() );
+			mapping.put( "continueIfLinked", s.continueIfLinked() );
+			mapping.put( "detectSpot", s.detectSpot() );
+
+			final Node node = representMapping( getTag(), mapping, getDefaultFlowStyle() );
+			return node;
+		}
+	}
+
+	private static class ConstructSemiAutomaticTrackerSettings extends AbstractWorkaroundConstruct
+	{
+		public ConstructSemiAutomaticTrackerSettings( final WorkaroundConstructor c )
+		{
+			super( c, SEMIAUTOTRACKERSETTINGS_TAG );
+		}
+
+		@Override
+		public Object construct( final Node node )
+		{
+			try
+			{
+				final Map< Object, Object > mapping = constructMapping( ( MappingNode  ) node );
+				final String name = ( String ) mapping.get( "name" );
+				final SemiAutomaticTrackerSettings s = SemiAutomaticTrackerSettings.defaultSettings().copy( name );
+
+				s.setName( ( String ) mapping.getOrDefault( "name", "NameNotFound" ) );
+
+				s.setSetupID( ( int ) mapping.getOrDefault( "setupID", 0 ) );
+				s.setQualityFactor( ( double ) mapping.getOrDefault( "qualityFactor", DEFAULT_QUALITY_FACTOR ) );
+				s.setDistanceFactor( ( double ) mapping.getOrDefault( "distanceFactor", DEFAULT_DISTANCE_FACTOR ) );
+				s.setNTimepoints( ( int ) mapping.getOrDefault( "nTimepoints", DEFAULT_N_TIMEPOINTS ) );
+				s.setForwardInTime( ( boolean ) mapping.getOrDefault( "forwardInTime", DEFAULT_FORWARD_IN_TIME ) );
+				s.setAllowLinkingToExisting( ( boolean ) mapping.getOrDefault( "allowLinkingToExisting", DEFAULT_ALLOW_LINKING_TO_EXISTING ) );
+				s.setAllowIfIncomingLinks( ( boolean ) mapping.getOrDefault( "allowIfIncomingLinks", DEFAULT_ALLOW_LINKING_IF_HAS_INCOMING ) );
+				s.setAllowIfOutgoingLinks( ( boolean ) mapping.getOrDefault( "allowIfOutgoingLinks", DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING ) );
+				s.setContinueIfLinked( ( boolean ) mapping.getOrDefault( "continueIfLinked", DEFAULT_CONTINUE_IF_LINK_EXISTS ) );
+				s.setDetectSpot( ( boolean ) mapping.getOrDefault( "detectSpot", DEFAULT_DETECT_SPOT ) );
+
+				return s;
+			}
+			catch( final Exception e )
+			{
+				e.printStackTrace();
+			}
+			return null;
+		}
+	}
+}
