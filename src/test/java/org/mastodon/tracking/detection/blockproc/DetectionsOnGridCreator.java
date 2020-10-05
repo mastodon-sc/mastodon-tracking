@@ -18,7 +18,7 @@ import net.imglib2.view.Views;
 public class DetectionsOnGridCreator
 {
 
-	private static final double RANDOM_FACTOR = 0.3;
+	private static final double RANDOM_FACTOR = 0.1;
 
 	private static final double AMPLITUDE = 1000.;
 
