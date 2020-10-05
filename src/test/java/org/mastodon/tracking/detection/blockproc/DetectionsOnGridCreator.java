@@ -7,8 +7,8 @@ import java.util.Random;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RealPoint;
+import net.imglib2.algorithm.neighborhood.CenteredRectangleShape;
 import net.imglib2.algorithm.neighborhood.Neighborhood;
-import net.imglib2.algorithm.neighborhood.RectangleShape;
 import net.imglib2.algorithm.neighborhood.Shape;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
@@ -34,9 +34,12 @@ public class DetectionsOnGridCreator
 
 	private final List< RealPoint > peaks;
 
-	public DetectionsOnGridCreator( final long[] dims, final double radius, final double spacingFactor )
+	private final double[] calibration;
+
+	public DetectionsOnGridCreator( final long[] dims, final double[] calibration, final double radius, final double spacingFactor )
 	{
 		this.dims = dims;
+		this.calibration = calibration;
 		this.radius = radius;
 		this.spacingFactor = spacingFactor;
 		this.ran = new Random();
@@ -49,9 +52,13 @@ public class DetectionsOnGridCreator
 		peaks.clear();
 		final long[] pos = new long[ dims.length ];
 		for ( int d = 0; d < pos.length; d++ )
-			pos[ d ] = ( long ) ( radius * spacingFactor / 2. );
+			pos[ d ] = ( long ) ( radius / calibration[ d ] * spacingFactor / 2. );
 
-		final Shape shape = new RectangleShape( ( int ) ( 1 + 3. * radius / Math.sqrt( pos.length ) ), false );
+		final int[] span = new int[ dims.length ];
+		for ( int d = 0; d < span.length; d++ )
+			span[ d ] = ( int ) ( 1 + 3. * radius / calibration[ d ] / Math.sqrt( pos.length ) );
+
+		final Shape shape = new CenteredRectangleShape( span, false );
 		final RandomAccess< Neighborhood< UnsignedShortType > > ra = shape.neighborhoodsRandomAccessible(
 				Views.extendZero( img ) ).randomAccess( img );
 
@@ -68,7 +75,8 @@ public class DetectionsOnGridCreator
 					neighborhood,
 					center,
 					radius * ( 1. + RANDOM_FACTOR * ( ran.nextDouble() - 0.5 ) ),
-					AMPLITUDE * ( 1. + RANDOM_FACTOR * ( ran.nextDouble() - 0.5 ) ) );
+					AMPLITUDE * ( 1. + RANDOM_FACTOR * ( ran.nextDouble() - 0.5 ) ),
+					calibration );
 
 		}
 		while ( increment( pos ) );
@@ -94,9 +102,9 @@ public class DetectionsOnGridCreator
 			final Neighborhood< UnsignedShortType > neighborhood,
 			final double[] center,
 			final double rad,
-			final double amplitude )
+			final double amplitude,
+			final double[] calibration )
 	{
-		final double sigma = rad / Math.sqrt( neighborhood.numDimensions() );
 		final long[] pos = new long[ neighborhood.numDimensions() ];
 		final Cursor< UnsignedShortType > cursor = neighborhood.localizingCursor();
 		final UnsignedShortType t = new UnsignedShortType( 0 );
@@ -107,10 +115,11 @@ public class DetectionsOnGridCreator
 			double dr2 = 0.;
 			for ( int d = 0; d < pos.length; d++ )
 			{
+				final double sigma = rad / calibration[ d ] / Math.sqrt( neighborhood.numDimensions() );
 				final double dx = center[ d ] - pos[ d ];
-				dr2 += dx * dx;
+				dr2 += dx * dx / sigma / sigma;
 			}
-			final double val = amplitude * Math.exp( -dr2 / sigma / sigma );
+			final double val = amplitude * Math.exp( -dr2  );
 			t.setReal( val );
 			cursor.get().add( t );
 		}
@@ -119,17 +128,17 @@ public class DetectionsOnGridCreator
 	private final void jitter( final double[] center, final long[] pos )
 	{
 		for ( int d = 0; d < pos.length; d++ )
-			center[ d ] = pos[ d ] + radius * spacingFactor * RANDOM_FACTOR * ( ran.nextDouble() - 0.5 );
+			center[ d ] = pos[ d ] + radius / calibration[ d ] * spacingFactor * RANDOM_FACTOR * ( ran.nextDouble() - 0.5 );
 	}
 
 	private boolean increment( final long[] pos )
 	{
 		for ( int d = 0; d < pos.length; d++ )
 		{
-			pos[ d ] += radius * spacingFactor;
-			if ( pos[ d ] >= dims[ d ] - radius * spacingFactor / 4. )
+			pos[ d ] += radius / calibration[ d ] * spacingFactor;
+			if ( pos[ d ] >= dims[ d ] - radius / calibration[ d ] * spacingFactor / 4. )
 			{
-				pos[ d ] = ( long ) ( radius * spacingFactor / 2. );
+				pos[ d ] = ( long ) ( radius / calibration[ d ] * spacingFactor / 2. );
 				if ( d == pos.length - 1 )
 				{
 					// Finished.
