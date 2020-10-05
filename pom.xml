@@ -135,10 +135,26 @@
 		<license.copyrightOwners>Tobias Pietzsch, Jean-Yves Tinevez</license.copyrightOwners>
 		
 		<mastodon.version>1.0.0-beta-17-SNAPSHOT</mastodon.version>
+		
+		<!-- Allow building with JDK > 1.8 -->
+		<scijava.jvm.build.version>[1.8.0-101,)</scijava.jvm.build.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
 	</properties>
+
+	<profiles>
+		<profile>
+			<!-- Target JDK1.8 for build. -->
+			<id>java-8</id>
+			<activation>
+				<jdk>1.8</jdk>
+			</activation>
+			<properties>
+				<maven.compiler.release />
+			</properties>
+		</profile>
+	</profiles>
 
 	<developers>
 		<developer>
