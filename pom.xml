@@ -3,9 +3,9 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.mastodon</groupId>
-		<artifactId>pom-mastodon</artifactId>
-		<version>1.0.0-beta-1-SNAPSHOT</version>
+		<groupId>org.scijava</groupId>
+		<artifactId>pom-scijava</artifactId>
+		<version>29.2.1</version>
 	</parent>
 
 	<artifactId>mastodon-tracking</artifactId>
@@ -51,8 +51,9 @@
 		<!-- Mastodon deps -->
 
 		<dependency>
-			<groupId>${mastodon.group}</groupId>
+			<groupId>org.mastodon</groupId>
 			<artifactId>mastodon</artifactId>
+			<version>${mastodon.version}</version>
 		</dependency>
 
 		<!-- JFreeChart deps -->
@@ -132,6 +133,8 @@
 		<license.projectName>mastodon-tracking</license.projectName>
 		<license.organizationName>Mastodon authors</license.organizationName>
 		<license.copyrightOwners>Tobias Pietzsch, Jean-Yves Tinevez</license.copyrightOwners>
+		
+		<mastodon.version>1.0.0-beta-17-SNAPSHOT</mastodon.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
