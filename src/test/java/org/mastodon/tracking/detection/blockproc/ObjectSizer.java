@@ -44,16 +44,14 @@ public final class ObjectSizer
 
 		/*
 		 * There are three duplicate images required of the type above:
-		 * 
+		 *
 		 * 1. One to store the DoG results (float if we don't have doubles).
-		 * 
+		 *
 		 * 2. A tmp image to compute the DoG.
-		 * 
+		 *
 		 * 3. In Gauss, a tmp holder to store convolution results.
-		 * 
-		 * 4. One that I have not found yet.
 		 */
-		return 4 * type.getBitsPerPixel() / 8 * nPixels( interval );
+		return 3 * type.getBitsPerPixel() / 8 * nPixels( interval );
 	}
 
 	public static < T extends RealType< T > > long imgSize( final RandomAccessibleInterval< T > img )
