@@ -136,39 +136,9 @@
 		
 		<mastodon.version>1.0.0-beta-17-SNAPSHOT</mastodon.version>
 		
-		<!-- Allow building with JDK > 1.8 -->
-		<scijava.jvm.build.version>[1.8.0-101,)</scijava.jvm.build.version>
-
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
 	</properties>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
-	<profiles>
-		<profile>
-			<!-- Target JDK1.8 for build. -->
-			<id>java-8</id>
-			<activation>
-				<jdk>1.8</jdk>
-			</activation>
-			<properties>
-				<maven.compiler.release />
-			</properties>
-		</profile>
-	</profiles>
 
 	<developers>
 		<developer>
