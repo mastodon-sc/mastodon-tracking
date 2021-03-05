@@ -9,7 +9,7 @@
 	</parent>
 
 	<artifactId>mastodon-tracking</artifactId>
-	<version>1.0.0-beta-7-SNAPSHOT</version>
+	<version>1.0.0-beta-8-SNAPSHOT</version>
 
 	<name>Mastodon Tracking</name>
 	<description>Basic tracking algorithms based on Mastodon data structures.</description>
