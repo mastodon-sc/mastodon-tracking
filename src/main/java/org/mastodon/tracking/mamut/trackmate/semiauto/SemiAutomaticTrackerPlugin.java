@@ -14,6 +14,7 @@ import java.util.Map;
 import javax.swing.JDialog;
 import javax.swing.WindowConstants;
 
+import org.mastodon.app.MastodonIcons;
 import org.mastodon.app.ui.ViewMenuBuilder.MenuItem;
 import org.mastodon.app.ui.settings.SettingsPanel;
 import org.mastodon.collection.RefCollections;
@@ -52,12 +53,19 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 {
 
 	public static final String[] MENU_PATH = new String[] { "Plugins", "Tracking" };
+
 	private static final String PERFORM_SEMI_AUTO_TRACKING_ACTION = "semi-automatic tracking";
+
 	private static final String CANCEL_SEMI_AUTO_TRACKING_ACTION = "cancel semi-automatic tracking";
+
 	private static final String CONFIGURE_SEMI_AUTO_TRACKING_ACTION = "config semi-automatic tracking";
+
 	private static final String SHOW_LOGGING_PANEL_ACTION = "log semi-automatic tracking";
+
 	private static final String[] PERFORM_SEMI_AUTO_TRACKING_KEYS = new String[] { "ctrl T" };
+
 	private static final String[] CANCEL_SEMI_AUTO_TRACKING_KEYS = new String[] { "ctrl shift T" };
+
 	private static final String[] CONFIGURE_SEMI_AUTO_TRACKING_KEYS = new String[] { "not mapped" };
 
 	@Parameter
@@ -175,6 +183,7 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 		this.loggingDialog = new JDialog( ( Frame ) null, "Semi-automatic tracker log" );
 		loggingDialog.getContentPane().add( loggingPanel, BorderLayout.CENTER );
 		loggingDialog.setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
+		loggingDialog.setIconImage( MastodonIcons.MASTODON_ICON_MEDIUM.getImage() );
 		loggingDialog.pack();
 
 		final GroupHandle groupHandle = appModel.getAppModel().getGroupManager().createGroupHandle();
@@ -217,6 +226,7 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 				settings.cancel();
 			}
 		} );
+		dialog.setIconImage( MastodonIcons.MASTODON_ICON_MEDIUM.getImage() );
 		dialog.pack();
 	}
 
@@ -277,7 +287,7 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 		@Override
 		public void actionPerformed( final ActionEvent e )
 		{
-			if (null != cancelable)
+			if ( null != cancelable )
 			{
 				cancelable.cancel( "User canceled semi-automatic tracking." );
 				cancelable = null;

@@ -5,6 +5,7 @@ import javax.swing.WindowConstants;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.StyledDocument;
 
+import org.mastodon.app.MastodonIcons;
 import org.scijava.Context;
 import org.scijava.plugin.Parameter;
 
@@ -46,6 +47,7 @@ public class Wizard
 		controller.init();
 		frame.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
 		frame.addWindowListener( controller );
+		frame.setIconImage( MastodonIcons.MASTODON_ICON_MEDIUM.getImage() );
 		frame.setVisible( true );
 	}
 }
