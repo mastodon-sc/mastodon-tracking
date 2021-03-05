@@ -3,8 +3,6 @@ package org.mastodon.tracking.mamut.trackmate.wizard;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import org.mastodon.tracking.mamut.trackmate.wizard.WizardPanelDescriptor;
-
 public class Descriptor3 extends WizardPanelDescriptor
 {
 
