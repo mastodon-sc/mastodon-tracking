@@ -21,7 +21,7 @@
 	</organization>
 	<licenses>
 		<license>
-			<name>not licensed yet</name>
+			<name>Simplified BSD License</name>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -129,7 +129,7 @@
 	<properties>
 		<package-name>org.mastodon</package-name>
 
-		<license.licenseName>not licensed yet</license.licenseName>
+		<license.licenseName>bsd_2</license.licenseName>
 		<license.projectName>mastodon-tracking</license.projectName>
 		<license.organizationName>Mastodon authors</license.organizationName>
 		<license.copyrightOwners>Tobias Pietzsch, Jean-Yves Tinevez</license.copyrightOwners>
