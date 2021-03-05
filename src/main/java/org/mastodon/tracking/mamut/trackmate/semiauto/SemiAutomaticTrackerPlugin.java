@@ -185,6 +185,8 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 		loggingDialog.setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 		loggingDialog.setIconImage( MastodonIcons.MASTODON_ICON_MEDIUM.getImage() );
 		loggingDialog.pack();
+		loggingDialog.setLocationByPlatform( true );
+		loggingDialog.setLocationRelativeTo( null );
 
 		final GroupHandle groupHandle = appModel.getAppModel().getGroupManager().createGroupHandle();
 		this.navigationHandler = groupHandle.getModel( appModel.getAppModel().NAVIGATION );
@@ -228,6 +230,8 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 		} );
 		dialog.setIconImage( MastodonIcons.MASTODON_ICON_MEDIUM.getImage() );
 		dialog.pack();
+		dialog.setLocationByPlatform( true );
+		dialog.setLocationRelativeTo( null );
 	}
 
 	private final AbstractNamedAction performSemiAutoTrackAction = new AbstractNamedAction( PERFORM_SEMI_AUTO_TRACKING_ACTION )

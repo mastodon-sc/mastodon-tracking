@@ -41,13 +41,14 @@ public class Wizard
 		final WizardController controller = new WizardController( sequence, wizardLogService );
 		frame.getContentPane().removeAll();
 		frame.getContentPane().add( controller.getWizardPanel() );
-		frame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
 		frame.setSize( 300, 600 );
 		frame.setTitle( title );
 		controller.init();
 		frame.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
 		frame.addWindowListener( controller );
 		frame.setIconImage( MastodonIcons.MASTODON_ICON_MEDIUM.getImage() );
+		frame.setLocationByPlatform( true );
+		frame.setLocationRelativeTo( null );
 		frame.setVisible( true );
 	}
 }
