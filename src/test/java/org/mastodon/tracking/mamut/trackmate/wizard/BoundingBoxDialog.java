@@ -13,7 +13,6 @@ import org.mastodon.mamut.project.MamutProject;
 import org.mastodon.mamut.project.MamutProjectIO;
 import org.mastodon.util.ToggleDialogAction;
 import org.mastodon.views.bdv.ViewerFrameMamut;
-import org.mastodon.views.bdv.ViewerPanelMamut;
 import org.scijava.Context;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Actions;
@@ -23,6 +22,7 @@ import bdv.tools.boundingbox.TransformedBoxSelectionDialog;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.Source;
+import bdv.viewer.ViewerPanel;
 import bdv.viewer.ViewerState;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
@@ -61,7 +61,7 @@ public class BoundingBoxDialog
 			bdv[ 0 ] = windowManager.createBigDataViewer();
 		} );
 		final ViewerFrameMamut viewerFrame = ( ViewerFrameMamut ) bdv[ 0 ].getFrame();
-		final ViewerPanelMamut viewer = viewerFrame.getViewerPanel();
+		final ViewerPanel viewer = viewerFrame.getViewerPanel();
 		final InputTriggerConfig keyconf = windowManager.getAppModel().getKeymap().getConfig();
 
 		/*

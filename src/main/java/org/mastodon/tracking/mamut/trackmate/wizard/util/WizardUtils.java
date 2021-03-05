@@ -44,10 +44,8 @@ import org.mastodon.ui.keymap.KeyConfigContexts;
 import org.mastodon.ui.keymap.Keymap;
 import org.mastodon.ui.keymap.KeymapManager;
 import org.mastodon.views.bdv.BigDataViewerMamut;
-import org.mastodon.views.bdv.NavigationActionsMamut;
 import org.mastodon.views.bdv.SharedBigDataViewerData;
 import org.mastodon.views.bdv.ViewerFrameMamut;
-import org.mastodon.views.bdv.ViewerPanelMamut;
 import org.mastodon.views.bdv.overlay.OverlayGraphRenderer;
 import org.mastodon.views.bdv.overlay.wrap.OverlayEdgeWrapper;
 import org.mastodon.views.bdv.overlay.wrap.OverlayGraphWrapper;
@@ -60,8 +58,10 @@ import org.scijava.ui.behaviour.util.Behaviours;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.tools.InitializeViewerState;
 import bdv.util.Affine3DHelpers;
+import bdv.viewer.NavigationActions;
 import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
+import bdv.viewer.ViewerPanel;
 import net.imagej.ops.OpService;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -84,7 +84,7 @@ public class WizardUtils
 
 	private static final NumberFormat FORMAT = new DecimalFormat( "0.0" );
 
-	public static final int countSpotsIn(final Model model, final int timepoint)
+	public static final int countSpotsIn( final Model model, final int timepoint )
 	{
 		int nSpots = 0;
 		final SpatialIndex< Spot > spatialIndex = model.getSpatioTemporalIndex().getSpatialIndex( timepoint );
@@ -234,13 +234,13 @@ public class WizardUtils
 			final Keymap keymap = new KeymapManager().getForwardDefaultKeymap();
 
 			final BigDataViewerMamut bdv = new BigDataViewerMamut( shared, "Preview detection", new GroupManager( 0 ).createGroupHandle() );
-			final ViewerPanelMamut viewer = bdv.getViewer();
+			final ViewerPanel viewer = bdv.getViewer();
 			InitializeViewerState.initTransform( viewer );
 			viewFrame = bdv.getViewerFrame();
 			viewFrame.setSettingsPanelVisible( false );
 
 			final BoundingSphereRadiusStatistics radiusStats = new BoundingSphereRadiusStatistics( model );
-			final OverlayGraphWrapper< Spot, Link > viewGraph = new OverlayGraphWrapper< >(
+			final OverlayGraphWrapper< Spot, Link > viewGraph = new OverlayGraphWrapper<>(
 					graph,
 					graphIdBimap,
 					model.getSpatioTemporalIndex(),
@@ -267,8 +267,8 @@ public class WizardUtils
 					focusModelAdapter,
 					selectionModelAdapter,
 					new DefaultGraphColorGenerator<>() );
-			viewer.getDisplay().addOverlayRenderer( tracksOverlay );
-			viewer.addRenderTransformListener( tracksOverlay );
+			viewer.getDisplay().overlays().add( tracksOverlay );
+			viewer.renderTransformListeners().add( tracksOverlay );
 			viewer.addTimePointListener( tracksOverlay );
 			graph.addGraphChangeListener( () -> viewer.getDisplay().repaint() );
 
@@ -277,7 +277,7 @@ public class WizardUtils
 			final Behaviours viewBehaviours = new Behaviours( keymap.getConfig(), keyConfigContexts );
 			viewBehaviours.install( viewFrame.getTriggerbindings(), "view" );
 
-			NavigationActionsMamut.install( viewActions, viewer, shared.is2D() );
+			NavigationActions.install( viewActions, viewer, shared.is2D() );
 			viewer.getTransformEventHandler().install( viewBehaviours );
 			viewFrame.setVisible( true );
 		}
