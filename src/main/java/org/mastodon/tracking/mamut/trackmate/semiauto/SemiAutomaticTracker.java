@@ -212,7 +212,7 @@ public class SemiAutomaticTracker
 
 		INPUT: for ( final Spot first : input )
 		{
-
+			graph.notifyGraphChanged();
 
 			/*
 			 * Initialize motion-model for this spot.
@@ -291,7 +291,7 @@ public class SemiAutomaticTracker
 
 				final double[] pos = new double[ 3 ];
 				predict.localize( pos );
-				if ( target != null  && ( distance < distanceFactor * radius ) )
+				if ( target != null && ( distance < distanceFactor * radius ) )
 				{
 
 					/*
@@ -346,7 +346,6 @@ public class SemiAutomaticTracker
 						{
 							graph.getLock().writeLock().unlock();
 						}
-						graph.notifyGraphChanged();
 
 						final double cost = motionModel.costTo( target );
 						log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
@@ -514,8 +513,6 @@ public class SemiAutomaticTracker
 						graph.getLock().writeLock().unlock();
 					}
 
-					graph.notifyGraphChanged();
-
 					final double cost = motionModel.costTo( target );
 					final double quality = candidate.quality;
 					log.info( String.format( " - Linking spot %s at t=%d to spot %s at t=%d with linking cost %.1f.",
@@ -560,6 +557,7 @@ public class SemiAutomaticTracker
 		 * Return.
 		 */
 
+		graph.notifyGraphChanged();
 		ok = true;
 	}
 
