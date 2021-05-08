@@ -256,7 +256,7 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 				settings.cancel();
 			}
 		} );
-		dialog.setIconImage( MastodonIcons.MASTODON_ICON_MEDIUM.getImage() );
+		dialog.setIconImages( MastodonIcons.MASTODON_ICON );
 		dialog.pack();
 		dialog.setLocationByPlatform( true );
 		dialog.setLocationRelativeTo( null );

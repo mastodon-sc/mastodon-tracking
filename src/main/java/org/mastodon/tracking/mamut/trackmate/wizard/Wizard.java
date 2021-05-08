@@ -74,7 +74,7 @@ public class Wizard
 		controller.init();
 		frame.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
 		frame.addWindowListener( controller );
-		frame.setIconImage( MastodonIcons.MASTODON_ICON_MEDIUM.getImage() );
+		frame.setIconImages( MastodonIcons.MASTODON_ICON );
 		frame.setLocationByPlatform( true );
 		frame.setLocationRelativeTo( null );
 		frame.setVisible( true );
