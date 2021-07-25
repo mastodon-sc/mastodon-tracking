@@ -46,26 +46,19 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import javax.swing.JFormattedTextField;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.mamut.WindowManager;
-import org.mastodon.mamut.model.Model;
-import org.mastodon.model.DefaultSelectionModel;
 import org.mastodon.tracking.detection.DetectorKeys;
 import org.mastodon.tracking.mamut.linking.KalmanLinkerMamut;
 import org.mastodon.tracking.mamut.linking.SpotLinkerOp;
 import org.mastodon.tracking.mamut.trackmate.Settings;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
 import org.mastodon.tracking.mamut.trackmate.wizard.util.SelectOnFocusListener;
-import org.scijava.Context;
 import org.scijava.log.LogLevel;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -259,32 +252,5 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 			gbc.gridx = 0;
 			add( lblInfo, gbc );
 		}
-	}
-
-	public static void main( final String[] args ) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException
-	{
-		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
-		Locale.setDefault( Locale.ROOT );
-		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-
-		final Context context = new org.scijava.Context();
-
-		final Model model = new Model();
-		final Settings settings = new Settings();
-		settings.linkerSettings( KalmanLinkerMamut.getDefaultSettingsMap() );
-
-		final TrackMate trackmate = new TrackMate( settings, model, new DefaultSelectionModel<>( model.getGraph(), model.getGraphIdBimap() ) );
-		context.inject( trackmate );
-
-		final JFrame frame = new JFrame( "Kalman linker config panel test" );
-		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-		frame.setSize( 300, 600 );
-		final KalmanLinkerDescriptor descriptor = new KalmanLinkerDescriptor();
-		context.inject( descriptor );
-		descriptor.setTrackMate( trackmate );
-		frame.getContentPane().add( descriptor.targetPanel );
-		descriptor.aboutToDisplayPanel();
-		frame.setVisible( true );
-		descriptor.displayingPanel();
 	}
 }

@@ -36,15 +36,18 @@ import org.scijava.Context;
 public class WizardExample
 {
 
-	public static void main( final String[] args )
+	public static void main( final String[] args ) throws Exception
 	{
 		final List< WizardPanelDescriptor > l = new ArrayList<>();
 		l.add( new Descriptor1() );
 		l.add( new Descriptor2() );
 		l.add( new Descriptor3() );
 		final ListWizardSequence sequence = new ListWizardSequence( l );
-		final Wizard wizard = new Wizard();
-		new Context().inject( wizard );
-		wizard.show( sequence, "Simple example" );
+		try (Context context = new Context())
+		{
+			final Wizard wizard = new Wizard();
+			context.inject( wizard );
+			wizard.show( sequence, "Simple example" );
+		}
 	}
 }

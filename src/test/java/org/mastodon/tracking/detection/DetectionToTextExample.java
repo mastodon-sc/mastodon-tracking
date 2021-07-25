@@ -46,7 +46,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.scijava.Context;
 
 import bdv.viewer.SourceAndConverter;
-import mpicbg.spim.data.SpimDataException;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.inplace.Inplaces;
 
@@ -74,7 +73,7 @@ public class DetectionToTextExample
 		@Override
 		public DetectionCreator create( final int timepoint )
 		{
-			return new TimepointDetectionOutputter(timepoint);
+			return new TimepointDetectionOutputter( timepoint );
 		}
 
 		private class TimepointDetectionOutputter implements DetectionCreator
@@ -122,43 +121,46 @@ public class DetectionToTextExample
 
 	}
 
-	public static void main( final String[] args ) throws SpimDataException
+	public static void main( final String[] args ) throws Exception
 	{
 		Locale.setDefault( Locale.ROOT );
-		final Context context = new Context();
-		final OpService ops = context.getService( OpService.class );
 
-		/*
-		 * Load SpimData
-		 */
-		final String bdvFile = "../TrackMate3/samples/mamutproject/datasethdf5.xml";
-//		final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-//		final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
-		final List< SourceAndConverter< ? > > sources = DetectionUtil.loadData( bdvFile );
-
-		final long start = System.currentTimeMillis();
-
-		final DetectionCreatorFactory detectionCreator = new MyTextDetectionOutputter( "samples/detections" );
-
-		final Map< String, Object > detectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
-		detectorSettings.put( KEY_RADIUS, Double.valueOf( 20. ) );
-		detectorSettings.put( KEY_THRESHOLD, Double.valueOf( 100. ) );
-		detectorSettings.put( KEY_MIN_TIMEPOINT, 0 );
-		detectorSettings.put( KEY_MAX_TIMEPOINT, 10 );
-
-		final DetectorOp detector = ( DetectorOp ) Inplaces.binary1( ops, DoGDetectorOp.class,
-				detectionCreator, sources, detectorSettings );
-		detector.mutate1( detectionCreator, sources );
-
-		final long end = System.currentTimeMillis();
-		final long processingTime = end - start;
-		if ( !detector.isSuccessful() )
+		try (Context context = new Context())
 		{
-			System.out.println( "Could not perform detection:\n" + detector.getErrorMessage() );
-			return;
-		}
-		System.out.println( String.format( "Detection performed in %.1f s.", processingTime / 1000. ) );
 
+			final OpService ops = context.getService( OpService.class );
+
+			/*
+			 * Load SpimData
+			 */
+			final String bdvFile = "../TrackMate3/samples/mamutproject/datasethdf5.xml";
+//			final String bdvFile = "/Users/Jean-Yves/Desktop/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+//			final String bdvFile = "/Users/tinevez/Projects/JYTinevez/MaMuT/MaMuT_demo_dataset/MaMuT_Parhyale_demo.xml";
+			final List< SourceAndConverter< ? > > sources = DetectionUtil.loadData( bdvFile );
+
+			final long start = System.currentTimeMillis();
+
+			final DetectionCreatorFactory detectionCreator = new MyTextDetectionOutputter( "samples/detections" );
+
+			final Map< String, Object > detectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
+			detectorSettings.put( KEY_RADIUS, Double.valueOf( 20. ) );
+			detectorSettings.put( KEY_THRESHOLD, Double.valueOf( 100. ) );
+			detectorSettings.put( KEY_MIN_TIMEPOINT, 0 );
+			detectorSettings.put( KEY_MAX_TIMEPOINT, 10 );
+
+			final DetectorOp detector = ( DetectorOp ) Inplaces.binary1( ops, DoGDetectorOp.class,
+					detectionCreator, sources, detectorSettings );
+			detector.mutate1( detectionCreator, sources );
+
+			final long end = System.currentTimeMillis();
+			final long processingTime = end - start;
+			if ( !detector.isSuccessful() )
+			{
+				System.out.println( "Could not perform detection:\n" + detector.getErrorMessage() );
+				return;
+			}
+			System.out.println( String.format( "Detection performed in %.1f s.", processingTime / 1000. ) );
+		}
 	}
 
 }
