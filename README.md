@@ -1,4 +1,4 @@
-[![](https://travis-ci.com/mastodon-sc/mastodon-tracking.svg?branch=master)](https://travis-ci.com/mastodon-sc/mastodon-tracking)
+[![](https://github.com/mastodon-sc/mastodon-tracking/actions/workflows/build-main.yml/badge.svg)](https://github.com/mastodon-sc/mastodon-tracking/actions/workflows/build-main.yml)
 
 
 Mastodon-Tracking
