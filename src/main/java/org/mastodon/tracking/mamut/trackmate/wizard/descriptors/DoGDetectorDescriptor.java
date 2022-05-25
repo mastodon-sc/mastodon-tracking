@@ -250,10 +250,9 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 		else
 			threshold = ( double ) objThreshold;
 
-		final String unit = "pixels";
-
 		panel.diameter.setValue( diameter );
 		panel.threshold.setValue( threshold );
+		final String unit = DetectionUtil.getSpatialUnits( settings.values.getSources() );
 		panel.lblDiameterUnit.setText( unit );
 	}
 
@@ -295,9 +294,9 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 			gbc.fill = GridBagConstraints.HORIZONTAL;
 			gbc.insets = new Insets( 5, 5, 5, 5 );
 
-			final JLabel title = new JLabel( "Configure detector." );
-			title.setFont( getFont().deriveFont( Font.BOLD ) );
-			add( title, gbc );
+			final JLabel lblTitle = new JLabel( "Configure detector" );
+			lblTitle.setFont( getFont().deriveFont( Font.BOLD ) );
+			add( lblTitle, gbc );
 
 			// Diameter.
 

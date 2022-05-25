@@ -53,6 +53,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.mastodon.mamut.WindowManager;
+import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.detection.DetectorKeys;
 import org.mastodon.tracking.mamut.linking.KalmanLinkerMamut;
 import org.mastodon.tracking.mamut.linking.SpotLinkerOp;
@@ -144,7 +145,8 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 	public void setTrackMate( final TrackMate trackmate )
 	{
 		this.settings = trackmate.getSettings();
-		this.targetPanel = new KalmanLinkerPanel();
+		final String units = DetectionUtil.getSpatialUnits( settings.values.getSources() );
+		this.targetPanel = new KalmanLinkerPanel( units );
 	}
 
 	@Override
@@ -162,12 +164,10 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 
 		private final JFormattedTextField initialSearchRadius;
 
-		public KalmanLinkerPanel()
+		public KalmanLinkerPanel( final String units )
 		{
 			final SelectOnFocusListener onFocusListener = new SelectOnFocusListener();
 			final PluginInfo< SciJavaPlugin > pluginInfo = pluginService.getPlugin( KalmanLinkerMamut.class );
-
-			final String units = "pixels";
 
 			final GridBagLayout layout = new GridBagLayout();
 			layout.columnWidths = new int[] { 80, 80, 40 };

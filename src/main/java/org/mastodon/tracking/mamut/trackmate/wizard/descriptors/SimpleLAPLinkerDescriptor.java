@@ -70,6 +70,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.mastodon.mamut.WindowManager;
+import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.detection.DetectorKeys;
 import org.mastodon.tracking.linking.LinkingUtils;
 import org.mastodon.tracking.mamut.linking.SimpleSparseLAPLinkerMamut;
@@ -178,7 +179,7 @@ public class SimpleLAPLinkerDescriptor extends SpotLinkerDescriptor
 			final SelectOnFocusListener onFocusListener = new SelectOnFocusListener();
 			final PluginInfo< SciJavaPlugin > pluginInfo = pluginService.getPlugin( SimpleSparseLAPLinkerMamut.class );
 
-			final String units = "pixels";
+			final String units = DetectionUtil.getSpatialUnits( settings.values.getSources() );
 			final GridBagLayout layout = new GridBagLayout();
 			layout.columnWidths = new int[] { 80, 80, 40 };
 			layout.columnWeights = new double[] { 0.2, 0.7, 0.1 };

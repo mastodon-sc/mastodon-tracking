@@ -46,6 +46,7 @@ import javax.swing.JScrollPane;
 import org.mastodon.mamut.WindowManager;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.Spot;
+import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.detection.DetectorKeys;
 import org.mastodon.tracking.linking.LinkingUtils;
 import org.mastodon.tracking.mamut.linking.SparseLAPLinkerMamut;
@@ -146,7 +147,7 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 			jScrollPaneMain.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
 			jScrollPaneMain.getVerticalScrollBar().setUnitIncrement( 24 );
 
-			final String units = "pixels";
+			final String units = DetectionUtil.getSpatialUnits( settings.values.getSources() );
 			this.configPanel = new LAPLinkerConfigPanel( "LAP linker.", units, model.getFeatureModel(), Spot.class );
 			jScrollPaneMain.setViewportView( configPanel );
 		}

@@ -66,8 +66,8 @@ import org.mastodon.tracking.detection.DetectorKeys;
 import org.mastodon.tracking.detection.DoGDetectorOp;
 import org.mastodon.tracking.mamut.detection.AdvancedDoGDetectorMamut;
 import org.mastodon.tracking.mamut.detection.MamutDetectionCreatorFactories;
-import org.mastodon.tracking.mamut.detection.SpotDetectorOp;
 import org.mastodon.tracking.mamut.detection.MamutDetectionCreatorFactories.DetectionBehavior;
+import org.mastodon.tracking.mamut.detection.SpotDetectorOp;
 import org.mastodon.tracking.mamut.trackmate.Settings;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
 import org.mastodon.tracking.mamut.trackmate.wizard.Wizard;
@@ -211,7 +211,7 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 			return;
 
 		final GridBagConstraints gbc = new GridBagConstraints();
-		gbc.gridy = 7;
+		gbc.gridy = 8;
 		gbc.gridx = 0;
 		gbc.gridwidth = 3;
 		gbc.anchor = GridBagConstraints.BASELINE_LEADING;
@@ -266,10 +266,9 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 
 		final DetectionType detectionType = DetectionType.getOrDefault( ( String ) detectorSettings.get( KEY_DETECTION_TYPE ), DetectionType.MINIMA );
 
-		final String unit = "pixels";
-
 		panel.diameter.setValue( diameter );
 		panel.threshold.setValue( threshold );
+		final String unit = DetectionUtil.getSpatialUnits( settings.values.getSources() );
 		panel.lblDiameterUnit.setText( unit );
 		panel.behaviorCB.setSelectedItem( detectionBehavior );
 		panel.detectionTypeCB.setSelectedItem( detectionType );
@@ -303,10 +302,10 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 		public AdvancedDoGDetectorPanel()
 		{
 			final GridBagLayout layout = new GridBagLayout();
-			layout.columnWidths = new int[] { 80, 80, 40 };
+			layout.columnWidths = new int[] { 80, 80, 50 };
 			layout.columnWeights = new double[] { 0.2, 0.7, 0.1 };
-			layout.rowHeights = new int[] { 26, 0, 0, 0, 0, 50, 26, 26 };
-			layout.rowWeights = new double[] { 1., 0., 0., 0., 0., 0., 0., 1. };
+			layout.rowHeights = new int[] { 0, 0, 0, 0, 0, 26, 26, 50 };
+			layout.rowWeights = new double[] { .2, 0., 0., 0., 0., 0., 0., 0., 1. };
 			setLayout( layout );
 
 			final GridBagConstraints gbc = new GridBagConstraints();
@@ -317,7 +316,7 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 			gbc.fill = GridBagConstraints.HORIZONTAL;
 			gbc.insets = new Insets( 5, 5, 5, 5 );
 
-			final JLabel title = new JLabel( "Configure detector." );
+			final JLabel title = new JLabel( IDENTIFIER );
 			title.setFont( getFont().deriveFont( Font.BOLD ) );
 			add( title, gbc );
 
@@ -330,8 +329,10 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 
 			this.detectionTypeCB = new JComboBox<>( DetectionType.values() );
 			gbc.gridx++;
+			gbc.gridwidth = 2;
 			gbc.anchor = GridBagConstraints.CENTER;
 			add( detectionTypeCB, gbc );
+			gbc.gridwidth = 1;
 
 			// Diameter.
 			final JLabel lblDiameter = new JLabel( "Estimated diameter:", JLabel.RIGHT );
@@ -375,8 +376,10 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 
 			this.behaviorCB = new JComboBox<>( MamutDetectionCreatorFactories.DetectionBehavior.values() );
 			gbc.gridx++;
+			gbc.gridwidth = 2;
 			gbc.anchor = GridBagConstraints.CENTER;
 			add( behaviorCB, gbc );
+			gbc.gridwidth = 1;
 
 			// Behavior info.
 			final JLabel lblAddBehaviorInfo = new JLabel( "<html>" + ( ( DetectionBehavior ) behaviorCB.getSelectedItem() ).info() + "</html>" );
@@ -409,6 +412,9 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 			add( lblInfo, gbc );
 
 			// Quality histogram place holder.
+			gbc.gridy++;
+			gbc.gridx = 0;
+			add( new JLabel(), gbc );
 		}
 	}
 
