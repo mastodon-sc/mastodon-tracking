@@ -1,5 +1,5 @@
 /*-
- * #%L
+return  * #%L
  * mastodon-tracking
  * %%
  * Copyright (C) 2017 - 2021 Tobias Pietzsch, Jean-Yves Tinevez
@@ -580,6 +580,15 @@ public class DetectionUtil
 			}
 		}
 		return sources;
+	}
+
+	public static final String getSpatialUnits( final List< SourceAndConverter< ? > > sources )
+	{
+		if ( null == sources || sources.isEmpty() )
+			return "pixel";
+
+		final SourceAndConverter< ? > sac = sources.iterator().next();
+		return sac.getSpimSource().getVoxelDimensions().unit();
 	}
 
 	private DetectionUtil()
