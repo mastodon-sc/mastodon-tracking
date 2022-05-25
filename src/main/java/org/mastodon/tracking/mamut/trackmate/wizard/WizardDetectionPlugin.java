@@ -45,11 +45,12 @@ import bdv.viewer.SourceAndConverter;
 @Plugin( type = WizardDetectionPlugin.class )
 public class WizardDetectionPlugin extends WizardPlugin
 {
-	private static final String RUN_WIZARD = "run spot detection wizard";
+
+	public static final String RUN_WIZARD = "run spot detection wizard";
 
 	private static final String[] RUN_WIZARD_KEYS = new String[] { "not mapped" };
 
-	private static final Settings settings = new Settings();
+	public static final Settings settings = new Settings();
 
 	public WizardDetectionPlugin()
 	{
