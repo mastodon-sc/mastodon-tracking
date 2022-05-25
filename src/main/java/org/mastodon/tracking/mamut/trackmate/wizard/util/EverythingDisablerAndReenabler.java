@@ -30,8 +30,10 @@ package org.mastodon.tracking.mamut.trackmate.wizard.util;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Purpose: To recursively disable (and later re-enable) all components of a
@@ -43,7 +45,7 @@ import java.util.List;
  * happens, all input events are eaten.
  * <p>
  * JYT: Changed it so that it can remember what was the enabled state and
- * restore this state.
+ * restore this state. Also use WeakReferences.
  */
 final public class EverythingDisablerAndReenabler
 { // v[1, 2016-12-05 14!30 UTC] by dreamspace-president.com
@@ -52,7 +54,7 @@ final public class EverythingDisablerAndReenabler
 
 	final private Class< ? >[] componentClassesToBeIgnored;
 
-	final private List< Component > componentsToReenable = new ArrayList<>();
+	final private List< WeakReference< Component > > componentsToReenable = new ArrayList<>();
 
 	private boolean disableHasBeenCalled = false;
 	// Order is strictly upheld via IllegalStateException!
@@ -105,7 +107,9 @@ final public class EverythingDisablerAndReenabler
 	public void disable()
 	{
 
-		if ( disableHasBeenCalled ) { throw new IllegalStateException(); }
+		if ( disableHasBeenCalled )
+			throw new IllegalStateException();
+
 		disableHasBeenCalled = true;
 		componentsToReenable.clear();
 		disableEverythingInsideThisHierarchically( rootContainerForWhatShouldBeDisabled );
@@ -119,13 +123,14 @@ final public class EverythingDisablerAndReenabler
 	public void reenable()
 	{
 
-		if ( !disableHasBeenCalled ) { throw new IllegalStateException(); }
+		if ( !disableHasBeenCalled )
+			throw new IllegalStateException();
+
 		disableHasBeenCalled = false;
 
 		for ( int i = componentsToReenable.size() - 1; i >= 0; i-- )
-		{
-			componentsToReenable.get( i ).setEnabled( true );
-		}
+			Optional.ofNullable( componentsToReenable.get( i ).get() ).ifPresent( c -> c.setEnabled( true ) );
+
 		componentsToReenable.clear();
 	}
 
@@ -141,9 +146,7 @@ final public class EverythingDisablerAndReenabler
 
 				// RECURSION FIRST
 				if ( component instanceof Container )
-				{
 					disableEverythingInsideThisHierarchically( ( Container ) component );
-				}
 
 				// AND THEN DEAL WITH THE ELEMENTS
 				if ( component.isEnabled() )
@@ -163,11 +166,10 @@ final public class EverythingDisablerAndReenabler
 					if ( !found && component.isEnabled() )
 					{
 						component.setEnabled( false );
-						componentsToReenable.add( component );
+						componentsToReenable.add( new WeakReference<>( component ) );
 					}
 				}
 			}
 		}
 	}
-
 }
