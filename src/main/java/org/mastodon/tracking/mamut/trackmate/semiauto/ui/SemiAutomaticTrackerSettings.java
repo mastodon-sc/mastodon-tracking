@@ -56,8 +56,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.mastodon.app.ui.settings.style.Style;
 import org.scijava.listeners.Listeners;
+
+import bdv.ui.settings.style.Style;
 
 public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTrackerSettings >
 {

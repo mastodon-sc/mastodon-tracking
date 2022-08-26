@@ -38,9 +38,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.mastodon.app.ui.settings.style.AbstractStyleManager;
 import org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerPlugin;
 import org.yaml.snakeyaml.Yaml;
+
+import bdv.ui.settings.style.AbstractStyleManager;
 
 public class SemiAutomaticTrackerSettingsManager extends AbstractStyleManager< SemiAutomaticTrackerSettingsManager, SemiAutomaticTrackerSettings >
 {
@@ -67,8 +68,8 @@ public class SemiAutomaticTrackerSettingsManager extends AbstractStyleManager< S
 	public SemiAutomaticTrackerSettingsManager( final boolean loadSettings )
 	{
 		forwardDefaultSettings = SemiAutomaticTrackerSettings.defaultSettings().copy();
-		updateForwardDefaultListeners = () -> forwardDefaultSettings.set( defaultStyle );
-		defaultStyle.updateListeners().add( updateForwardDefaultListeners );
+		updateForwardDefaultListeners = () -> forwardDefaultSettings.set( selectedStyle );
+		selectedStyle.updateListeners().add( updateForwardDefaultListeners );
 		if ( loadSettings )
 			loadStyles();
 	}
@@ -98,7 +99,7 @@ public class SemiAutomaticTrackerSettingsManager extends AbstractStyleManager< S
 			final FileWriter output = new FileWriter( filename );
 			final Yaml yaml = SemiAutomaticTrackerSettingsIO.createYaml();
 			final ArrayList< Object > objects = new ArrayList<>();
-			objects.add( defaultStyle.getName() );
+			objects.add( selectedStyle.getName() );
 			objects.addAll( userStyles );
 			yaml.dumpAll( objects.iterator(), output );
 			output.close();
@@ -143,7 +144,7 @@ public class SemiAutomaticTrackerSettingsManager extends AbstractStyleManager< S
 					}
 				}
 			}
-			setDefaultStyle( styleForName( defaultStyleName ).orElseGet( () -> builtinStyles.get( 0 ) ) );
+			setSelectedStyle( styleForName( defaultStyleName ).orElseGet( () -> builtinStyles.get( 0 ) ) );
 		}
 		catch ( final FileNotFoundException e )
 		{
@@ -152,12 +153,12 @@ public class SemiAutomaticTrackerSettingsManager extends AbstractStyleManager< S
 	}
 
 	@Override
-	public synchronized void setDefaultStyle( final SemiAutomaticTrackerSettings renderSettings )
+	public synchronized void setSelectedStyle( final SemiAutomaticTrackerSettings renderSettings )
 	{
-		defaultStyle.updateListeners().remove( updateForwardDefaultListeners );
-		defaultStyle = renderSettings;
-		forwardDefaultSettings.set( defaultStyle );
-		defaultStyle.updateListeners().add( updateForwardDefaultListeners );
+		selectedStyle.updateListeners().remove( updateForwardDefaultListeners );
+		selectedStyle = renderSettings;
+		forwardDefaultSettings.set( selectedStyle );
+		selectedStyle.updateListeners().add( updateForwardDefaultListeners );
 	}
 
 	@Override

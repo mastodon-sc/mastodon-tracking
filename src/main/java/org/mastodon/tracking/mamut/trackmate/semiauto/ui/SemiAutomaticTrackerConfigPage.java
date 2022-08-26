@@ -31,14 +31,15 @@ package org.mastodon.tracking.mamut.trackmate.semiauto.ui;
 import javax.swing.Action;
 import javax.swing.JPanel;
 
-import org.mastodon.app.ui.settings.ModificationListener;
-import org.mastodon.app.ui.settings.SelectAndEditProfileSettingsPage;
-import org.mastodon.app.ui.settings.style.StyleProfile;
-import org.mastodon.app.ui.settings.style.StyleProfileManager;
 import org.mastodon.grouping.GroupHandle;
 import org.mastodon.views.bdv.SharedBigDataViewerData;
 import org.scijava.listeners.Listeners;
 import org.scijava.listeners.Listeners.SynchronizedList;
+
+import bdv.ui.settings.ModificationListener;
+import bdv.ui.settings.SelectAndEditProfileSettingsPage;
+import bdv.ui.settings.style.StyleProfile;
+import bdv.ui.settings.style.StyleProfileManager;
 
 public class SemiAutomaticTrackerConfigPage extends SelectAndEditProfileSettingsPage< StyleProfile< SemiAutomaticTrackerSettings > >
 {
@@ -47,7 +48,12 @@ public class SemiAutomaticTrackerConfigPage extends SelectAndEditProfileSettings
 	{
 		super( treePath,
 				new StyleProfileManager<>( settingsManager, new SemiAutomaticTrackerSettingsManager( false ) ),
-				new SemiAutomaticTrackerSettingsEditPanel( settingsManager.getDefaultStyle(), data, groupHandle, trackAction, cancelAction ) );
+				new SemiAutomaticTrackerSettingsEditPanel(
+						settingsManager.getSelectedStyle(),
+						data,
+						groupHandle,
+						trackAction,
+						cancelAction ) );
 	}
 
 	static class SemiAutomaticTrackerSettingsEditPanel implements SemiAutomaticTrackerSettings.UpdateListener, SelectAndEditProfileSettingsPage.ProfileEditPanel< StyleProfile< SemiAutomaticTrackerSettings > >
@@ -61,7 +67,12 @@ public class SemiAutomaticTrackerConfigPage extends SelectAndEditProfileSettings
 
 		private final SynchronizedList< ModificationListener > modificationListeners;
 
-		public SemiAutomaticTrackerSettingsEditPanel( final SemiAutomaticTrackerSettings initialSettings, final SharedBigDataViewerData data, final GroupHandle groupHandle, final Action trackAction, final Action cancelAction )
+		public SemiAutomaticTrackerSettingsEditPanel(
+				final SemiAutomaticTrackerSettings initialSettings,
+				final SharedBigDataViewerData data,
+				final GroupHandle groupHandle,
+				final Action trackAction,
+				final Action cancelAction )
 		{
 			editedSettings = initialSettings.copy( "Edited" );
 			settingsPanel = new SemiAutomaticTrackerConfigPanel( data, editedSettings, groupHandle );
@@ -107,7 +118,7 @@ public class SemiAutomaticTrackerConfigPage extends SelectAndEditProfileSettings
 		public void settingsChanged()
 		{
 			if ( trackModifications )
-				modificationListeners.list.forEach( ModificationListener::modified );
+				modificationListeners.list.forEach( ModificationListener::setModified );
 		}
 	}
 }
