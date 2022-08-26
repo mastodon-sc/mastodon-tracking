@@ -31,6 +31,7 @@ package org.mastodon.tracking.mamut.trackmate.semiauto.ui;
 import static org.mastodon.app.ui.StyleElements.doubleElement;
 import static org.mastodon.app.ui.StyleElements.intElement;
 
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -45,6 +46,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 
 import org.mastodon.app.ui.GroupLocksPanel;
@@ -138,14 +140,15 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 
 		final GridBagLayout gbl = new GridBagLayout();
 		gbl.columnWidths = new int[] { 0, 0, 0 };
-		gbl.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		gbl.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		gbl.columnWeights = new double[] { 0.0, 1.0, Double.MIN_VALUE };
-		gbl.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, Double.MIN_VALUE };
+		gbl.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE };
 		setLayout( gbl );
 
 		final JLabel lblDetection = new JLabel( "Detection." );
 		lblDetection.setFont( lblDetection.getFont().deriveFont( lblDetection.getFont().getStyle() | Font.BOLD ) );
 		final GridBagConstraints gbcLblDetection = new GridBagConstraints();
+		gbcLblDetection.anchor = GridBagConstraints.WEST;
 		gbcLblDetection.gridwidth = 2;
 		gbcLblDetection.insets = new Insets( 5, 5, 5, 0 );
 		gbcLblDetection.gridx = 0;
@@ -232,13 +235,25 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbcLblNTimepointsSlider.gridy = 4;
 		add( nTimepointsSlider, gbcLblNTimepointsSlider );
 
+		final JSeparator sep1 = new JSeparator();
+		sep1.setMinimumSize( new Dimension( 5, 10 ) );
+		final GridBagConstraints gbcSeparator1 = new GridBagConstraints();
+		gbcSeparator1.fill = GridBagConstraints.HORIZONTAL;
+		gbcSeparator1.gridwidth = 2;
+		gbcSeparator1.insets = new Insets( 0, 0, 5, 0 );
+		gbcSeparator1.gridx = 0;
+		gbcSeparator1.gridy = 5;
+		gbcSeparator1.anchor = GridBagConstraints.SOUTH;
+		add( sep1, gbcSeparator1 );
+
 		final JLabel lblTrackingDirection = new JLabel( "Tracking direction." );
 		lblTrackingDirection.setFont( lblTrackingDirection.getFont().deriveFont( lblTrackingDirection.getFont().getStyle() | Font.BOLD ) );
 		final GridBagConstraints gbcLblTrackingDirection = new GridBagConstraints();
+		gbcLblTrackingDirection.anchor = GridBagConstraints.WEST;
 		gbcLblTrackingDirection.gridwidth = 2;
 		gbcLblTrackingDirection.insets = new Insets( 5, 5, 5, 0 );
 		gbcLblTrackingDirection.gridx = 0;
-		gbcLblTrackingDirection.gridy = 5;
+		gbcLblTrackingDirection.gridy = 6;
 		add( lblTrackingDirection, gbcLblTrackingDirection );
 
 		final JPanel panelTrackingDirection = new JPanel();
@@ -247,7 +262,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbcPanelTrackingDirection.gridwidth = 2;
 		gbcPanelTrackingDirection.fill = GridBagConstraints.VERTICAL;
 		gbcPanelTrackingDirection.gridx = 0;
-		gbcPanelTrackingDirection.gridy = 6;
+		gbcPanelTrackingDirection.gridy = 7;
 		add( panelTrackingDirection, gbcPanelTrackingDirection );
 
 		final JRadioButton rdbtnForward = new JRadioButton( "Forward in time." );
@@ -262,13 +277,25 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		buttonGroup.add( rdbtnForward );
 		buttonGroup.add( rdbtnBackward );
 
+		final JSeparator sep2 = new JSeparator();
+		sep2.setMinimumSize( new Dimension( 5, 10 ) );
+		final GridBagConstraints gbcSeparator2 = new GridBagConstraints();
+		gbcSeparator2.anchor = GridBagConstraints.SOUTH;
+		gbcSeparator2.fill = GridBagConstraints.HORIZONTAL;
+		gbcSeparator2.gridwidth = 2;
+		gbcSeparator2.insets = new Insets( 0, 0, 5, 0 );
+		gbcSeparator2.gridx = 0;
+		gbcSeparator2.gridy = 8;
+		add( sep2, gbcSeparator2 );
+
 		final JLabel lblDealWithExisting = new JLabel( "Existing spots." );
 		lblDealWithExisting.setFont( lblDealWithExisting.getFont().deriveFont( lblDealWithExisting.getFont().getStyle() | Font.BOLD ) );
 		final GridBagConstraints gbcLblDealWithExisting = new GridBagConstraints();
+		gbcLblDealWithExisting.anchor = GridBagConstraints.WEST;
 		gbcLblDealWithExisting.gridwidth = 2;
 		gbcLblDealWithExisting.insets = new Insets( 5, 5, 5, 0 );
 		gbcLblDealWithExisting.gridx = 0;
-		gbcLblDealWithExisting.gridy = 7;
+		gbcLblDealWithExisting.gridy = 9;
 		add( lblDealWithExisting, gbcLblDealWithExisting );
 
 		final JCheckBox chckbxAllowLinkingIf = new JCheckBox( "Allow linking to an existing spot?" );
@@ -280,7 +307,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbcLblAllowLinkingIf.fill = GridBagConstraints.VERTICAL;
 		gbcLblAllowLinkingIf.insets = new Insets( 5, 5, 5, 0 );
 		gbcLblAllowLinkingIf.gridx = 0;
-		gbcLblAllowLinkingIf.gridy = 8;
+		gbcLblAllowLinkingIf.gridy = 10;
 		add( chckbxAllowLinkingIf, gbcLblAllowLinkingIf );
 
 		final JCheckBox chckbxLinkIncoming = new JCheckBox( "Link even if target has incoming links." );
@@ -290,7 +317,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbcChckbxLinkIncoming.insets = new Insets( 5, 5, 5, 0 );
 		gbcChckbxLinkIncoming.anchor = GridBagConstraints.WEST;
 		gbcChckbxLinkIncoming.gridx = 1;
-		gbcChckbxLinkIncoming.gridy = 9;
+		gbcChckbxLinkIncoming.gridy = 11;
 		add( chckbxLinkIncoming, gbcChckbxLinkIncoming );
 
 		final JCheckBox chckbxLinkOutgoing = new JCheckBox( "Link even if target has outgoing links." );
@@ -300,7 +327,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbcChckbxLinkOutgoing.insets = new Insets( 5, 5, 5, 0 );
 		gbcChckbxLinkOutgoing.anchor = GridBagConstraints.WEST;
 		gbcChckbxLinkOutgoing.gridx = 1;
-		gbcChckbxLinkOutgoing.gridy = 10;
+		gbcChckbxLinkOutgoing.gridy = 12;
 		add( chckbxLinkOutgoing, gbcChckbxLinkOutgoing );
 
 		final JCheckBox chckbxContinueTracking = new JCheckBox( "<html>"
@@ -310,11 +337,11 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		chckbxContinueTracking.setToolTipText( CONTINUE_LINKING_TOOLTIP );
 		chckbxContinueTracking.addItemListener( ( e ) -> editedSettings.setContinueIfLinked( chckbxContinueTracking.isSelected() ) );
 		final GridBagConstraints gbcChckbxContinueTracking = new GridBagConstraints();
-		gbcChckbxContinueTracking.anchor = GridBagConstraints.NORTHWEST;
-		gbcChckbxContinueTracking.fill = GridBagConstraints.BOTH;
+		gbcChckbxContinueTracking.anchor = GridBagConstraints.NORTH;
+		gbcChckbxContinueTracking.fill = GridBagConstraints.HORIZONTAL;
 		gbcChckbxContinueTracking.insets = new Insets( 5, 5, 5, 0 );
 		gbcChckbxContinueTracking.gridx = 1;
-		gbcChckbxContinueTracking.gridy = 11;
+		gbcChckbxContinueTracking.gridy = 13;
 		add( chckbxContinueTracking, gbcChckbxContinueTracking );
 
 		final JCheckBox chckbxDetectSpot = new JCheckBox("Run detection if existing spot cannot be found?");
@@ -323,18 +350,30 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		final GridBagConstraints gbcChckbxDetectSpot = new GridBagConstraints();
 		gbcChckbxDetectSpot.anchor = GridBagConstraints.WEST;
 		gbcChckbxDetectSpot.gridwidth = 2;
-		gbcChckbxDetectSpot.insets = new Insets( 5, 5, 5, 5 );
+		gbcChckbxDetectSpot.insets = new Insets( 5, 5, 5, 0 );
 		gbcChckbxDetectSpot.gridx = 0;
-		gbcChckbxDetectSpot.gridy = 12;
+		gbcChckbxDetectSpot.gridy = 14;
 		add( chckbxDetectSpot, gbcChckbxDetectSpot );
+
+		final JSeparator sep3 = new JSeparator();
+		sep3.setMinimumSize( new Dimension( 5, 10 ) );
+		final GridBagConstraints gbcSeparator3 = new GridBagConstraints();
+		gbcSeparator3.anchor = GridBagConstraints.SOUTH;
+		gbcSeparator3.fill = GridBagConstraints.HORIZONTAL;
+		gbcSeparator3.gridwidth = 2;
+		gbcSeparator3.insets = new Insets( 0, 0, 5, 5 );
+		gbcSeparator3.gridx = 0;
+		gbcSeparator3.gridy = 15;
+		add( sep3, gbcSeparator3 );
 
 		final JLabel lblNavigation = new JLabel( "Navigation." );
 		lblNavigation.setFont( lblNavigation.getFont().deriveFont( lblNavigation.getFont().getStyle() | Font.BOLD ) );
 		final GridBagConstraints gbcLblNavigation = new GridBagConstraints();
+		gbcLblNavigation.anchor = GridBagConstraints.WEST;
 		gbcLblNavigation.gridwidth = 2;
 		gbcLblNavigation.insets = new Insets( 0, 0, 5, 0 );
 		gbcLblNavigation.gridx = 0;
-		gbcLblNavigation.gridy = 13;
+		gbcLblNavigation.gridy = 16;
 		add( lblNavigation, gbcLblNavigation );
 
 		if ( null != groupHandle )
@@ -345,7 +384,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 			gbcGroupLocksPanel.insets = new Insets( 0, 0, 5, 0 );
 			gbcGroupLocksPanel.fill = GridBagConstraints.BOTH;
 			gbcGroupLocksPanel.gridx = 0;
-			gbcGroupLocksPanel.gridy = 14;
+			gbcGroupLocksPanel.gridy = 17;
 			add( groupLocksPanel, gbcGroupLocksPanel );
 		}
 
@@ -356,13 +395,10 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbcPanelButtons.insets = new Insets( 5, 5, 0, 0 );
 		gbcPanelButtons.fill = GridBagConstraints.HORIZONTAL;
 		gbcPanelButtons.gridx = 0;
-		gbcPanelButtons.gridy = 15;
+		gbcPanelButtons.gridy = 18;
 		add( panelButtons, gbcPanelButtons );
 		panelButtons.setLayout( new BoxLayout( panelButtons, BoxLayout.X_AXIS ) );
 
-		final JLabel warning = new JLabel( "Please click 'Apply' before tracking to use current settings." );
-		warning.setFont( getFont().deriveFont( Font.ITALIC ).deriveFont( getFont().getSize2D() - 4f ) );
-		panelButtons.add( warning );
 		panelButtons.add( Box.createHorizontalGlue() );
 		this.btnCancel = new JButton( "Cancel" );
 		panelButtons.add( btnCancel );
