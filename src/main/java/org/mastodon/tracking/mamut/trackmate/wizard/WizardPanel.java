@@ -44,8 +44,8 @@ import javax.swing.border.EmptyBorder;
 
 import org.mastodon.tracking.mamut.trackmate.wizard.TransitionAnimator.Direction;
 
-import net.imglib2.ui.PainterThread;
-import net.imglib2.ui.PainterThread.Paintable;
+import bdv.viewer.render.PainterThread;
+import bdv.viewer.render.PainterThread.Paintable;
 
 public class WizardPanel extends JPanel
 {
