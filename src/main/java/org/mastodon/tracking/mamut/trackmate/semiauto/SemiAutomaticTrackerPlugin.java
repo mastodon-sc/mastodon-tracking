@@ -44,7 +44,6 @@ import javax.swing.WindowConstants;
 
 import org.mastodon.app.MastodonIcons;
 import org.mastodon.app.ui.ViewMenuBuilder.MenuItem;
-import org.mastodon.app.ui.settings.SettingsPanel;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.grouping.GroupHandle;
 import org.mastodon.mamut.MamutMenuBuilder;
@@ -73,6 +72,7 @@ import org.scijava.ui.behaviour.util.AbstractNamedAction;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.swing.console.LoggingPanel;
 
+import bdv.ui.settings.SettingsPanel;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.computer.Computers;
 

@@ -28,8 +28,8 @@
  */
 package org.mastodon.tracking.mamut.trackmate.semiauto.ui;
 
-import static org.mastodon.app.ui.StyleElements.doubleElement;
-import static org.mastodon.app.ui.StyleElements.intElement;
+import static org.mastodon.app.ui.settings.StyleElements.doubleElement;
+import static org.mastodon.app.ui.settings.StyleElements.intElement;
 
 import java.awt.Dimension;
 import java.awt.Font;
