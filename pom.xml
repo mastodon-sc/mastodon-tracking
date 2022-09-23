@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>32.0.0-beta-5</version>
+		<version>33.2.0</version>
 	</parent>
 
 	<groupId>org.mastodon</groupId>
@@ -135,7 +135,7 @@
 		<license.organizationName>Mastodon authors</license.organizationName>
 		<license.copyrightOwners>Tobias Pietzsch, Jean-Yves Tinevez</license.copyrightOwners>
 		
-		<mastodon.version>1.0.0-beta-22-SNAPSHOT</mastodon.version>
+		<mastodon.version>1.0.0-beta-24</mastodon.version>
 		
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
