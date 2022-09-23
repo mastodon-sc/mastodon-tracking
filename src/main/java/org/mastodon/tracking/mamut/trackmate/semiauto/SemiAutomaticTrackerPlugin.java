@@ -31,6 +31,8 @@ package org.mastodon.tracking.mamut.trackmate.semiauto;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,10 +44,10 @@ import javax.swing.WindowConstants;
 
 import org.mastodon.app.MastodonIcons;
 import org.mastodon.app.ui.ViewMenuBuilder.MenuItem;
+import org.mastodon.app.ui.settings.SettingsPanel;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.grouping.GroupHandle;
 import org.mastodon.mamut.MamutMenuBuilder;
-import org.mastodon.mamut.PreferencesDialog;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.Spot;
@@ -107,6 +109,10 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 
 	private static Map< String, String > menuTexts = new HashMap<>();
 
+	private final Map< String, Object > currentSettings;
+
+	private JDialog dialog;
+
 	private NavigationHandler< Spot, Link > navigationHandler;
 
 	private LoggingPanel loggingPanel;
@@ -120,9 +126,11 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 	 */
 	private Cancelable cancelable;
 
-	private SemiAutomaticTrackerConfigPage page;
-
-	private SemiAutomaticTrackerSettingsManager styleManager;
+	public SemiAutomaticTrackerPlugin()
+	{
+		this.currentSettings = new HashMap<>();
+		currentSettings.putAll( SemiAutomaticTrackerKeys.getDefaultDetectorSettingsMap() );
+	}
 
 	static
 	{
@@ -197,7 +205,6 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 	{
 		this.appModel = appModel;
 
-
 		final Context context = appModel.getWindowManager().getContext();
 		final String prefKey = "Mastodon semi-automatic tracker";
 		this.loggingPanel = new LoggingPanel( context, prefKey );
@@ -213,17 +220,46 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 		this.navigationHandler = groupHandle.getModel( appModel.getAppModel().NAVIGATION );
 
 		final SharedBigDataViewerData data = appModel.getAppModel().getSharedBdvData();
-		styleManager = new SemiAutomaticTrackerSettingsManager();
-		page = new SemiAutomaticTrackerConfigPage(
-				"Semi-Automatic Tracking",
+		final SemiAutomaticTrackerSettingsManager styleManager = new SemiAutomaticTrackerSettingsManager();
+		final SemiAutomaticTrackerConfigPage page = new SemiAutomaticTrackerConfigPage(
+				"Settings",
 				styleManager,
 				data,
 				groupHandle,
 				performSemiAutoTrackAction,
-				cancelSemiAutoTrackAction );
-
-		final PreferencesDialog settings = appModel.getWindowManager().getPreferencesDialog();
+				cancelSemiAutoTrackAction )
+		{
+			@Override
+			public void apply()
+			{
+				super.apply();
+				final SemiAutomaticTrackerSettings forwardDefaultStyle = styleManager.getForwardDefaultStyle();
+				currentSettings.clear();
+				currentSettings.putAll( forwardDefaultStyle.getAsSettingsMap() );
+			}
+		};
+		page.apply();
+		final SettingsPanel settings = new SettingsPanel();
 		settings.addPage( page );
+
+		dialog = new JDialog( ( Frame ) null, "Semi-automatic tracker settings" );
+		dialog.getContentPane().add( settings, BorderLayout.CENTER );
+		settings.onOk( () -> dialog.setVisible( false ) );
+		settings.onCancel( () -> dialog.setVisible( false ) );
+
+		dialog.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
+		dialog.addWindowListener( new WindowAdapter()
+		{
+			@Override
+			public void windowClosing( final WindowEvent e )
+			{
+				settings.cancel();
+			}
+		} );
+		dialog.setIconImages( MastodonIcons.MASTODON_ICON );
+		dialog.pack();
+		dialog.setLocationByPlatform( true );
+		dialog.setLocationRelativeTo( null );
 	}
 
 	private final AbstractNamedAction performSemiAutoTrackAction = new AbstractNamedAction( PERFORM_SEMI_AUTO_TRACKING_ACTION )
@@ -250,15 +286,9 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 					appModel.getAppModel().getModel().getGraph().vertices(), selectedSpots.size() );
 			spots.addAll( selectedSpots );
 
-			// Apply recent changes on the config page, if any.
-			page.apply();
-
-			// Get settings from page.
-			final SemiAutomaticTrackerSettings forwardDefaultStyle = styleManager.getForwardDefaultStyle();
-			final Map< String, Object > settings =  ( forwardDefaultStyle == null )
+			final Map< String, Object > settings = ( currentSettings == null )
 					? SemiAutomaticTrackerKeys.getDefaultDetectorSettingsMap()
-				: forwardDefaultStyle.getAsSettingsMap();
-
+					: currentSettings;
 			final Model model = appModel.getAppModel().getModel();
 
 			final SharedBigDataViewerData data = appModel.getAppModel().getSharedBdvData();
@@ -305,12 +335,9 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 		@Override
 		public void actionPerformed( final ActionEvent e )
 		{
-			final PreferencesDialog dialog = appModel.getWindowManager().getPreferencesDialog();
 			if ( null == dialog )
 				return;
-
-			dialog.showPage( page.getTreePath() );
-			dialog.setVisible( true );
+			dialog.setVisible( !dialog.isVisible() );
 		}
 	};
 
