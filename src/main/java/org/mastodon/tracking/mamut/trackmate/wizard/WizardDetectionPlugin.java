@@ -31,8 +31,6 @@ package org.mastodon.tracking.mamut.trackmate.wizard;
 import java.util.ArrayList;
 
 import org.mastodon.mamut.MamutAppModel;
-import org.mastodon.mamut.WindowManager;
-import org.mastodon.mamut.plugin.MamutPluginAppModel;
 import org.mastodon.tracking.mamut.trackmate.Settings;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
 import org.mastodon.ui.keymap.CommandDescriptionProvider;
@@ -58,10 +56,8 @@ public class WizardDetectionPlugin extends WizardPlugin
 	}
 
 	@Override
-	public WizardSequence getWizardSequence( final MamutPluginAppModel pluginAppModel, final Wizard wizard )
+	public WizardSequence getWizardSequence( final MamutAppModel appModel, final Wizard wizard )
 	{
-		final MamutAppModel appModel = pluginAppModel.getAppModel();
-		final WindowManager windowManager = pluginAppModel.getWindowManager();
 		/*
 		 * TODO Resolve later: SharedBdvData has AbstractSpimData<?>, we need
 		 * SpimDataMinimal here. Using AbstractSpimData<?> everywhere should
@@ -73,7 +69,7 @@ public class WizardDetectionPlugin extends WizardPlugin
 		getContext().inject( trackmate );
 		trackmate.setLogger( wizard.getLogService() );
 		trackmate.setStatusService( wizard.getLogService() );
-		return new DetectionSequence( trackmate, windowManager, wizard.getLogService() );
+		return new DetectionSequence( trackmate, appModel, wizard.getLogService() );
 	}
 
 	/*

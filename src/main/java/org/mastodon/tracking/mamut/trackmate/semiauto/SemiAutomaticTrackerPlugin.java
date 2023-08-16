@@ -46,12 +46,12 @@ import org.mastodon.app.MastodonIcons;
 import org.mastodon.app.ui.ViewMenuBuilder.MenuItem;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.grouping.GroupHandle;
+import org.mastodon.mamut.MamutAppModel;
 import org.mastodon.mamut.MamutMenuBuilder;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.Spot;
 import org.mastodon.mamut.plugin.MamutPlugin;
-import org.mastodon.mamut.plugin.MamutPluginAppModel;
 import org.mastodon.model.FocusModel;
 import org.mastodon.model.NavigationHandler;
 import org.mastodon.model.SelectionModel;
@@ -105,7 +105,7 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 	@Parameter
 	private LogService logService;
 
-	private MamutPluginAppModel appModel;
+	private MamutAppModel appModel;
 
 	private static Map< String, String > menuTexts = new HashMap<>();
 
@@ -201,11 +201,11 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 	}
 
 	@Override
-	public void setAppPluginModel( final MamutPluginAppModel appModel )
+	public void setAppPluginModel( final MamutAppModel appModel )
 	{
 		this.appModel = appModel;
 
-		final Context context = appModel.getWindowManager().getContext();
+		final Context context = appModel.getContext();
 		final String prefKey = "Mastodon semi-automatic tracker";
 		this.loggingPanel = new LoggingPanel( context, prefKey );
 		this.loggingDialog = new JDialog( ( Frame ) null, "Semi-automatic tracker log" );
@@ -216,10 +216,10 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 		loggingDialog.setLocationByPlatform( true );
 		loggingDialog.setLocationRelativeTo( null );
 
-		final GroupHandle groupHandle = appModel.getAppModel().getGroupManager().createGroupHandle();
-		this.navigationHandler = groupHandle.getModel( appModel.getAppModel().NAVIGATION );
+		final GroupHandle groupHandle = appModel.getGroupManager().createGroupHandle();
+		this.navigationHandler = groupHandle.getModel( appModel.NAVIGATION );
 
-		final SharedBigDataViewerData data = appModel.getAppModel().getSharedBdvData();
+		final SharedBigDataViewerData data = appModel.getSharedBdvData();
 		final SemiAutomaticTrackerSettingsManager styleManager = new SemiAutomaticTrackerSettingsManager();
 		final SemiAutomaticTrackerConfigPage page = new SemiAutomaticTrackerConfigPage(
 				"Settings",
@@ -279,19 +279,19 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 			final Logger subLogger = log.subLogger( "Semi-auto tracker" );
 			subLogger.addLogListener( loggingPanel );
 
-			final SelectionModel< Spot, Link > selectionModel = appModel.getAppModel().getSelectionModel();
-			final FocusModel< Spot, Link > focusModel = appModel.getAppModel().getFocusModel();
+			final SelectionModel< Spot, Link > selectionModel = appModel.getSelectionModel();
+			final FocusModel< Spot, Link > focusModel = appModel.getFocusModel();
 			final Collection< Spot > selectedSpots = selectionModel.getSelectedVertices();
 			final Collection< Spot > spots = RefCollections.createRefList(
-					appModel.getAppModel().getModel().getGraph().vertices(), selectedSpots.size() );
+					appModel.getModel().getGraph().vertices(), selectedSpots.size() );
 			spots.addAll( selectedSpots );
 
 			final Map< String, Object > settings = ( currentSettings == null )
 					? SemiAutomaticTrackerKeys.getDefaultDetectorSettingsMap()
 					: currentSettings;
-			final Model model = appModel.getAppModel().getModel();
+			final Model model = appModel.getModel();
 
-			final SharedBigDataViewerData data = appModel.getAppModel().getSharedBdvData();
+			final SharedBigDataViewerData data = appModel.getSharedBdvData();
 			final SemiAutomaticTracker tracker = ( SemiAutomaticTracker ) Computers.binary(
 					ops, SemiAutomaticTracker.class, model, spots, settings,
 					data,

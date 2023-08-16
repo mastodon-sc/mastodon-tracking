@@ -40,7 +40,6 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import org.mastodon.mamut.WindowManager;
 import org.mastodon.tracking.mamut.linking.SpotLinkerOp;
 import org.mastodon.tracking.mamut.trackmate.PluginProvider;
 import org.mastodon.tracking.mamut.trackmate.Settings;
@@ -65,7 +64,7 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor
 
 	private final TrackMate trackmate;
 
-	public ChooseLinkerDescriptor( final TrackMate trackmate, final WindowManager windowManager )
+	public ChooseLinkerDescriptor( final TrackMate trackmate, final Context context )
 	{
 		this.trackmate = trackmate;
 		this.model = new DefaultComboBoxModel<>();
@@ -73,7 +72,6 @@ public class ChooseLinkerDescriptor extends WizardPanelDescriptor
 		this.panelIdentifier = IDENTIFIER;
 
 		final PluginProvider< SpotLinkerOp > linkerProvider = new PluginProvider<>( SpotLinkerOp.class );
-		final Context context = windowManager.getContext();
 		context.inject( linkerProvider );
 		this.names = linkerProvider.getVisibleNames();
 		this.descriptions = linkerProvider.getDescriptions();

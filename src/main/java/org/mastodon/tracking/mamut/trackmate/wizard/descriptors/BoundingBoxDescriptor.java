@@ -46,6 +46,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
+import org.mastodon.mamut.MamutAppModel;
 import org.mastodon.mamut.WindowManager;
 import org.mastodon.tracking.mamut.trackmate.Settings;
 import org.mastodon.tracking.mamut.trackmate.wizard.WizardLogService;
@@ -77,8 +78,6 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 
 	private final Settings settings;
 
-	private final WindowManager wm;
-
 	private final WizardLogService log;
 
 	private ViewerFrameMamut viewFrame;
@@ -87,11 +86,13 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 
 	private MyBoundingBoxModel roi;
 
-	public BoundingBoxDescriptor( final Settings settings, final WindowManager wm, final WizardLogService log )
+	private final MamutAppModel appModel;
+
+	public BoundingBoxDescriptor( final Settings settings, final MamutAppModel appModel, final WizardLogService log )
 	{
+		this.appModel = appModel;
 		this.panelIdentifier = IDENTIFIER;
 		this.settings = settings;
-		this.wm = wm;
 		this.log = log;
 		this.targetPanel = new BoundingBoxPanel();
 	}
@@ -122,11 +123,11 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 		roi.intervalChangedListeners().add( () -> viewFrame.getViewerPanel().getDisplay().repaint() );
 
 		// Editor.
-		final int boxSetupId = SetupAssignments.getUnusedSetupId( wm.getAppModel().getSharedBdvData().getSetupAssignments() );
+		final int boxSetupId = SetupAssignments.getUnusedSetupId( appModel.getSharedBdvData().getSetupAssignments() );
 		boundingBoxEditor = new TransformedBoxEditor(
-				wm.getAppModel().getKeymap().getConfig(),
+				appModel.getKeymap().getConfig(),
 				viewFrame.getViewerPanel(),
-				wm.getAppModel().getSharedBdvData().getConverterSetups(),
+				appModel.getSharedBdvData().getConverterSetups(),
 				boxSetupId,
 				viewFrame.getTriggerbindings(),
 				roi,
@@ -157,7 +158,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 	{
 		// Max interval.
 		final int setupID = ( int ) settings.values.getDetectorSettings().get( KEY_SETUP_ID );
-		final SharedBigDataViewerData data = wm.getAppModel().getSharedBdvData();
+		final SharedBigDataViewerData data = appModel.getSharedBdvData();
 		final Source< ? > source = data.getSources().get( setupID ).getSpimSource();
 		final int numTimepoints = data.getNumTimepoints();
 		Interval maxInterval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
@@ -196,6 +197,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 			return;
 
 		// Is there a BDV open?
+		final WindowManager wm = appModel.getWindowManager();
 		wm.forEachBdvView( view -> {
 			final ViewerFrameMamut vf = ( ViewerFrameMamut ) view.getFrame();
 			if ( vf != null && vf.isShowing() )
@@ -269,8 +271,8 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 		else
 		{
 			interval = null;
-			t0 = wm.getAppModel().getMinTimepoint();
-			t1 = wm.getAppModel().getMaxTimepoint();
+			t0 = appModel.getMinTimepoint();
+			t1 = appModel.getMaxTimepoint();
 			info = "Processing whole image.\n";
 		}
 		settings.values.getDetectorSettings().put( KEY_ROI, interval );
@@ -300,8 +302,8 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 
 		public BoundingBoxPanel()
 		{
-			final int t0 = wm.getAppModel().getMinTimepoint();
-			final int t1 = wm.getAppModel().getMaxTimepoint();
+			final int t0 = appModel.getMinTimepoint();
+			final int t1 = appModel.getMaxTimepoint();
 			this.intervalT = new BoundedInterval( t0, t1, t0, t1, 0 );
 
 			final GridBagLayout layout = new GridBagLayout();

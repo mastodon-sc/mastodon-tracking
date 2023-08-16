@@ -40,7 +40,6 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import org.mastodon.mamut.WindowManager;
 import org.mastodon.tracking.mamut.detection.SpotDetectorOp;
 import org.mastodon.tracking.mamut.trackmate.PluginProvider;
 import org.mastodon.tracking.mamut.trackmate.Settings;
@@ -65,7 +64,7 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor
 
 	private final TrackMate trackmate;
 
-	public ChooseDetectorDescriptor( final TrackMate trackmate, final WindowManager windowManager )
+	public ChooseDetectorDescriptor( final TrackMate trackmate, final Context context )
 	{
 		this.trackmate = trackmate;
 		this.model = new DefaultComboBoxModel<>();
@@ -73,7 +72,6 @@ public class ChooseDetectorDescriptor extends WizardPanelDescriptor
 		this.panelIdentifier = IDENTIFIER;
 
 		final PluginProvider< SpotDetectorOp > detectorprovider = new PluginProvider<>( SpotDetectorOp.class );
-		final Context context = windowManager.getContext();
 		context .inject( detectorprovider );
 		this.names = detectorprovider.getVisibleNames();
 		this.descriptions = detectorprovider.getDescriptions();

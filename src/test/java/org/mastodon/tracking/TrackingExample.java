@@ -38,11 +38,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.mastodon.mamut.WindowManager;
+import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.io.ProjectCreator;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.Spot;
-import org.mastodon.mamut.project.MamutProject;
 import org.mastodon.model.SelectionModel;
 import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.linking.LinkingUtils;
@@ -72,16 +72,15 @@ public class TrackingExample
 		 * Create empty model and window manager.
 		 */
 
-		final WindowManager windowManager = new WindowManager( new Context() );
-		windowManager.getProjectManager().open( new MamutProject( null, new File( bdvFile ) ) );
-		final Model model = windowManager.getAppModel().getModel();
-		final SelectionModel< Spot, Link > selectionModel = windowManager.getAppModel().getSelectionModel();
+		final MamutAppModel appModel = ProjectCreator.createProjectFromBdvFile( new File( bdvFile ), new Context(), null );
+		final Model model = appModel.getModel();
+		final SelectionModel< Spot, Link > selectionModel = appModel.getSelectionModel();
 
 		/*
 		 * Detection parameters.
 		 */
 
-		final List< SourceAndConverter< ? > > sources = windowManager.getAppModel().getSharedBdvData().getSources();
+		final List< SourceAndConverter< ? > > sources = appModel.getSharedBdvData().getSources();
 		final Class< ? extends SpotDetectorOp > detector = DoGDetectorMamut.class;
 		final Map< String, Object > detectorSettings = DetectionUtil.getDefaultDetectorSettingsMap();
 		detectorSettings.put( KEY_RADIUS, Double.valueOf( 7. ) );
@@ -111,7 +110,7 @@ public class TrackingExample
 
 		final long start = System.currentTimeMillis();
 		final TrackMate trackmate = new TrackMate( settings, model, selectionModel );
-		trackmate.setContext( windowManager.getContext() );
+		trackmate.setContext( appModel.getContext() );
 		if ( !trackmate.execDetection() || !trackmate.execParticleLinking() )
 		{
 			System.out.println( "Tracking failed: " + trackmate.getErrorMessage() );
@@ -124,7 +123,6 @@ public class TrackingExample
 		 * Show results.
 		 */
 
-		windowManager.createBigDataViewer();
-
+		appModel.getWindowManager().createBigDataViewer();
 	}
 }

@@ -35,8 +35,6 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import org.mastodon.mamut.MamutAppModel;
-import org.mastodon.mamut.WindowManager;
-import org.mastodon.mamut.plugin.MamutPluginAppModel;
 import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.linking.LinkingUtils;
 import org.mastodon.tracking.mamut.trackmate.Settings;
@@ -74,12 +72,10 @@ public class WizardLinkingPlugin extends WizardPlugin
 	}
 
 	@Override
-	public WizardSequence getWizardSequence( final MamutPluginAppModel pluginAppModel, final Wizard wizard )
+	public WizardSequence getWizardSequence( final MamutAppModel appModel, final Wizard wizard )
 	{
-		final MamutAppModel appModel = pluginAppModel.getAppModel();
-		final WindowManager windowManager = pluginAppModel.getWindowManager();
-		final int tmax = windowManager.getAppModel().getMaxTimepoint();
-		final int tmin = windowManager.getAppModel().getMinTimepoint();
+		final int tmax = appModel.getMaxTimepoint();
+		final int tmin = appModel.getMinTimepoint();
 
 		final Map< String, Object > linkerSettings = settings.values.getLinkerSettings();
 		linkerSettings.put( KEY_MIN_TIMEPOINT, Integer.valueOf( tmin ) );
@@ -94,7 +90,7 @@ public class WizardLinkingPlugin extends WizardPlugin
 		getContext().inject( trackmate );
 		trackmate.setLogger( wizard.getLogService() );
 		trackmate.setStatusService( wizard.getLogService() );
-		return new LinkingSequence( trackmate, windowManager, wizard.getLogService() );
+		return new LinkingSequence( trackmate, appModel, wizard.getLogService() );
 	}
 
 	/*

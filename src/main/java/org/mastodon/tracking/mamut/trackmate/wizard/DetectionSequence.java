@@ -32,7 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.mastodon.mamut.WindowManager;
+import org.mastodon.mamut.MamutAppModel;
 import org.mastodon.tracking.mamut.detection.SpotDetectorOp;
 import org.mastodon.tracking.mamut.trackmate.PluginProvider;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
@@ -49,8 +49,6 @@ public class DetectionSequence implements WizardSequence
 {
 
 	private final TrackMate trackmate;
-
-	private final WindowManager windowManager;
 
 	private final SetupIdDecriptor setupIdDecriptor;
 
@@ -76,16 +74,18 @@ public class DetectionSequence implements WizardSequence
 
 	private final WizardLogService logService;
 
-	public DetectionSequence( final TrackMate trackmate, final WindowManager windowManager, final WizardLogService logService )
+	private final MamutAppModel appModel;
+
+	public DetectionSequence( final TrackMate trackmate, final MamutAppModel appModel, final WizardLogService logService )
 	{
 		this.trackmate = trackmate;
-		this.windowManager = windowManager;
+		this.appModel = appModel;
 		this.logService = logService;
-		final AbstractSpimData< ? > spimData = windowManager.getAppModel().getSharedBdvData().getSpimData();
+		final AbstractSpimData< ? > spimData = appModel.getSharedBdvData().getSpimData();
 		this.setupIdDecriptor = new SetupIdDecriptor( trackmate.getSettings(), spimData, logService );
-		setupIdDecriptor.setContext( windowManager.getContext() );
-		this.boundingBoxDescriptor = new BoundingBoxDescriptor( trackmate.getSettings(), windowManager, logService );
-		this.chooseDetectorDescriptor = new ChooseDetectorDescriptor( trackmate, windowManager );
+		setupIdDecriptor.setContext( appModel.getContext() );
+		this.boundingBoxDescriptor = new BoundingBoxDescriptor( trackmate.getSettings(), appModel, logService );
+		this.chooseDetectorDescriptor = new ChooseDetectorDescriptor( trackmate, appModel.getContext() );
 		this.executeDetectionDescriptor = new ExecuteDetectionDescriptor( trackmate, logService.getPanel() );
 		this.current = init();
 
@@ -93,7 +93,7 @@ public class DetectionSequence implements WizardSequence
 		this.previous = getBackwardSequence();
 
 		descriptorProvider = new PluginProvider<>( SpotDetectorDescriptor.class );
-		final Context context = windowManager.getContext();
+		final Context context = appModel.getContext();
 		context.inject( descriptorProvider );
 	}
 
@@ -137,7 +137,7 @@ public class DetectionSequence implements WizardSequence
 
 				previousDetectorPanel = detectorConfigDescriptor;
 				if ( detectorConfigDescriptor.getContext() == null )
-					windowManager.getContext().inject( detectorConfigDescriptor );
+					appModel.getContext().inject( detectorConfigDescriptor );
 
 				/*
 				 * Copy as much settings as we can to the potentially new config descriptor.
@@ -149,7 +149,7 @@ public class DetectionSequence implements WizardSequence
 				trackmate.getSettings().detectorSettings( defaultSettings );
 
 				detectorConfigDescriptor.setTrackMate( trackmate );
-				detectorConfigDescriptor.setWindowManager( windowManager );
+				detectorConfigDescriptor.setAppModel( appModel );
 				detectorConfigDescriptor.setLogger( logService );
 				detectorConfigDescriptor.setStatusService( logService );
 				detectorConfigDescriptor.getPanelComponent().setSize( chooseDetectorDescriptor.getPanelComponent().getSize() );

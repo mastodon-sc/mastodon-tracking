@@ -2,7 +2,7 @@
  * #%L
  * mastodon-tracking
  * %%
- * Copyright (C) 2017 - 2022 Tobias Pietzsch, Jean-Yves Tinevez
+ * Copyright (C) 2017 - 2021 Tobias Pietzsch, Jean-Yves Tinevez
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,49 +26,40 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package org.mastodon.tracking.mamut.trackmate.wizard.descriptors;
+package org.mastodon.tracking;
 
 import java.util.Locale;
-import java.util.Map;
 
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
-import org.mastodon.mamut.MainWindow;
-import org.mastodon.mamut.MamutAppModel;
-import org.mastodon.mamut.io.ProjectLoader;
-import org.mastodon.mamut.io.project.MamutProject;
-import org.mastodon.mamut.io.project.MamutProjectIO;
-import org.mastodon.tracking.detection.DetectionUtil;
-import org.mastodon.tracking.detection.DetectorKeys;
-import org.mastodon.tracking.mamut.detection.AdvancedDoGDetectorMamut;
-import org.mastodon.tracking.mamut.trackmate.wizard.WizardDetectionPlugin;
+import org.mastodon.mamut.launcher.MastodonLauncherCommand;
 import org.scijava.Context;
 
-public class AdvancedDoGDescriptorExample
+public class MastodonLauncherTrackingTestDrive
 {
 
 	public static void main( final String[] args ) throws Exception
 	{
-		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
-		Locale.setDefault( Locale.ROOT );
-		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-
+		setSystemLookAndFeelAndLocale();
+		final MastodonLauncherCommand launcher = new MastodonLauncherCommand();
 		try (Context context = new Context())
 		{
-			final MamutProject project = MamutProjectIO.load( "../mastodon/samples/Celegans.mastodon" );
-			final MamutAppModel appModel = ProjectLoader.open( project, context );
-			final MainWindow mw = new MainWindow( appModel );
-			mw.setVisible( true );
+			context.inject( launcher );
+			launcher.run();
+		}
+	}
 
-			// Edit default detection settings.
-			WizardDetectionPlugin.settings.detector( AdvancedDoGDetectorMamut.class );
-			final Map< String, Object > ds = DetectionUtil.getDefaultDetectorSettingsMap();
-			ds.put( DetectorKeys.KEY_THRESHOLD, 10. );
-			WizardDetectionPlugin.settings.detectorSettings( ds );
-
-			// Execute detection plugin.
-			appModel.getPlugins().getPluginActions().getActionMap()
-					.get( "run spot detection wizard" ).actionPerformed( null );
+	private static final void setSystemLookAndFeelAndLocale()
+	{
+		Locale.setDefault( Locale.ROOT );
+		try
+		{
+			UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
+		}
+		catch ( ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e )
+		{
+			e.printStackTrace();
 		}
 	}
 }

@@ -46,9 +46,7 @@ import javax.swing.text.StyledDocument;
 
 import org.mastodon.app.ui.ViewMenuBuilder;
 import org.mastodon.mamut.MamutAppModel;
-import org.mastodon.mamut.WindowManager;
 import org.mastodon.mamut.plugin.MamutPlugin;
-import org.mastodon.mamut.plugin.MamutPluginAppModel;
 import org.scijava.AbstractContextual;
 import org.scijava.ui.behaviour.util.AbstractNamedAction;
 import org.scijava.ui.behaviour.util.Actions;
@@ -59,7 +57,7 @@ public abstract class WizardPlugin extends AbstractContextual implements MamutPl
 
 	private final AbstractNamedAction runWizardAction;
 
-	private MamutPluginAppModel pluginAppModel;
+	private MamutAppModel appModel;
 
 	private final String actionName;
 
@@ -114,13 +112,13 @@ public abstract class WizardPlugin extends AbstractContextual implements MamutPl
 	 *            the wizard that will display the sequence.
 	 * @return the {@link WizardSequence}.
 	 */
-	public abstract WizardSequence getWizardSequence( MamutPluginAppModel pluginAppModel, Wizard wizard );
+	public abstract WizardSequence getWizardSequence( MamutAppModel pluginAppModel, Wizard wizard );
 
 
 	@Override
-	public void setAppPluginModel( final MamutPluginAppModel model )
+	public void setAppPluginModel( final MamutAppModel model )
 	{
-		this.pluginAppModel = model;
+		this.appModel = model;
 		updateEnabledActions();
 	}
 
@@ -150,13 +148,12 @@ public abstract class WizardPlugin extends AbstractContextual implements MamutPl
 
 	private void updateEnabledActions()
 	{
-		final MamutAppModel appModel = ( pluginAppModel == null ) ? null : pluginAppModel.getAppModel();
 		runWizardAction.setEnabled( appModel != null );
 	}
 
 	private void runWizard()
 	{
-		if ( pluginAppModel != null )
+		if ( appModel != null )
 		{
 			try
 			{
@@ -171,10 +168,9 @@ public abstract class WizardPlugin extends AbstractContextual implements MamutPl
 			{
 				e.printStackTrace();
 			}
-			final WindowManager windowManager = pluginAppModel.getWindowManager();
 			final Wizard wizard = new Wizard( log );
-			windowManager.getContext().inject( wizard );
-			final WizardSequence sequence = getWizardSequence( pluginAppModel, wizard );
+			appModel.getContext().inject( wizard );
+			final WizardSequence sequence = getWizardSequence( appModel, wizard );
 			wizard.show( sequence, commandName );
 		}
 	}

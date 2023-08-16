@@ -34,11 +34,11 @@ import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import org.mastodon.mamut.MamutAppModel;
 import org.mastodon.mamut.MamutViewBdv;
-import org.mastodon.mamut.ProjectManager;
-import org.mastodon.mamut.WindowManager;
-import org.mastodon.mamut.project.MamutProject;
-import org.mastodon.mamut.project.MamutProjectIO;
+import org.mastodon.mamut.io.ProjectLoader;
+import org.mastodon.mamut.io.project.MamutProject;
+import org.mastodon.mamut.io.project.MamutProjectIO;
 import org.mastodon.util.ToggleDialogAction;
 import org.mastodon.views.bdv.ViewerFrameMamut;
 import org.scijava.Context;
@@ -80,17 +80,15 @@ public class BoundingBoxDialog
 		 * Load a Mastodon project.
 		 */
 		final Context context = new Context();
-		final WindowManager windowManager = new WindowManager( context );
-		final ProjectManager projectManager = windowManager.getProjectManager();
-		final MamutProject project = new MamutProjectIO().load( "../mastodon/samples/mamutproject" );
-		projectManager.open( project );
+		final MamutProject project = MamutProjectIO.load( "../mastodon/samples/mamutproject" );
+		final MamutAppModel appModel = ProjectLoader.open( project, context );
 		final MamutViewBdv[] bdv = new MamutViewBdv[ 1 ];
 		SwingUtilities.invokeAndWait( () -> {
-			bdv[ 0 ] = windowManager.createBigDataViewer();
+			bdv[ 0 ] = appModel.getWindowManager().createBigDataViewer();
 		} );
 		final ViewerFrameMamut viewerFrame = ( ViewerFrameMamut ) bdv[ 0 ].getFrame();
 		final ViewerPanel viewer = viewerFrame.getViewerPanel();
-		final InputTriggerConfig keyconf = windowManager.getAppModel().getKeymap().getConfig();
+		final InputTriggerConfig keyconf = appModel.getKeymap().getConfig();
 
 		/*
 		 * Compute an initial interval from the specified setup id.
@@ -115,8 +113,8 @@ public class BoundingBoxDialog
 		if ( null == interval )
 			interval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
 
-		final ConverterSetups converterSetups = windowManager.getAppModel().getSharedBdvData().getConverterSetups();
-		final int boxSetupId = SetupAssignments.getUnusedSetupId( windowManager.getAppModel().getSharedBdvData().getSetupAssignments() );
+		final ConverterSetups converterSetups = appModel.getSharedBdvData().getConverterSetups();
+		final int boxSetupId = SetupAssignments.getUnusedSetupId( appModel.getSharedBdvData().getSetupAssignments() );
 		final JDialog dialog = new TransformedBoxSelectionDialog(
 				viewer,
 				converterSetups,

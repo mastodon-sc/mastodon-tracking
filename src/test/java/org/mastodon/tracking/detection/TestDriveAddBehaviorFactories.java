@@ -40,9 +40,9 @@ import java.util.Map;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import org.mastodon.mamut.WindowManager;
+import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.io.ProjectCreator;
 import org.mastodon.mamut.model.Model;
-import org.mastodon.mamut.project.MamutProject;
 import org.mastodon.tracking.mamut.detection.AdvancedDoGDetectorMamut;
 import org.mastodon.tracking.mamut.detection.DoGDetectorMamut;
 import org.mastodon.tracking.mamut.detection.MamutDetectionCreatorFactories.DetectionBehavior;
@@ -60,25 +60,24 @@ public class TestDriveAddBehaviorFactories
 		UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
 		Locale.setDefault( Locale.ROOT );
 		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-		final Context context = new Context();
-		final WindowManager windowManager = new WindowManager( context );
 
-		final String bdvFile = "../TrackMate3/samples/mamutproject/datasethdf5.xml";
-		final MamutProject project = new MamutProject( null, new File( bdvFile ) );
-		windowManager.getProjectManager().open( project );
+		final String bdvFile = "samples/mamutproject/datasethdf5.xml";
+
+		final Context context = new Context();
+		final MamutAppModel appModel = ProjectCreator.createProjectFromBdvFile( new File( bdvFile ), context, null );
 
 		final Map< String, Object > ds = DetectionUtil.getDefaultDetectorSettingsMap();
 		ds.put( KEY_THRESHOLD, 20. );
 		ds.put( KEY_RADIUS, 5. );
 
 		final Settings settings = new Settings()
-				.sources( windowManager.getAppModel().getSharedBdvData().getSources() )
+				.sources( appModel.getSharedBdvData().getSources() )
 				.detector( DoGDetectorMamut.class )
 				.detectorSettings( ds );
 
-		final Model model = windowManager.getAppModel().getModel();
-		final TrackMate trackmate = new TrackMate( settings, model, windowManager.getAppModel().getSelectionModel() );
-		trackmate.setContext( windowManager.getContext() );
+		final Model model = appModel.getModel();
+		final TrackMate trackmate = new TrackMate( settings, model, appModel.getSelectionModel() );
+		trackmate.setContext( appModel.getContext() );
 
 		if ( !trackmate.execDetection() )
 		{
@@ -86,7 +85,7 @@ public class TestDriveAddBehaviorFactories
 			return;
 		}
 		System.out.println( "First detection completed. Found " + model.getGraph().vertices().size() + " spots." );
-		windowManager.createBigDataViewer();
+		appModel.getWindowManager().createBigDataViewer();
 
 		ds.put( KEY_ADD_BEHAVIOR, DetectionBehavior.DONTADD.name() );
 		ds.put( KEY_RADIUS, 12. );

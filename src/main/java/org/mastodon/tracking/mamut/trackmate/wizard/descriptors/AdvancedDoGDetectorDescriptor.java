@@ -58,7 +58,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import org.jfree.chart.ChartPanel;
-import org.mastodon.mamut.WindowManager;
+import org.mastodon.mamut.MamutAppModel;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.tracking.detection.DetectionType;
 import org.mastodon.tracking.detection.DetectionUtil;
@@ -95,7 +95,7 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 
 	private Settings settings;
 
-	private WindowManager windowManager;
+	private MamutAppModel appModel;
 
 	private ChartPanel chartPanel;
 
@@ -163,10 +163,10 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 
 	private void preview()
 	{
-		if ( null == windowManager )
+		if ( null == appModel )
 			return;
 
-		final SharedBigDataViewerData shared = windowManager.getAppModel().getSharedBdvData();
+		final SharedBigDataViewerData shared = appModel.getSharedBdvData();
 		viewFrame = WizardUtils.previewFrame( viewFrame, shared, localModel );
 		final int currentTimepoint = viewFrame.getViewerPanel().state().getCurrentTimepoint();
 
@@ -275,9 +275,9 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 	}
 
 	@Override
-	public void setWindowManager( final WindowManager windowManager )
+	public void setAppModel( final MamutAppModel appModel )
 	{
-		this.windowManager = windowManager;
+		this.appModel = appModel;
 	}
 
 	private class AdvancedDoGDetectorPanel extends JPanel

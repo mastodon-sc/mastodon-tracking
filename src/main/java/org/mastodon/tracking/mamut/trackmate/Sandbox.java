@@ -44,9 +44,9 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.mamut.MainWindow;
-import org.mastodon.mamut.WindowManager;
+import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.io.ProjectCreator;
 import org.mastodon.mamut.model.Model;
-import org.mastodon.mamut.project.MamutProject;
 import org.mastodon.model.DefaultSelectionModel;
 import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.mamut.detection.DoGDetectorMamut;
@@ -107,10 +107,8 @@ public class Sandbox
 				.linker( linkerClass )
 				.linkerSettings( linkerSettings );
 
-		final WindowManager wm = new WindowManager( context );
-		final MamutProject project = new MamutProject( null, new File(bdvFile) );
-		wm.getProjectManager().open( project );
-		final Model model = wm.getAppModel().getModel();
+		final MamutAppModel appModel = ProjectCreator.createProjectFromBdvFile( new File( bdvFile ), context, null );
+		final Model model = appModel.getModel();
 		final TrackMate trackmate = new TrackMate( settings, model, new DefaultSelectionModel<>( model.getGraph(), model.getGraphIdBimap() ) );
 		trackmate.setContext( context );
 
@@ -128,7 +126,6 @@ public class Sandbox
 		else
 			System.out.println( "Calculation complete." );
 
-
-		new MainWindow( wm).setVisible( true );
+		new MainWindow( appModel ).setVisible( true );
 	}
 }

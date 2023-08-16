@@ -38,7 +38,7 @@ import java.util.Map;
 
 import javax.swing.JLabel;
 
-import org.mastodon.mamut.WindowManager;
+import org.mastodon.mamut.MamutAppModel;
 import org.mastodon.tracking.mamut.detection.SpotDetectorOp;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
 import org.mastodon.tracking.mamut.trackmate.wizard.WizardPanelDescriptor;
@@ -82,7 +82,7 @@ public abstract class SpotDetectorDescriptor extends WizardPanelDescriptor imple
 
 	public abstract void setTrackMate( TrackMate trackmate );
 
-	public abstract void setWindowManager( final WindowManager windowManager );
+	public abstract void setAppModel( final MamutAppModel appModel );
 
 	/**
 	 * Returns a default settings map, suitable to be configured with this

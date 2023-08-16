@@ -32,7 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.mastodon.mamut.WindowManager;
+import org.mastodon.mamut.MamutAppModel;
 import org.mastodon.tracking.mamut.linking.SpotLinkerOp;
 import org.mastodon.tracking.mamut.trackmate.PluginProvider;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
@@ -46,8 +46,6 @@ public class LinkingSequence implements WizardSequence
 {
 
 	private final TrackMate trackmate;
-
-	private final WindowManager windowManager;
 
 	/**
 	 * The previously chosen SpotLinkerDescriptor (<code>null</code> if it is
@@ -71,21 +69,23 @@ public class LinkingSequence implements WizardSequence
 
 	private final WizardLogService logService;
 
-	public LinkingSequence( final TrackMate trackmate, final WindowManager windowManager, final WizardLogService logService )
+	private final MamutAppModel appModel;
+
+	public LinkingSequence( final TrackMate trackmate, final MamutAppModel appModel, final WizardLogService logService )
 	{
 		this.trackmate = trackmate;
-		this.windowManager = windowManager;
+		this.appModel = appModel;
 		this.logService = logService;
 
-		this.linkingTargetDescriptor = new LinkingTargetDescriptor( trackmate, windowManager, logService );
-		this.chooseLinkerDescriptor = new ChooseLinkerDescriptor( trackmate, windowManager );
+		this.linkingTargetDescriptor = new LinkingTargetDescriptor( trackmate, appModel, logService );
+		this.chooseLinkerDescriptor = new ChooseLinkerDescriptor( trackmate, appModel.getContext() );
 		this.executeLinkingDescriptor = new ExecuteLinkingDescriptor( trackmate, logService.getPanel() );
 
 		this.next = getForwardSequence();
 		this.previous = getBackwardSequence();
 
 		descriptorProvider = new PluginProvider<>( SpotLinkerDescriptor.class );
-		final Context context = windowManager.getContext();
+		final Context context = appModel.getContext();
 		context.inject( descriptorProvider );
 
 		this.current = init();
@@ -127,7 +127,7 @@ public class LinkingSequence implements WizardSequence
 
 				previousLinkerPanel = linkerConfigDescriptor;
 				if ( linkerConfigDescriptor.getContext() == null )
-					windowManager.getContext().inject( linkerConfigDescriptor );
+					appModel.getContext().inject( linkerConfigDescriptor );
 				final Map< String, Object > defaultSettings = linkerConfigDescriptor.getDefaultSettings();
 
 				// Pass as much parameter as we can from the old settings.
@@ -141,7 +141,7 @@ public class LinkingSequence implements WizardSequence
 
 				trackmate.getSettings().linkerSettings( defaultSettings );
 				linkerConfigDescriptor.setTrackMate( trackmate );
-				linkerConfigDescriptor.setWindowManager( windowManager );
+				linkerConfigDescriptor.setWindowManager( appModel.getWindowManager() );
 				linkerConfigDescriptor.setLogger( logService );
 				linkerConfigDescriptor.setStatusService( logService );
 				linkerConfigDescriptor.getPanelComponent().setSize( chooseLinkerDescriptor.getPanelComponent().getSize() );
