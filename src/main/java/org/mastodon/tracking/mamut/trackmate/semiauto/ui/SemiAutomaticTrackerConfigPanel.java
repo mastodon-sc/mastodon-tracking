@@ -140,9 +140,9 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 
 		final GridBagLayout gbl = new GridBagLayout();
 		gbl.columnWidths = new int[] { 0, 0, 0 };
-		gbl.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		gbl.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		gbl.columnWeights = new double[] { 0.0, 1.0, Double.MIN_VALUE };
-		gbl.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE };
+		gbl.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE };
 		setLayout( gbl );
 
 		final JLabel lblDetection = new JLabel( "Detection." );
@@ -361,7 +361,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbcSeparator3.anchor = GridBagConstraints.SOUTH;
 		gbcSeparator3.fill = GridBagConstraints.HORIZONTAL;
 		gbcSeparator3.gridwidth = 2;
-		gbcSeparator3.insets = new Insets( 0, 0, 5, 5 );
+		gbcSeparator3.insets = new Insets( 0, 0, 5, 0 );
 		gbcSeparator3.gridx = 0;
 		gbcSeparator3.gridy = 15;
 		add( sep3, gbcSeparator3 );
@@ -371,7 +371,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		final GridBagConstraints gbcLblNavigation = new GridBagConstraints();
 		gbcLblNavigation.anchor = GridBagConstraints.WEST;
 		gbcLblNavigation.gridwidth = 2;
-		gbcLblNavigation.insets = new Insets( 0, 0, 5, 0 );
+		gbcLblNavigation.insets = new Insets( 5, 5, 5, 0 );
 		gbcLblNavigation.gridx = 0;
 		gbcLblNavigation.gridy = 16;
 		add( lblNavigation, gbcLblNavigation );
@@ -395,7 +395,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbcPanelButtons.insets = new Insets( 5, 5, 0, 0 );
 		gbcPanelButtons.fill = GridBagConstraints.HORIZONTAL;
 		gbcPanelButtons.gridx = 0;
-		gbcPanelButtons.gridy = 18;
+		gbcPanelButtons.gridy = 19;
 		add( panelButtons, gbcPanelButtons );
 		panelButtons.setLayout( new BoxLayout( panelButtons, BoxLayout.X_AXIS ) );
 
