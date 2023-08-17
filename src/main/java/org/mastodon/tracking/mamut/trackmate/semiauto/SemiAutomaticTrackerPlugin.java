@@ -31,8 +31,6 @@ package org.mastodon.tracking.mamut.trackmate.semiauto;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,8 +44,9 @@ import org.mastodon.app.MastodonIcons;
 import org.mastodon.app.ui.ViewMenuBuilder.MenuItem;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.grouping.GroupHandle;
-import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.MamutMenuBuilder;
+import org.mastodon.mamut.PreferencesDialog;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.Spot;
@@ -72,7 +71,6 @@ import org.scijava.ui.behaviour.util.AbstractNamedAction;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.swing.console.LoggingPanel;
 
-import bdv.ui.settings.SettingsPanel;
 import net.imagej.ops.OpService;
 import net.imagej.ops.special.computer.Computers;
 
@@ -83,17 +81,12 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 	public static final String[] MENU_PATH = new String[] { "Plugins", "Tracking" };
 
 	private static final String PERFORM_SEMI_AUTO_TRACKING_ACTION = "semi-automatic tracking";
-
 	private static final String CANCEL_SEMI_AUTO_TRACKING_ACTION = "cancel semi-automatic tracking";
-
 	private static final String CONFIGURE_SEMI_AUTO_TRACKING_ACTION = "config semi-automatic tracking";
-
 	private static final String SHOW_LOGGING_PANEL_ACTION = "log semi-automatic tracking";
 
 	private static final String[] PERFORM_SEMI_AUTO_TRACKING_KEYS = new String[] { "ctrl T" };
-
 	private static final String[] CANCEL_SEMI_AUTO_TRACKING_KEYS = new String[] { "ctrl shift T" };
-
 	private static final String[] CONFIGURE_SEMI_AUTO_TRACKING_KEYS = new String[] { "not mapped" };
 
 	@Parameter
@@ -111,8 +104,6 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 
 	private final Map< String, Object > currentSettings;
 
-	private JDialog dialog;
-
 	private NavigationHandler< Spot, Link > navigationHandler;
 
 	private LoggingPanel loggingPanel;
@@ -125,6 +116,8 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 	 * another action.
 	 */
 	private Cancelable cancelable;
+
+	private SemiAutomaticTrackerConfigPage page;
 
 	public SemiAutomaticTrackerPlugin()
 	{
@@ -197,7 +190,7 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 	{
 		actions.namedAction( performSemiAutoTrackAction, PERFORM_SEMI_AUTO_TRACKING_KEYS );
 		actions.namedAction( cancelSemiAutoTrackAction, CANCEL_SEMI_AUTO_TRACKING_KEYS );
-		actions.namedAction( toggleConfigDialogVisibility, CONFIGURE_SEMI_AUTO_TRACKING_KEYS );
+		actions.namedAction( toggleConfigPageVisibility, CONFIGURE_SEMI_AUTO_TRACKING_KEYS );
 	}
 
 	@Override
@@ -221,8 +214,8 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 
 		final SharedBigDataViewerData data = appModel.getSharedBdvData();
 		final SemiAutomaticTrackerSettingsManager styleManager = new SemiAutomaticTrackerSettingsManager();
-		final SemiAutomaticTrackerConfigPage page = new SemiAutomaticTrackerConfigPage(
-				"Settings",
+		this.page = new SemiAutomaticTrackerConfigPage(
+				"Semi-automatic tracking",
 				styleManager,
 				data,
 				groupHandle,
@@ -239,27 +232,8 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 			}
 		};
 		page.apply();
-		final SettingsPanel settings = new SettingsPanel();
+		final PreferencesDialog settings = appModel.getWindowManager().getPreferencesDialog();
 		settings.addPage( page );
-
-		dialog = new JDialog( ( Frame ) null, "Semi-automatic tracker settings" );
-		dialog.getContentPane().add( settings, BorderLayout.CENTER );
-		settings.onOk( () -> dialog.setVisible( false ) );
-		settings.onCancel( () -> dialog.setVisible( false ) );
-
-		dialog.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
-		dialog.addWindowListener( new WindowAdapter()
-		{
-			@Override
-			public void windowClosing( final WindowEvent e )
-			{
-				settings.cancel();
-			}
-		} );
-		dialog.setIconImages( MastodonIcons.MASTODON_ICON );
-		dialog.pack();
-		dialog.setLocationByPlatform( true );
-		dialog.setLocationRelativeTo( null );
 	}
 
 	private final AbstractNamedAction performSemiAutoTrackAction = new AbstractNamedAction( PERFORM_SEMI_AUTO_TRACKING_ACTION )
@@ -327,20 +301,6 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 		}
 	};
 
-	private final AbstractNamedAction toggleConfigDialogVisibility = new AbstractNamedAction( CONFIGURE_SEMI_AUTO_TRACKING_ACTION )
-	{
-
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			if ( null == dialog )
-				return;
-			dialog.setVisible( !dialog.isVisible() );
-		}
-	};
-
 	private final AbstractNamedAction showLogDialog = new AbstractNamedAction( SHOW_LOGGING_PANEL_ACTION )
 	{
 
@@ -354,4 +314,26 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 			loggingDialog.setVisible( true );
 		}
 	};
+
+	private final AbstractNamedAction toggleConfigPageVisibility =
+			new AbstractNamedAction( CONFIGURE_SEMI_AUTO_TRACKING_ACTION )
+			{
+
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public void actionPerformed( final ActionEvent e )
+				{
+					if ( appModel == null )
+						return;
+
+					final PreferencesDialog dialog = appModel.getWindowManager().getPreferencesDialog();
+					if ( null == dialog )
+						return;
+
+					dialog.showPage( page.getTreePath() );
+					dialog.setVisible( true );
+				}
+			};
 }
+
