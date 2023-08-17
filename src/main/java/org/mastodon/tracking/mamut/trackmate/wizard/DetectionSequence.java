@@ -32,7 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.tracking.mamut.detection.SpotDetectorOp;
 import org.mastodon.tracking.mamut.trackmate.PluginProvider;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
@@ -74,9 +74,9 @@ public class DetectionSequence implements WizardSequence
 
 	private final WizardLogService logService;
 
-	private final MamutAppModel appModel;
+	private final ProjectModel appModel;
 
-	public DetectionSequence( final TrackMate trackmate, final MamutAppModel appModel, final WizardLogService logService )
+	public DetectionSequence( final TrackMate trackmate, final ProjectModel appModel, final WizardLogService logService )
 	{
 		this.trackmate = trackmate;
 		this.appModel = appModel;

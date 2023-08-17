@@ -40,7 +40,7 @@ import java.util.Map;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.io.ProjectCreator;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.tracking.mamut.detection.AdvancedDoGDetectorMamut;
@@ -64,7 +64,7 @@ public class TestDriveAddBehaviorFactories
 		final String bdvFile = "samples/mamutproject/datasethdf5.xml";
 
 		final Context context = new Context();
-		final MamutAppModel appModel = ProjectCreator.createProjectFromBdvFile( new File( bdvFile ), context, null );
+		final ProjectModel appModel = ProjectCreator.createProjectFromBdvFile( new File( bdvFile ), context );
 
 		final Map< String, Object > ds = DetectionUtil.getDefaultDetectorSettingsMap();
 		ds.put( KEY_THRESHOLD, 20. );

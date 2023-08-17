@@ -34,7 +34,7 @@ import java.util.Map;
 import javax.swing.UIManager;
 
 import org.mastodon.mamut.MainWindow;
-import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.io.ProjectLoader;
 import org.mastodon.mamut.io.project.MamutProject;
 import org.mastodon.mamut.io.project.MamutProjectIO;
@@ -56,7 +56,7 @@ public class AdvancedDoGDescriptorExample
 		try (Context context = new Context())
 		{
 			final MamutProject project = MamutProjectIO.load( "../mastodon/samples/Celegans.mastodon" );
-			final MamutAppModel appModel = ProjectLoader.open( project, context );
+			final ProjectModel appModel = ProjectLoader.open( project, context );
 			final MainWindow mw = new MainWindow( appModel );
 			mw.setVisible( true );
 

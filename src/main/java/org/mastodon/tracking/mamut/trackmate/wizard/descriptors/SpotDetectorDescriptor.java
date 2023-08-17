@@ -38,7 +38,7 @@ import java.util.Map;
 
 import javax.swing.JLabel;
 
-import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.tracking.mamut.detection.SpotDetectorOp;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
 import org.mastodon.tracking.mamut.trackmate.wizard.WizardPanelDescriptor;
@@ -82,7 +82,7 @@ public abstract class SpotDetectorDescriptor extends WizardPanelDescriptor imple
 
 	public abstract void setTrackMate( TrackMate trackmate );
 
-	public abstract void setAppModel( final MamutAppModel appModel );
+	public abstract void setAppModel( final ProjectModel appModel );
 
 	/**
 	 * Returns a default settings map, suitable to be configured with this

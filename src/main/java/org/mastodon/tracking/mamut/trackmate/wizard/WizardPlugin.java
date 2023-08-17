@@ -45,7 +45,7 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
 import org.mastodon.app.ui.ViewMenuBuilder;
-import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.plugin.MamutPlugin;
 import org.scijava.AbstractContextual;
 import org.scijava.ui.behaviour.util.AbstractNamedAction;
@@ -57,7 +57,7 @@ public abstract class WizardPlugin extends AbstractContextual implements MamutPl
 
 	private final AbstractNamedAction runWizardAction;
 
-	private MamutAppModel appModel;
+	private ProjectModel appModel;
 
 	private final String actionName;
 
@@ -112,11 +112,11 @@ public abstract class WizardPlugin extends AbstractContextual implements MamutPl
 	 *            the wizard that will display the sequence.
 	 * @return the {@link WizardSequence}.
 	 */
-	public abstract WizardSequence getWizardSequence( MamutAppModel pluginAppModel, Wizard wizard );
+	public abstract WizardSequence getWizardSequence( ProjectModel pluginAppModel, Wizard wizard );
 
 
 	@Override
-	public void setAppPluginModel( final MamutAppModel model )
+	public void setAppPluginModel( final ProjectModel model )
 	{
 		this.appModel = model;
 		updateEnabledActions();

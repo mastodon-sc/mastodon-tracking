@@ -30,7 +30,7 @@ package org.mastodon.tracking.mamut.trackmate.wizard;
 
 import java.util.ArrayList;
 
-import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.tracking.mamut.trackmate.Settings;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
 import org.mastodon.ui.keymap.CommandDescriptionProvider;
@@ -56,7 +56,7 @@ public class WizardDetectionPlugin extends WizardPlugin
 	}
 
 	@Override
-	public WizardSequence getWizardSequence( final MamutAppModel appModel, final Wizard wizard )
+	public WizardSequence getWizardSequence( final ProjectModel appModel, final Wizard wizard )
 	{
 		/*
 		 * TODO Resolve later: SharedBdvData has AbstractSpimData<?>, we need

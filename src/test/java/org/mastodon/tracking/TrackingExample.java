@@ -38,7 +38,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.io.ProjectCreator;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
@@ -72,7 +72,7 @@ public class TrackingExample
 		 * Create empty model and window manager.
 		 */
 
-		final MamutAppModel appModel = ProjectCreator.createProjectFromBdvFile( new File( bdvFile ), new Context(), null );
+		final ProjectModel appModel = ProjectCreator.createProjectFromBdvFile( new File( bdvFile ), new Context() );
 		final Model model = appModel.getModel();
 		final SelectionModel< Spot, Link > selectionModel = appModel.getSelectionModel();
 

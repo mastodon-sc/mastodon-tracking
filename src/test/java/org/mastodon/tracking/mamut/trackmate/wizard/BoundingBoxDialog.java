@@ -34,8 +34,8 @@ import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import org.mastodon.mamut.MamutAppModel;
 import org.mastodon.mamut.MamutViewBdv;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.io.ProjectLoader;
 import org.mastodon.mamut.io.project.MamutProject;
 import org.mastodon.mamut.io.project.MamutProjectIO;
@@ -47,7 +47,6 @@ import org.scijava.ui.behaviour.util.Actions;
 
 import bdv.tools.boundingbox.BoxSelectionOptions;
 import bdv.tools.boundingbox.TransformedBoxSelectionDialog;
-import bdv.tools.brightness.SetupAssignments;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerPanel;
@@ -63,7 +62,6 @@ import net.imglib2.util.Intervals;
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
  */
-@SuppressWarnings( "deprecation" )
 public class BoundingBoxDialog
 {
 	static final String TOGGLE_BOUNDING_BOX = "toggle bounding-box";
@@ -81,7 +79,7 @@ public class BoundingBoxDialog
 		 */
 		final Context context = new Context();
 		final MamutProject project = MamutProjectIO.load( "../mastodon/samples/mamutproject" );
-		final MamutAppModel appModel = ProjectLoader.open( project, context );
+		final ProjectModel appModel = ProjectLoader.open( project, context );
 		final MamutViewBdv[] bdv = new MamutViewBdv[ 1 ];
 		SwingUtilities.invokeAndWait( () -> {
 			bdv[ 0 ] = appModel.getWindowManager().createBigDataViewer();
@@ -114,7 +112,7 @@ public class BoundingBoxDialog
 			interval = Intervals.createMinMax( 0, 0, 0, 1, 1, 1 );
 
 		final ConverterSetups converterSetups = appModel.getSharedBdvData().getConverterSetups();
-		final int boxSetupId = SetupAssignments.getUnusedSetupId( appModel.getSharedBdvData().getSetupAssignments() );
+		final int boxSetupId = appModel.getSharedBdvData().getSources().size();
 		final JDialog dialog = new TransformedBoxSelectionDialog(
 				viewer,
 				converterSetups,

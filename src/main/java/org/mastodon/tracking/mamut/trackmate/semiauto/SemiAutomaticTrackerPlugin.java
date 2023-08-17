@@ -46,7 +46,7 @@ import org.mastodon.app.MastodonIcons;
 import org.mastodon.app.ui.ViewMenuBuilder.MenuItem;
 import org.mastodon.collection.RefCollections;
 import org.mastodon.grouping.GroupHandle;
-import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.MamutMenuBuilder;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
@@ -105,7 +105,7 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 	@Parameter
 	private LogService logService;
 
-	private MamutAppModel appModel;
+	private ProjectModel appModel;
 
 	private static Map< String, String > menuTexts = new HashMap<>();
 
@@ -201,7 +201,7 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 	}
 
 	@Override
-	public void setAppPluginModel( final MamutAppModel appModel )
+	public void setAppPluginModel( final ProjectModel appModel )
 	{
 		this.appModel = appModel;
 

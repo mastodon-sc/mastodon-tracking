@@ -46,7 +46,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 
-import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Spot;
 import org.mastodon.model.SelectionListener;
@@ -70,7 +70,7 @@ public class LinkingTargetDescriptor extends WizardPanelDescriptor
 
 	private final WizardLogService log;
 
-	public LinkingTargetDescriptor( final TrackMate trackmate, final MamutAppModel appModel, final WizardLogService logService )
+	public LinkingTargetDescriptor( final TrackMate trackmate, final ProjectModel appModel, final WizardLogService logService )
 	{
 		this.trackmate = trackmate;
 		this.log = logService;

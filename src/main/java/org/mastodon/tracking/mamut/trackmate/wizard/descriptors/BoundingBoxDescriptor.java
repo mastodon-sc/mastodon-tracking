@@ -46,7 +46,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
-import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.MamutViewBdv;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.WindowManager;
 import org.mastodon.tracking.mamut.trackmate.Settings;
 import org.mastodon.tracking.mamut.trackmate.wizard.WizardLogService;
@@ -59,7 +60,6 @@ import bdv.tools.boundingbox.BoxSelectionPanel;
 import bdv.tools.boundingbox.TransformedBoxEditor;
 import bdv.tools.boundingbox.TransformedBoxEditor.BoxSourceType;
 import bdv.tools.boundingbox.TransformedBoxModel;
-import bdv.tools.brightness.SetupAssignments;
 import bdv.tools.brightness.SliderPanel;
 import bdv.util.BoundedInterval;
 import bdv.util.ModifiableInterval;
@@ -70,7 +70,6 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.Util;
 
-@SuppressWarnings( "deprecation" )
 public class BoundingBoxDescriptor extends WizardPanelDescriptor
 {
 
@@ -86,9 +85,9 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 
 	private MyBoundingBoxModel roi;
 
-	private final MamutAppModel appModel;
+	private final ProjectModel appModel;
 
-	public BoundingBoxDescriptor( final Settings settings, final MamutAppModel appModel, final WizardLogService log )
+	public BoundingBoxDescriptor( final Settings settings, final ProjectModel appModel, final WizardLogService log )
 	{
 		this.appModel = appModel;
 		this.panelIdentifier = IDENTIFIER;
@@ -123,7 +122,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 		roi.intervalChangedListeners().add( () -> viewFrame.getViewerPanel().getDisplay().repaint() );
 
 		// Editor.
-		final int boxSetupId = SetupAssignments.getUnusedSetupId( appModel.getSharedBdvData().getSetupAssignments() );
+		final int boxSetupId = appModel.getSharedBdvData().getSources().size();
 		boundingBoxEditor = new TransformedBoxEditor(
 				appModel.getKeymap().getConfig(),
 				viewFrame.getViewerPanel(),
@@ -198,7 +197,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 
 		// Is there a BDV open?
 		final WindowManager wm = appModel.getWindowManager();
-		wm.forEachBdvView( view -> {
+		wm.forEachView( MamutViewBdv.class, view -> {
 			final ViewerFrameMamut vf = ( ViewerFrameMamut ) view.getFrame();
 			if ( vf != null && vf.isShowing() )
 			{

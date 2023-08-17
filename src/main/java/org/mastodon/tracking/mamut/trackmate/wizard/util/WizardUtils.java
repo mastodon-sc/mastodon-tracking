@@ -297,7 +297,7 @@ public class WizardUtils
 					new DefaultGraphColorGenerator<>() );
 			viewer.getDisplay().overlays().add( tracksOverlay );
 			viewer.renderTransformListeners().add( tracksOverlay );
-			viewer.addTimePointListener( tracksOverlay );
+			viewer.timePointListeners().add( tracksOverlay );
 			graph.addGraphChangeListener( () -> viewer.getDisplay().repaint() );
 
 			final Actions viewActions = new Actions( keymap.getConfig(), keyConfigContexts );

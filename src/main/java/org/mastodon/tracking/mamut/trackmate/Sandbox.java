@@ -44,7 +44,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import org.mastodon.mamut.MainWindow;
-import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.io.ProjectCreator;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.model.DefaultSelectionModel;
@@ -107,7 +107,7 @@ public class Sandbox
 				.linker( linkerClass )
 				.linkerSettings( linkerSettings );
 
-		final MamutAppModel appModel = ProjectCreator.createProjectFromBdvFile( new File( bdvFile ), context, null );
+		final ProjectModel appModel = ProjectCreator.createProjectFromBdvFile( new File( bdvFile ), context );
 		final Model model = appModel.getModel();
 		final TrackMate trackmate = new TrackMate( settings, model, new DefaultSelectionModel<>( model.getGraph(), model.getGraphIdBimap() ) );
 		trackmate.setContext( context );

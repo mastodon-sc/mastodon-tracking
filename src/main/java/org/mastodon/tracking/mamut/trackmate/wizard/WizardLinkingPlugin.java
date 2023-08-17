@@ -34,7 +34,7 @@ import static org.mastodon.tracking.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.linking.LinkingUtils;
 import org.mastodon.tracking.mamut.trackmate.Settings;
@@ -72,7 +72,7 @@ public class WizardLinkingPlugin extends WizardPlugin
 	}
 
 	@Override
-	public WizardSequence getWizardSequence( final MamutAppModel appModel, final Wizard wizard )
+	public WizardSequence getWizardSequence( final ProjectModel appModel, final Wizard wizard )
 	{
 		final int tmax = appModel.getMaxTimepoint();
 		final int tmin = appModel.getMinTimepoint();

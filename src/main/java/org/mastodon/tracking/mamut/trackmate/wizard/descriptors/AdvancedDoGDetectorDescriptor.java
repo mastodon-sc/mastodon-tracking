@@ -58,7 +58,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import org.jfree.chart.ChartPanel;
-import org.mastodon.mamut.MamutAppModel;
+import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.tracking.detection.DetectionType;
 import org.mastodon.tracking.detection.DetectionUtil;
@@ -95,7 +95,7 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 
 	private Settings settings;
 
-	private MamutAppModel appModel;
+	private ProjectModel appModel;
 
 	private ChartPanel chartPanel;
 
@@ -275,7 +275,7 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 	}
 
 	@Override
-	public void setAppModel( final MamutAppModel appModel )
+	public void setAppModel( final ProjectModel appModel )
 	{
 		this.appModel = appModel;
 	}
