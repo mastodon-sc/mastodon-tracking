@@ -34,17 +34,17 @@ import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import org.mastodon.mamut.MamutViewBdv;
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.io.ProjectLoader;
 import org.mastodon.mamut.io.project.MamutProject;
 import org.mastodon.mamut.io.project.MamutProjectIO;
-import org.mastodon.util.ToggleDialogAction;
+import org.mastodon.mamut.views.bdv.MamutViewBdv;
 import org.mastodon.views.bdv.ViewerFrameMamut;
 import org.scijava.Context;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Actions;
 
+import bdv.tools.ToggleDialogAction;
 import bdv.tools.boundingbox.BoxSelectionOptions;
 import bdv.tools.boundingbox.TransformedBoxSelectionDialog;
 import bdv.viewer.ConverterSetups;
@@ -82,7 +82,7 @@ public class BoundingBoxDialog
 		final ProjectModel appModel = ProjectLoader.open( project, context );
 		final MamutViewBdv[] bdv = new MamutViewBdv[ 1 ];
 		SwingUtilities.invokeAndWait( () -> {
-			bdv[ 0 ] = appModel.getWindowManager().createBigDataViewer();
+			bdv[ 0 ] = appModel.getWindowManager().createView( MamutViewBdv.class );
 		} );
 		final ViewerFrameMamut viewerFrame = ( ViewerFrameMamut ) bdv[ 0 ].getFrame();
 		final ViewerPanel viewer = viewerFrame.getViewerPanel();

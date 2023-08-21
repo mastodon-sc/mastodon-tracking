@@ -46,9 +46,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
-import org.mastodon.mamut.MamutViewBdv;
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.WindowManager;
+import org.mastodon.mamut.views.bdv.MamutViewBdv;
 import org.mastodon.tracking.mamut.trackmate.Settings;
 import org.mastodon.tracking.mamut.trackmate.wizard.WizardLogService;
 import org.mastodon.tracking.mamut.trackmate.wizard.WizardPanelDescriptor;
@@ -208,7 +208,7 @@ public class BoundingBoxDescriptor extends WizardPanelDescriptor
 
 		// Create one
 		if ( viewFrame == null )
-			viewFrame = ( ViewerFrameMamut ) wm.createBigDataViewer().getFrame();
+			viewFrame = ( ViewerFrameMamut ) wm.createView( MamutViewBdv.class ).getFrame();
 
 		viewFrame.addWindowListener( new WindowAdapter()
 		{

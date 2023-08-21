@@ -43,6 +43,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.mamut.io.ProjectCreator;
 import org.mastodon.mamut.model.Model;
+import org.mastodon.mamut.views.bdv.MamutViewBdv;
 import org.mastodon.tracking.mamut.detection.AdvancedDoGDetectorMamut;
 import org.mastodon.tracking.mamut.detection.DoGDetectorMamut;
 import org.mastodon.tracking.mamut.detection.MamutDetectionCreatorFactories.DetectionBehavior;
@@ -85,7 +86,7 @@ public class TestDriveAddBehaviorFactories
 			return;
 		}
 		System.out.println( "First detection completed. Found " + model.getGraph().vertices().size() + " spots." );
-		appModel.getWindowManager().createBigDataViewer();
+		appModel.getWindowManager().createView( MamutViewBdv.class );
 
 		ds.put( KEY_ADD_BEHAVIOR, DetectionBehavior.DONTADD.name() );
 		ds.put( KEY_RADIUS, 12. );

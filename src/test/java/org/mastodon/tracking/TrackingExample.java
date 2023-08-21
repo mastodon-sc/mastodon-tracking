@@ -43,6 +43,7 @@ import org.mastodon.mamut.io.ProjectCreator;
 import org.mastodon.mamut.model.Link;
 import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.Spot;
+import org.mastodon.mamut.views.bdv.MamutViewBdv;
 import org.mastodon.model.SelectionModel;
 import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.linking.LinkingUtils;
@@ -123,6 +124,6 @@ public class TrackingExample
 		 * Show results.
 		 */
 
-		appModel.getWindowManager().createBigDataViewer();
+		appModel.getWindowManager().createView( MamutViewBdv.class );
 	}
 }
