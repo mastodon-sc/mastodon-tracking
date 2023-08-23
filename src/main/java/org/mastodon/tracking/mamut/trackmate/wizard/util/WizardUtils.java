@@ -69,8 +69,6 @@ import org.mastodon.tracking.mamut.trackmate.Settings;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
 import org.mastodon.ui.coloring.DefaultGraphColorGenerator;
 import org.mastodon.ui.keymap.KeyConfigContexts;
-import org.mastodon.ui.keymap.Keymap;
-import org.mastodon.ui.keymap.KeymapManager;
 import org.mastodon.views.bdv.BigDataViewerMamut;
 import org.mastodon.views.bdv.SharedBigDataViewerData;
 import org.mastodon.views.bdv.ViewerFrameMamut;
@@ -85,6 +83,8 @@ import org.scijava.ui.behaviour.util.Behaviours;
 
 import bdv.spimdata.SpimDataMinimal;
 import bdv.tools.InitializeViewerState;
+import bdv.ui.keymap.Keymap;
+import bdv.ui.keymap.KeymapManager;
 import bdv.util.Affine3DHelpers;
 import bdv.viewer.NavigationActions;
 import bdv.viewer.Source;
@@ -259,7 +259,7 @@ public class WizardUtils
 			final ModelGraph graph = model.getGraph();
 			final GraphIdBimap< Spot, Link > graphIdBimap = model.getGraphIdBimap();
 			final String[] keyConfigContexts = new String[] { KeyConfigContexts.BIGDATAVIEWER };
-			final Keymap keymap = new KeymapManager().getForwardDefaultKeymap();
+			final Keymap keymap = new KeymapManager().getForwardSelectedKeymap();
 
 			final BigDataViewerMamut bdv = new BigDataViewerMamut( shared, "Preview detection", new GroupManager( 0 ).createGroupHandle() );
 			final ViewerPanel viewer = bdv.getViewer();

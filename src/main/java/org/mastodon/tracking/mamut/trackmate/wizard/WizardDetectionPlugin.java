@@ -30,13 +30,14 @@ package org.mastodon.tracking.mamut.trackmate.wizard;
 
 import java.util.ArrayList;
 
+import org.mastodon.mamut.KeyConfigScopes;
 import org.mastodon.mamut.ProjectModel;
 import org.mastodon.tracking.mamut.trackmate.Settings;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
-import org.mastodon.ui.keymap.CommandDescriptionProvider;
-import org.mastodon.ui.keymap.CommandDescriptions;
 import org.mastodon.ui.keymap.KeyConfigContexts;
 import org.scijava.plugin.Plugin;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptionProvider;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptions;
 
 import bdv.viewer.SourceAndConverter;
 
@@ -80,7 +81,7 @@ public class WizardDetectionPlugin extends WizardPlugin
 	{
 		public Descriptions()
 		{
-			super( KeyConfigContexts.MASTODON );
+			super( KeyConfigScopes.MAMUT, KeyConfigContexts.MASTODON );
 		}
 
 		@Override
