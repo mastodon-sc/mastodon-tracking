@@ -48,6 +48,7 @@ import org.mastodon.io.yaml.WorkaroundRepresenter;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.error.YAMLException;
 import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.Tag;
@@ -134,34 +135,25 @@ public class SemiAutomaticTrackerSettingsIO
 		}
 
 		@Override
-		public Object construct( final Node node )
+		public Object construct( final Node node ) throws YAMLException
 		{
-			try
-			{
-				final Map< Object, Object > mapping = constructMapping( ( MappingNode  ) node );
-				final String name = ( String ) mapping.get( "name" );
-				final SemiAutomaticTrackerSettings s = SemiAutomaticTrackerSettings.defaultSettings().copy( name );
+			final Map< Object, Object > mapping = constructMapping( ( MappingNode ) node );
+			final String name = ( String ) mapping.get( "name" );
+			final SemiAutomaticTrackerSettings s = SemiAutomaticTrackerSettings.defaultSettings().copy( name );
 
-				s.setName( ( String ) mapping.getOrDefault( "name", "NameNotFound" ) );
+			s.setName( getStringOrDefault( mapping, "name", "NameNotFound" ) );
+			s.setSetupID( getIntOrDefault( mapping, "setupID", 0 ) );
+			s.setQualityFactor( getDoubleOrDefault( mapping, "qualityFactor", DEFAULT_QUALITY_FACTOR ) );
+			s.setDistanceFactor( getDoubleOrDefault( mapping, "distanceFactor", DEFAULT_DISTANCE_FACTOR ) );
+			s.setNTimepoints( getIntOrDefault( mapping, "nTimepoints", DEFAULT_N_TIMEPOINTS ) );
+			s.setForwardInTime( getBooleanOrDefault( mapping, "forwardInTime", DEFAULT_FORWARD_IN_TIME ) );
+			s.setAllowLinkingToExisting( ( getBooleanOrDefault( mapping, "allowLinkingToExisting", DEFAULT_ALLOW_LINKING_TO_EXISTING ) ) );
+			s.setAllowIfIncomingLinks( getBooleanOrDefault( mapping, "allowIfIncomingLinks", DEFAULT_ALLOW_LINKING_IF_HAS_INCOMING ) );
+			s.setAllowIfOutgoingLinks( getBooleanOrDefault( mapping, "allowIfOutgoingLinks", DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING ) );
+			s.setContinueIfLinked( getBooleanOrDefault( mapping, "continueIfLinked", DEFAULT_CONTINUE_IF_LINK_EXISTS ) );
+			s.setDetectSpot( getBooleanOrDefault( mapping, "detectSpot", DEFAULT_DETECT_SPOT ) );
 
-				s.setSetupID( ( int ) mapping.getOrDefault( "setupID", 0 ) );
-				s.setQualityFactor( ( double ) mapping.getOrDefault( "qualityFactor", DEFAULT_QUALITY_FACTOR ) );
-				s.setDistanceFactor( ( double ) mapping.getOrDefault( "distanceFactor", DEFAULT_DISTANCE_FACTOR ) );
-				s.setNTimepoints( ( int ) mapping.getOrDefault( "nTimepoints", DEFAULT_N_TIMEPOINTS ) );
-				s.setForwardInTime( ( boolean ) mapping.getOrDefault( "forwardInTime", DEFAULT_FORWARD_IN_TIME ) );
-				s.setAllowLinkingToExisting( ( boolean ) mapping.getOrDefault( "allowLinkingToExisting", DEFAULT_ALLOW_LINKING_TO_EXISTING ) );
-				s.setAllowIfIncomingLinks( ( boolean ) mapping.getOrDefault( "allowIfIncomingLinks", DEFAULT_ALLOW_LINKING_IF_HAS_INCOMING ) );
-				s.setAllowIfOutgoingLinks( ( boolean ) mapping.getOrDefault( "allowIfOutgoingLinks", DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING ) );
-				s.setContinueIfLinked( ( boolean ) mapping.getOrDefault( "continueIfLinked", DEFAULT_CONTINUE_IF_LINK_EXISTS ) );
-				s.setDetectSpot( ( boolean ) mapping.getOrDefault( "detectSpot", DEFAULT_DETECT_SPOT ) );
-
-				return s;
-			}
-			catch( final Exception e )
-			{
-				e.printStackTrace();
-			}
-			return null;
+			return s;
 		}
 	}
 }
