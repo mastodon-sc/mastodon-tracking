@@ -31,21 +31,13 @@ package org.mastodon.tracking.mamut.trackmate.semiauto.ui;
 import java.util.List;
 
 import org.mastodon.app.ui.AbstractStyleManagerYaml;
-import org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerPlugin;
 import org.yaml.snakeyaml.Yaml;
 
 public class SemiAutomaticTrackerSettingsManager extends AbstractStyleManagerYaml< SemiAutomaticTrackerSettingsManager, SemiAutomaticTrackerSettings >
 {
 
-	private static final String SETTINGS_FILE;
-	static
-	{
-		String sfPath = System.getProperty( "user.home" ) + "/.mastodon";
-		for ( final String pathElement : SemiAutomaticTrackerPlugin.MENU_PATH )
-			sfPath += '/' + pathElement;
-		sfPath += "/semiautomatictrackersettings.yaml";
-		SETTINGS_FILE = sfPath;
-	}
+	private static final String SETTINGS_FILE = System.getProperty( "user.home" ) + "/.mastodon/plugins/tracking/semi-automatic-tracker-settings.yaml";
+	private static final String LEGACY_SETTINGS_FILE = System.getProperty( "user.home" ) + "/.mastodon/Plugins/Tracking/semiautomatictrackersettings.yaml";
 
 	private final SemiAutomaticTrackerSettings forwardDefaultSettings;
 
@@ -85,6 +77,7 @@ public class SemiAutomaticTrackerSettingsManager extends AbstractStyleManagerYam
 	public void loadStyles()
 	{
 		loadStyles( SETTINGS_FILE );
+		handleLegacyFile( LEGACY_SETTINGS_FILE );
 	}
 
 	@Override
