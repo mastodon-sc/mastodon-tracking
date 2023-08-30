@@ -216,7 +216,7 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 		final SharedBigDataViewerData data = appModel.getSharedBdvData();
 		final SemiAutomaticTrackerSettingsManager styleManager = new SemiAutomaticTrackerSettingsManager();
 		this.page = new SemiAutomaticTrackerConfigPage(
-				"Semi-automatic tracking",
+				"Plugins > Semi-automatic tracking",
 				styleManager,
 				data,
 				groupHandle,
