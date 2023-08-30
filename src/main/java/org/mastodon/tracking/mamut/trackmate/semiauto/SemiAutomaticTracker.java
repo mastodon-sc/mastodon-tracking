@@ -114,7 +114,7 @@ public class SemiAutomaticTracker
 	private SelectionModel< Spot, Link > selectionModel;
 
 	@Parameter( required = false )
-	private FocusModel< Spot, Link > focusModel;
+	private FocusModel< Spot > focusModel;
 
 	@Parameter( required = false )
 	private Logger log;

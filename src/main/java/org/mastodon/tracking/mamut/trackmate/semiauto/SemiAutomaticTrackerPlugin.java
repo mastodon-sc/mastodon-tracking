@@ -255,7 +255,7 @@ public class SemiAutomaticTrackerPlugin implements MamutPlugin
 			subLogger.addLogListener( loggingPanel );
 
 			final SelectionModel< Spot, Link > selectionModel = appModel.getSelectionModel();
-			final FocusModel< Spot, Link > focusModel = appModel.getFocusModel();
+			final FocusModel< Spot > focusModel = appModel.getFocusModel();
 			final Collection< Spot > selectedSpots = selectionModel.getSelectedVertices();
 			final Collection< Spot > spots = RefCollections.createRefList(
 					appModel.getModel().getGraph().vertices(), selectedSpots.size() );
