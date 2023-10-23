@@ -157,12 +157,13 @@ public abstract class WizardPlugin extends AbstractContextual implements MamutPl
 		{
 			try
 			{
-				final String str = "______________\n" + commandName + " @ " + new SimpleDateFormat( "HH:mm" ).format( new Date() );
+				final String str1 = "______________\n" + commandName;
+				final String str2 = " @ " + new SimpleDateFormat( "HH:mm" ).format( new Date() ) + "\n  ";
 				final SimpleAttributeSet normal = new SimpleAttributeSet();
 				final SimpleAttributeSet bold = new SimpleAttributeSet( normal );
 				StyleConstants.setBold( bold, true );
-				log.insertString( log.getEndPosition().getOffset(), str, bold );
-				log.insertString( log.getEndPosition().getOffset(), " \n ", normal );
+				log.insertString( log.getLength(), str1, bold );
+				log.insertString( log.getLength(), str2, normal );
 			}
 			catch ( final BadLocationException e )
 			{
