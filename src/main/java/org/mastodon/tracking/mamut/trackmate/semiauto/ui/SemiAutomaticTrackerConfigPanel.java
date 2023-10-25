@@ -52,7 +52,7 @@ import javax.swing.SwingConstants;
 import org.mastodon.app.ui.GroupLocksPanel;
 import org.mastodon.grouping.GroupHandle;
 import org.mastodon.tracking.mamut.trackmate.semiauto.ui.SemiAutomaticTrackerSettings.UpdateListener;
-import org.mastodon.tracking.mamut.trackmate.wizard.util.SetupIDComboBox;
+import org.mastodon.ui.util.SetupIDComboBox;
 import org.mastodon.views.bdv.SharedBigDataViewerData;
 
 import bdv.tools.brightness.SliderPanel;
