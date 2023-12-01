@@ -10,7 +10,7 @@
 
 	<groupId>org.mastodon</groupId>
 	<artifactId>mastodon-tracking</artifactId>
-	<version>1.0.0-beta-14-SNAPSHOT</version>
+	<version>1.0.0-beta-15-SNAPSHOT</version>
 
 	<name>Mastodon Tracking</name>
 	<description>Basic tracking algorithms based on Mastodon data structures.</description>
