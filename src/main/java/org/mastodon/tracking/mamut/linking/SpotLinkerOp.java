@@ -28,6 +28,8 @@
  */
 package org.mastodon.tracking.mamut.linking;
 
+import java.util.Map;
+
 import org.mastodon.mamut.model.ModelGraph;
 import org.mastodon.mamut.model.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
@@ -50,4 +52,11 @@ public interface SpotLinkerOp extends BinaryInplace1OnlyOp< ModelGraph, SpatioTe
 	 */
 	public LinkCostFeature getLinkCostFeature();
 
+	/**
+	 * Returns a default settings map, suitable to be configured with this
+	 * descriptor.
+	 *
+	 * @return a default settings map.
+	 */
+	public abstract Map< String, Object > getDefaultSettings();
 }

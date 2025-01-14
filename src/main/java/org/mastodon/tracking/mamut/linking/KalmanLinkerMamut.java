@@ -144,6 +144,12 @@ public class KalmanLinkerMamut extends AbstractSpotLinkerOp
 		linker = null;
 	}
 
+	@Override
+	public Map< String, Object > getDefaultSettings()
+	{
+		return getDefaultSettingsMap();
+	}
+
 	public static boolean checkSettingsValidity( final Map< String, Object > settings, final StringBuilder str )
 	{
 		if ( null == settings )

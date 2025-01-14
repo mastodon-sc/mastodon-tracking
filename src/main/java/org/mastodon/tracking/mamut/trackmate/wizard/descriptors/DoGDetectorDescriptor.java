@@ -220,12 +220,6 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 	}
 
 	@Override
-	public Map< String, Object > getDefaultSettings()
-	{
-		return DetectionUtil.getDefaultDetectorSettingsMap();
-	}
-
-	@Override
 	public void setTrackMate( final TrackMate trackmate )
 	{
 		final DoGDetectorPanel panel = ( DoGDetectorPanel ) targetPanel;

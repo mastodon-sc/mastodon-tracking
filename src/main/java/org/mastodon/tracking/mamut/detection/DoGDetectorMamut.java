@@ -29,8 +29,10 @@
 package org.mastodon.tracking.mamut.detection;
 
 import java.util.List;
+import java.util.Map;
 
 import org.mastodon.mamut.model.ModelGraph;
+import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.detection.DoGDetectorOp;
 import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
@@ -61,4 +63,9 @@ public class DoGDetectorMamut extends AbstractSpotDetectorOp implements SpotDete
 		exec( sources, graph, DoGDetectorOp.class );
 	}
 
+	@Override
+	public Map< String, Object > getDefaultSettings()
+	{
+		return DetectionUtil.getDefaultDetectorSettingsMap();
+	}
 }

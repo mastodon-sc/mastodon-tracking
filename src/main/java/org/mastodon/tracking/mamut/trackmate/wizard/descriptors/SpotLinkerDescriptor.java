@@ -29,7 +29,6 @@
 package org.mastodon.tracking.mamut.trackmate.wizard.descriptors;
 
 import java.util.Collection;
-import java.util.Map;
 
 import org.mastodon.mamut.WindowManager;
 import org.mastodon.tracking.mamut.linking.SpotLinkerOp;
@@ -68,14 +67,6 @@ public abstract class SpotLinkerDescriptor extends WizardPanelDescriptor impleme
 	 * @return the linkers this panel can configure.
 	 */
 	public abstract Collection< Class< ? extends SpotLinkerOp > > getTargetClasses();
-
-	/**
-	 * Returns a default settings map, suitable to be configured with this
-	 * descriptor.
-	 *
-	 * @return a default settings map.
-	 */
-	public abstract Map< String, Object > getDefaultSettings();
 
 	public abstract void setTrackMate( TrackMate trackmate );
 

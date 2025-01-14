@@ -34,7 +34,6 @@ import static org.mastodon.tracking.mamut.trackmate.wizard.descriptors.LogPanel.
 
 import java.awt.Color;
 import java.util.Collection;
-import java.util.Map;
 
 import javax.swing.JLabel;
 
@@ -83,14 +82,6 @@ public abstract class SpotDetectorDescriptor extends WizardPanelDescriptor imple
 	public abstract void setTrackMate( TrackMate trackmate );
 
 	public abstract void setAppModel( final ProjectModel appModel );
-
-	/**
-	 * Returns a default settings map, suitable to be configured with this
-	 * descriptor.
-	 *
-	 * @return a default settings map.
-	 */
-	public abstract Map< String, Object > getDefaultSettings();
 
 	protected final static class JLabelLogger extends AbstractLogService
 	{

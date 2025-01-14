@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.mastodon.mamut.ProjectModel;
+import org.mastodon.mamut.model.Model;
+import org.mastodon.tracking.mamut.linking.LinkCostFeature;
 import org.mastodon.tracking.mamut.linking.SpotLinkerOp;
 import org.mastodon.tracking.mamut.trackmate.PluginProvider;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
@@ -41,6 +43,9 @@ import org.mastodon.tracking.mamut.trackmate.wizard.descriptors.ExecuteLinkingDe
 import org.mastodon.tracking.mamut.trackmate.wizard.descriptors.LinkingTargetDescriptor;
 import org.mastodon.tracking.mamut.trackmate.wizard.descriptors.SpotLinkerDescriptor;
 import org.scijava.Context;
+
+import net.imagej.ops.OpService;
+import net.imagej.ops.special.inplace.Inplaces;
 
 public class LinkingSequence implements WizardSequence
 {
@@ -128,7 +133,7 @@ public class LinkingSequence implements WizardSequence
 				previousLinkerPanel = linkerConfigDescriptor;
 				if ( linkerConfigDescriptor.getContext() == null )
 					appModel.getContext().inject( linkerConfigDescriptor );
-				final Map< String, Object > defaultSettings = linkerConfigDescriptor.getDefaultSettings();
+				final Map< String, Object > defaultSettings = getLinkerDefaultSettings( linkerClass );
 
 				// Pass as much parameter as we can from the old settings.
 				final Map< String, Object > oldSettings = trackmate.getSettings().values.getLinkerSettings();
@@ -149,6 +154,23 @@ public class LinkingSequence implements WizardSequence
 			}
 		}
 		throw new RuntimeException( "Could not find a descriptor that can configure " + linkerClass );
+	}
+
+	private Map< String, Object > getLinkerDefaultSettings( final Class< ? extends SpotLinkerOp > linkerCl )
+	{
+		// Instantiate a dummy linker.
+		final Model model = appModel.getModel();
+		final LinkCostFeature linkCostFeature = LinkCostFeature.getOrRegister(
+				model.getFeatureModel(), model.getGraph().edges().getRefPool() );
+		final OpService ops = appModel.getContext().getService( OpService.class );
+
+		final SpotLinkerOp linker =
+				( SpotLinkerOp ) Inplaces.binary1( ops, linkerCl, model.getGraph(),
+						model.getSpatioTemporalIndex(),
+						new HashMap< String, Object >(),
+						model.getFeatureModel(),
+						linkCostFeature );
+		return linker.getDefaultSettings();
 	}
 
 	@Override

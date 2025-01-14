@@ -28,9 +28,12 @@
  */
 package org.mastodon.tracking.mamut.linking;
 
+import java.util.Map;
+
 import org.mastodon.mamut.model.ModelGraph;
 import org.mastodon.mamut.model.Spot;
 import org.mastodon.spatial.SpatioTemporalIndex;
+import org.mastodon.tracking.linking.LinkingUtils;
 import org.mastodon.tracking.linking.graph.lap.SparseLAPLinker;
 import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
@@ -56,6 +59,12 @@ public class SimpleSparseLAPLinkerMamut extends AbstractSpotLinkerOp
 	public void mutate1( final ModelGraph graph, final SpatioTemporalIndex< Spot > spots )
 	{
 		exec( graph, spots, SparseLAPLinker.class );
+	}
+
+	@Override
+	public Map< String, Object > getDefaultSettings()
+	{
+		return LinkingUtils.getDefaultLAPSettingsMap();
 	}
 
 }

@@ -136,12 +136,6 @@ public class KalmanLinkerDescriptor extends SpotLinkerDescriptor
 	}
 
 	@Override
-	public Map< String, Object > getDefaultSettings()
-	{
-		return KalmanLinkerMamut.getDefaultSettingsMap();
-	}
-
-	@Override
 	public void setTrackMate( final TrackMate trackmate )
 	{
 		this.settings = trackmate.getSettings();

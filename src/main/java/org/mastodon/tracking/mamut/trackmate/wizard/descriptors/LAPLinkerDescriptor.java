@@ -48,7 +48,6 @@ import org.mastodon.mamut.model.Model;
 import org.mastodon.mamut.model.Spot;
 import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.detection.DetectorKeys;
-import org.mastodon.tracking.linking.LinkingUtils;
 import org.mastodon.tracking.mamut.linking.SparseLAPLinkerMamut;
 import org.mastodon.tracking.mamut.linking.SpotLinkerOp;
 import org.mastodon.tracking.mamut.trackmate.Settings;
@@ -109,12 +108,6 @@ public class LAPLinkerDescriptor extends SpotLinkerDescriptor
 		} ) );
 		final Collection< Class< ? extends SpotLinkerOp > > a = b;
 		return a;
-	}
-
-	@Override
-	public Map< String, Object > getDefaultSettings()
-	{
-		return LinkingUtils.getDefaultLAPSettingsMap();
 	}
 
 	@Override

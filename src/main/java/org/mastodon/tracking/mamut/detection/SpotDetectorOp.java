@@ -29,6 +29,7 @@
 package org.mastodon.tracking.mamut.detection;
 
 import java.util.List;
+import java.util.Map;
 
 import org.mastodon.mamut.model.ModelGraph;
 import org.scijava.Cancelable;
@@ -66,6 +67,13 @@ public interface SpotDetectorOp extends UnaryHybridCF< List< SourceAndConverter<
 	 * @return an error message.
 	 */
 	public String getErrorMessage();
+
+	/**
+	 * Returns a default settings map, suitable for this spot detector.
+	 *
+	 * @return a default settings map.
+	 */
+	public Map< String, Object > getDefaultSettings();
 
 	public void setStatusService( StatusService statusService );
 

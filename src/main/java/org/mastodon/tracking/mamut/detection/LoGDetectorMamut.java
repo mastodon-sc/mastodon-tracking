@@ -29,8 +29,10 @@
 package org.mastodon.tracking.mamut.detection;
 
 import java.util.List;
+import java.util.Map;
 
 import org.mastodon.mamut.model.ModelGraph;
+import org.mastodon.tracking.detection.DetectionUtil;
 import org.mastodon.tracking.detection.LoGDetectorOp;
 import org.scijava.plugin.Plugin;
 
@@ -58,5 +60,11 @@ public class LoGDetectorMamut extends AbstractSpotDetectorOp implements SpotDete
 	public void compute( final List< SourceAndConverter< ? > > sources, final ModelGraph graph )
 	{
 		exec( sources, graph, LoGDetectorOp.class );
+	}
+
+	@Override
+	public Map< String, Object > getDefaultSettings()
+	{
+		return DetectionUtil.getDefaultDetectorSettingsMap();
 	}
 }

@@ -33,6 +33,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.mastodon.mamut.ProjectModel;
+import org.mastodon.mamut.model.Model;
+import org.mastodon.mamut.model.ModelGraph;
+import org.mastodon.tracking.mamut.detection.DetectionQualityFeature;
 import org.mastodon.tracking.mamut.detection.SpotDetectorOp;
 import org.mastodon.tracking.mamut.trackmate.PluginProvider;
 import org.mastodon.tracking.mamut.trackmate.TrackMate;
@@ -43,7 +46,11 @@ import org.mastodon.tracking.mamut.trackmate.wizard.descriptors.SetupIdDecriptor
 import org.mastodon.tracking.mamut.trackmate.wizard.descriptors.SpotDetectorDescriptor;
 import org.scijava.Context;
 
+import bdv.viewer.SourceAndConverter;
 import mpicbg.spim.data.generic.AbstractSpimData;
+import net.imagej.ops.OpService;
+import net.imagej.ops.special.hybrid.Hybrids;
+import net.imagej.ops.special.hybrid.UnaryHybridCF;
 
 public class DetectionSequence implements WizardSequence
 {
@@ -143,7 +150,7 @@ public class DetectionSequence implements WizardSequence
 				 * Copy as much settings as we can to the potentially new config descriptor.
 				 */
 				final Map< String, Object > oldSettings = new HashMap<>( trackmate.getSettings().values.getDetectorSettings() );
-				final Map< String, Object > defaultSettings = detectorConfigDescriptor.getDefaultSettings();
+				final Map< String, Object > defaultSettings = getDetectorDefaultSettings( detectorClass );
 				for ( final String skey : defaultSettings.keySet() )
 					defaultSettings.put( skey, oldSettings.get( skey ) );
 				trackmate.getSettings().detectorSettings( defaultSettings );
@@ -157,6 +164,23 @@ public class DetectionSequence implements WizardSequence
 			}
 		}
 		throw new RuntimeException( "Could not find a descriptor that can configure " + detectorClass );
+	}
+
+	private Map< String, Object > getDetectorDefaultSettings( final Class< ? extends SpotDetectorOp > detectorClass )
+	{
+		// Instantiate a dummy detector.
+		final Model model = appModel.getModel();
+		final ModelGraph graph = model.getGraph();
+		final DetectionQualityFeature qualityFeature = DetectionQualityFeature.getOrRegister(
+				model.getFeatureModel(), graph.vertices().getRefPool() );
+		final OpService ops = appModel.getContext().getService( OpService.class );
+		final UnaryHybridCF< List< SourceAndConverter< ? > >, ModelGraph > unaryCF = Hybrids.unaryCF( ops, detectorClass,
+				graph, appModel.getSharedBdvData().getSources(),
+				new HashMap< String, Object >(),
+				model.getSpatioTemporalIndex(),
+				qualityFeature );
+		final SpotDetectorOp detector = ( SpotDetectorOp ) unaryCF;
+		return detector.getDefaultSettings();
 	}
 
 	@Override
