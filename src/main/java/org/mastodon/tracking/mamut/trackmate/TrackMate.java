@@ -135,11 +135,17 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		}
 
 		/*
-		 * Exec detection.
+		 * Exec detection (or not).
 		 */
 
 		final long start = System.currentTimeMillis();
 		final Class< ? extends SpotDetectorOp > cl = settings.values.getDetector();
+		if ( cl == null )
+		{
+			logger.info( "No detector specified. Skipping detection.\n" );
+			return true;
+		}
+
 		final Map< String, Object > detectorSettings = settings.values.getDetectorSettings();
 		final DetectionQualityFeature qualityFeature = DetectionQualityFeature.getOrRegister(
 				model.getFeatureModel(), graph.vertices().getRefPool() );
@@ -181,6 +187,13 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		errorMessage = null;
 		if ( isCanceled() )
 			return true;
+
+		final Class< ? extends SpotLinkerOp > linkerCl = settings.values.getLinker();
+		if ( linkerCl == null )
+		{
+			logger.info( "No linker specified. Skipping linking.\n" );
+			return true;
+		}
 
 		final Map< String, Object > linkerSettings = settings.values.getLinkerSettings();
 
@@ -250,7 +263,6 @@ public class TrackMate extends ContextCommand implements HasErrorMessage
 		 */
 
 		final long start = System.currentTimeMillis();
-		final Class< ? extends SpotLinkerOp > linkerCl = settings.values.getLinker();
 		final LinkCostFeature linkCostFeature = LinkCostFeature.getOrRegister(
 				model.getFeatureModel(), model.getGraph().edges().getRefPool() );
 
