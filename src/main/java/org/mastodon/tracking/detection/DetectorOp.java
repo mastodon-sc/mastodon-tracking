@@ -2,7 +2,7 @@
  * #%L
  * mastodon-tracking
  * %%
- * Copyright (C) 2017 - 2024 Tobias Pietzsch, Jean-Yves Tinevez
+ * Copyright (C) 2017 - 2025 Tobias Pietzsch, Jean-Yves Tinevez
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
