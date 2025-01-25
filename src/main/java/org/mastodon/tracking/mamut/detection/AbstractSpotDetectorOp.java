@@ -54,10 +54,10 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 {
 
 	@Parameter( type = ItemIO.INPUT )
-	private Map< String, Object > settings;
+	protected Map< String, Object > settings;
 
 	@Parameter( type = ItemIO.INPUT )
-	private SpatioTemporalIndex< Spot > sti;
+	protected SpatioTemporalIndex< Spot > sti;
 
 	@Parameter( type = ItemIO.BOTH, required = false )
 	protected DetectionQualityFeature qualityFeature;
@@ -69,18 +69,33 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 	protected boolean ok;
 
 	@Parameter
-	private ThreadService threadService;
+	protected ThreadService threadService;
 
 	@Parameter( required = false )
-	private StatusService statusService;
+	protected StatusService statusService;
 
 	@Parameter( required = false )
-	private Logger log;
+	protected Logger log;
 
-	private long processingTime;
+	protected long processingTime;
 
 	protected DetectorOp detector;
 
+	/**
+	 * Default execution routine for a Mamut spot detector.
+	 * <p>
+	 * Calling this method will run the {@link DetectorOp} specified by its
+	 * class (3rd input) on the specified sources (1st input). The positions
+	 * found by the detector op will be then converted to {@link Spot}s and
+	 * added to the specified {@link ModelGraph} (2nd input).
+	 * 
+	 * @param sources
+	 *            the souces to operate on.
+	 * @param graph
+	 *            the {@link ModelGraph} to add the spots to.
+	 * @param cl
+	 *            the {@link DetectorOp} to run.
+	 */
 	protected void exec( final List< SourceAndConverter< ? > > sources, final ModelGraph graph, final Class< ? extends DetectorOp > cl )
 	{
 		ok = false;
@@ -89,29 +104,8 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 		if ( null == qualityFeature )
 			qualityFeature = new DetectionQualityFeature( graph.vertices().getRefPool() );
 
-		/*
-		 * Resolve add detection behavior.
-		 */
-		final DetectionCreatorFactory detectionCreator;
-		if ( null == sti )
-		{
-			detectionCreator = MamutDetectionCreatorFactories.getAddDetectionCreatorFactory( graph, qualityFeature );
-		}
-		else
-		{
-			DetectionBehavior detectionBehavior = DetectionBehavior.ADD;
-			final String addBehavior = ( String ) settings.get( KEY_ADD_BEHAVIOR );
-			if ( null != addBehavior )
-			{
-				try
-				{
-					detectionBehavior = MamutDetectionCreatorFactories.DetectionBehavior.valueOf( addBehavior );
-				}
-				catch ( final IllegalArgumentException e )
-				{}
-			}
-			detectionCreator = detectionBehavior.getFactory( graph, qualityFeature, sti );
-		}
+		// Resolve add detection behavior.
+		final DetectionCreatorFactory detectionCreator = getDetectorFactory( graph );
 
 		this.detector = ( DetectorOp ) Inplaces.binary1( ops(), cl,
 				detectionCreator, sources, settings );
@@ -136,6 +130,47 @@ public abstract class AbstractSpotDetectorOp extends AbstractUnaryHybridCF< List
 			processingTime = end - start;
 			this.detector = null;
 		}
+	}
+
+	/**
+	 * Instantiates a default {@link DetectionCreatorFactory} configured to add
+	 * spots to the specified {@link ModelGraph}.
+	 * <p>
+	 * If a setting key 'ADD_BEHAVIOR' exists in the {@link #settings} field,
+	 * the corresponding factory will be returned. Otherwise, the factory
+	 * created adds spots to the graph, regardless of possibly pre-existing
+	 * spots.
+	 * 
+	 * @param graph
+	 *            the {@link ModelGraph}.
+	 * @return a new {@link DetectionCreatorFactory}.
+	 */
+	protected DetectionCreatorFactory getDetectorFactory( final ModelGraph graph )
+	{
+		/*
+		 * Resolve add detection behavior.
+		 */
+		final DetectionCreatorFactory detectionCreator;
+		if ( null == sti )
+		{
+			detectionCreator = MamutDetectionCreatorFactories.getAddDetectionCreatorFactory( graph, qualityFeature );
+		}
+		else
+		{
+			DetectionBehavior detectionBehavior = DetectionBehavior.ADD;
+			final String addBehavior = ( String ) settings.get( KEY_ADD_BEHAVIOR );
+			if ( null != addBehavior )
+			{
+				try
+				{
+					detectionBehavior = MamutDetectionCreatorFactories.DetectionBehavior.valueOf( addBehavior );
+				}
+				catch ( final IllegalArgumentException e )
+				{}
+			}
+			detectionCreator = detectionBehavior.getFactory( graph, qualityFeature, sti );
+		}
+		return detectionCreator;
 	}
 
 	@Override
