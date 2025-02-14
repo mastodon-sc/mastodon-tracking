@@ -211,6 +211,11 @@ public class DoGDetectorOp
 			dog.setExecutorService( threadService.getExecutorService() );
 			final ArrayList< RefinedPeak< Point > > refinedPeaks = dog.getSubpixelPeaks();
 
+			if( refinedPeaks.size() == 0 ) {
+				final ArrayList< Point > peaks = dog.getPeaks();
+				peaks.stream().forEach( p -> refinedPeaks.add( new RefinedPeak< Point >( p, p, 0, false ) ));
+			}
+
 			final double[] pos = new double[ 3 ];
 			final RealPoint sp = RealPoint.wrap( pos );
 			final RealPoint p3d = new RealPoint( 3 );
