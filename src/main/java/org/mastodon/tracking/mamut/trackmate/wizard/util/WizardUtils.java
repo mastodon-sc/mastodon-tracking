@@ -381,7 +381,7 @@ public class WizardUtils
 	 *            the quality threshold for the detector.
 	 * @return an information string.
 	 */
-	public static final String echoDetectorConfigInfo( final List< SourceAndConverter< ? > > sources, final double minSizePixel, final int timepoint, final int setupID, final double radius, final double threshold )
+	public static final String echoDetectorConfigInfo( final List< SourceAndConverter< ? > > sources, final double minSizePixel, final int timepoint, final int setupID, final double radius, final double threshold, final boolean doSubpixleLocalization )
 	{
 		final int level = DetectionUtil.determineOptimalResolutionLevel( sources, radius, minSizePixel, timepoint, setupID );
 		final AffineTransform3D mipmapTransform = DetectionUtil.getMipmapTransform( sources, timepoint, setupID, level );
@@ -400,6 +400,7 @@ public class WizardUtils
 		str.append( "Configured detector with parameters:\n" );
 		str.append( String.format( "  - spot radius: %.1f %s\n", radius, units ) );
 		str.append( String.format( "  - quality threshold: %.1f\n", threshold ) );
+		str.append( String.format( "  - do sub-pixel localization: %b\n", doSubpixleLocalization ) );
 		final Source< ? > source = sources.get( setupID ).getSpimSource();
 		final int numMipmapLevels = source.getNumMipmapLevels();
 		if ( numMipmapLevels > 1 )
