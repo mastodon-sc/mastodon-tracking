@@ -155,8 +155,9 @@ public class AdvancedDoGDetectorDescriptor extends SpotDetectorDescriptor
 		final double minSizePixel = DoGDetectorOp.MIN_SPOT_PIXEL_SIZE / 2.;
 		final int timepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT );
 		final double threshold = ( double ) settings.values.getDetectorSettings().get( KEY_THRESHOLD );
+		final boolean doSubpixelLocalization = ( boolean ) settings.values.getDetectorSettings().get( DetectorKeys.KEY_DO_SUBPIXEL_LOCALIZATION );
 		final List< SourceAndConverter< ? > > sources = settings.values.getSources();
-		logger.info( WizardUtils.echoDetectorConfigInfo( sources, minSizePixel, timepoint, setupID, radius, threshold ) );
+		logger.info( WizardUtils.echoDetectorConfigInfo( sources, minSizePixel, timepoint, setupID, radius, threshold, doSubpixelLocalization ) );
 		final String addBehavior = ( String ) settings.values.getDetectorSettings().get( KEY_ADD_BEHAVIOR );
 		logger.info( String.format( "  - dealing with existing spot: %s.\n", addBehavior ) );
 	}

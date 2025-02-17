@@ -28,7 +28,9 @@
  */
 package org.mastodon.tracking.mamut.trackmate.semiauto.ui;
 
+import static org.mastodon.tracking.detection.DetectorKeys.DEFAULT_DO_SUBPIXEL_LOCALIZATION;
 import static org.mastodon.tracking.detection.DetectorKeys.DEFAULT_SETUP_ID;
+import static org.mastodon.tracking.detection.DetectorKeys.KEY_DO_SUBPIXEL_LOCALIZATION;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_SETUP_ID;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_ALLOW_LINKING_IF_HAS_INCOMING;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING;
@@ -92,6 +94,8 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 
 	private boolean detectSpot;
 
+	private boolean doSubpixelLocalization;
+
 	private static final SemiAutomaticTrackerSettings defSats;
 	static
 	{
@@ -106,6 +110,7 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 		defSats.allowIfOutgoingLinks = DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING;
 		defSats.continueIfLinked = DEFAULT_CONTINUE_IF_LINK_EXISTS;
 		defSats.detectSpot = DEFAULT_DETECT_SPOT;
+		defSats.doSubpixelLocalization = DEFAULT_DO_SUBPIXEL_LOCALIZATION;
 		defSats.name = "Forward";
 	}
 
@@ -123,6 +128,7 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 		backSats.allowIfOutgoingLinks = Boolean.valueOf( true );
 		backSats.continueIfLinked = Boolean.valueOf( false );
 		backSats.detectSpot = DEFAULT_DETECT_SPOT;
+		backSats.doSubpixelLocalization = DEFAULT_DO_SUBPIXEL_LOCALIZATION;
 		backSats.name = "Backtracking";
 	}
 
@@ -169,6 +175,7 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 		this.allowIfOutgoingLinks = stas.allowIfOutgoingLinks;
 		this.continueIfLinked = stas.continueIfLinked;
 		this.detectSpot = stas.detectSpot;
+		this.doSubpixelLocalization = stas.doSubpixelLocalization;
 		notifyListeners();
 	}
 
@@ -185,6 +192,7 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 		map.put( KEY_ALLOW_LINKING_IF_HAS_OUTGOING, Boolean.valueOf( allowIfOutgoingLinks ) );
 		map.put( KEY_CONTINUE_IF_LINK_EXISTS, Boolean.valueOf( continueIfLinked ) );
 		map.put( KEY_DETECT_SPOT, Boolean.valueOf( detectSpot ) );
+		map.put( KEY_DO_SUBPIXEL_LOCALIZATION, Boolean.valueOf( doSubpixelLocalization ) );
 		return map;
 	}
 
@@ -324,6 +332,20 @@ public class SemiAutomaticTrackerSettings implements Style< SemiAutomaticTracker
 		if ( this.detectSpot != detectSpot )
 		{
 			this.detectSpot = detectSpot;
+			notifyListeners();
+		}
+	}
+
+	public boolean doSubpixelLocalization()
+	{
+		return doSubpixelLocalization;
+	}
+
+	public void setDoSubpixelLocalization( final boolean doSubpixelLocalization )
+	{
+		if ( this.doSubpixelLocalization != doSubpixelLocalization )
+		{
+			this.doSubpixelLocalization = doSubpixelLocalization;
 			notifyListeners();
 		}
 	}

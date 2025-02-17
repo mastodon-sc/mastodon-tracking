@@ -30,6 +30,7 @@ package org.mastodon.tracking.mamut.trackmate.wizard.descriptors;
 
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_ADD_BEHAVIOR;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_DETECTION_TYPE;
+import static org.mastodon.tracking.detection.DetectorKeys.KEY_DO_SUBPIXEL_LOCALIZATION;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_RADIUS;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_THRESHOLD;
@@ -51,6 +52,7 @@ import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -126,8 +128,9 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 		final double minSizePixel = DoGDetectorOp.MIN_SPOT_PIXEL_SIZE / 2.;
 		final int timepoint = ( int ) settings.values.getDetectorSettings().get( KEY_MIN_TIMEPOINT );
 		final double threshold = ( double ) settings.values.getDetectorSettings().get( KEY_THRESHOLD );
+		final boolean doSubpixelLocalization = ( boolean ) settings.values.getDetectorSettings().get( KEY_DO_SUBPIXEL_LOCALIZATION );
 		final List< SourceAndConverter< ? > > sources = settings.values.getSources();
-		logger.info( WizardUtils.echoDetectorConfigInfo( sources, minSizePixel, timepoint, setupID, radius, threshold ) );
+		logger.info( WizardUtils.echoDetectorConfigInfo( sources, minSizePixel, timepoint, setupID, radius, threshold, doSubpixelLocalization ) );
 	}
 
 	private void preview()
@@ -204,6 +207,7 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 		detectorSettings.put( KEY_RADIUS, ( ( Number ) panel.diameter.getValue() ).doubleValue() / 2. );
 		detectorSettings.put( KEY_THRESHOLD, ( ( Number ) panel.threshold.getValue() ).doubleValue() );
 		detectorSettings.put( KEY_DETECTION_TYPE, DetectionType.MINIMA.name() );
+		detectorSettings.put( KEY_DO_SUBPIXEL_LOCALIZATION, Boolean.valueOf( panel.chckbxDosubpixelLocalization.isSelected() ) );
 		detectorSettings.put( KEY_ADD_BEHAVIOR, MamutDetectionCreatorFactories.DetectionBehavior.REMOVEALL.name() );
 	}
 
@@ -244,8 +248,16 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 		else
 			threshold = ( double ) objThreshold;
 
+		final boolean doSubpixelLocalization;
+		final Object objDoSubpixelLocalization = detectorSettings.get( KEY_DO_SUBPIXEL_LOCALIZATION );
+		if ( null == objDoSubpixelLocalization )
+			doSubpixelLocalization = DetectorKeys.DEFAULT_DO_SUBPIXEL_LOCALIZATION;
+		else
+			doSubpixelLocalization = ( boolean ) objDoSubpixelLocalization; 
+
 		panel.diameter.setValue( diameter );
 		panel.threshold.setValue( threshold );
+		panel.chckbxDosubpixelLocalization.setSelected( doSubpixelLocalization );
 		final String unit = DetectionUtil.getSpatialUnits( settings.values.getSources() );
 		panel.lblDiameterUnit.setText( unit );
 	}
@@ -264,6 +276,8 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 		private final JFormattedTextField diameter;
 
 		private final JFormattedTextField threshold;
+
+		private final JCheckBox chckbxDosubpixelLocalization;
 
 		private final JLabel lblDiameterUnit;
 
@@ -326,6 +340,20 @@ public class DoGDetectorDescriptor extends SpotDetectorDescriptor
 			gbc.gridx++;
 			gbc.anchor = GridBagConstraints.CENTER;
 			add( threshold, gbc );
+
+			// Do subpixel localization.
+
+			final JLabel lblDoSubpixelLocalization = new JLabel( "Do sub-pixel localization:", JLabel.RIGHT );
+			gbc.gridy++;
+			gbc.gridx = 0;
+			gbc.anchor = GridBagConstraints.BASELINE_TRAILING;
+			add( lblDoSubpixelLocalization, gbc );
+
+			this.chckbxDosubpixelLocalization = new JCheckBox("Do sub-pixel localization?");
+			chckbxDosubpixelLocalization.setHorizontalAlignment( JLabel.RIGHT );
+			gbc.gridx++;
+			gbc.anchor = GridBagConstraints.CENTER;
+			add( chckbxDosubpixelLocalization, gbc );
 
 			// Preview button.
 			preview = new JButton( "Preview", PREVIEW_ICON );

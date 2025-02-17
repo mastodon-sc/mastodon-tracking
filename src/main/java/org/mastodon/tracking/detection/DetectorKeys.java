@@ -131,6 +131,23 @@ public class DetectorKeys
 	 */
 	public static final String DEFAULT_ADD_BEHAVIOR = null;
 
+	/**
+	 * The key identifying the parameter setting whether we use sub-pixel
+	 * localization for spot position. Accepted values are {@link Boolean}s.
+	 * <p>
+	 * Currently used by:
+	 * <ul>
+	 * <li>{@link LogDetectorOp}
+	 * <li>{@link DogDetectorOp}
+	 * </ul>
+	 */
+	public static final String KEY_DO_SUBPIXEL_LOCALIZATION = "DO_SUBPIXEL_LOCALIZATION";
+
+	/**
+	 * Default value for the {@link #KEY_DO_SUBPIXEL_LOCALIZATION} parameter.
+	 */
+	public static final Boolean DEFAULT_DO_SUBPIXEL_LOCALIZATION = true;
+
 	private DetectorKeys()
 	{}
 }

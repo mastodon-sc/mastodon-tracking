@@ -119,6 +119,11 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 			+ "to create spots to link to from the image data. "
 			+ "</p></html>";
 
+	private static final String DO_SUBPIXEL_LOCALIZATION_TOOLTIP = "<html><p width=\"500\"> "
+			+ "Parameter that specifies whether we use sub-pixel "
+			+ "localization for spot detection. "
+			+ "</p></html>";
+
 	/**
 	 * The cancel button.
 	 */
@@ -140,9 +145,9 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 
 		final GridBagLayout gbl = new GridBagLayout();
 		gbl.columnWidths = new int[] { 0, 0, 0 };
-		gbl.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		gbl.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		gbl.columnWeights = new double[] { 0.0, 1.0, Double.MIN_VALUE };
-		gbl.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE };
+		gbl.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE };
 		setLayout( gbl );
 
 		final JLabel lblDetection = new JLabel( "Detection." );
@@ -355,6 +360,17 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbcChckbxDetectSpot.gridy = 14;
 		add( chckbxDetectSpot, gbcChckbxDetectSpot );
 
+		final JCheckBox chckbxDoSubpixelLocalization = new JCheckBox("Do sub-pixel localization?");
+		chckbxDoSubpixelLocalization.setToolTipText( DO_SUBPIXEL_LOCALIZATION_TOOLTIP );
+		chckbxDoSubpixelLocalization.addItemListener( ( e ) -> editedSettings.setDoSubpixelLocalization( chckbxDoSubpixelLocalization.isSelected() ) );
+		final GridBagConstraints gbcChckbxDoSubpixelLocalization = new GridBagConstraints();
+		gbcChckbxDoSubpixelLocalization.anchor = GridBagConstraints.WEST;
+		gbcChckbxDoSubpixelLocalization.gridwidth = 2;
+		gbcChckbxDoSubpixelLocalization.insets = new Insets( 5, 5, 5, 0 );
+		gbcChckbxDoSubpixelLocalization.gridx = 0;
+		gbcChckbxDoSubpixelLocalization.gridy = 15;
+		add( chckbxDoSubpixelLocalization, gbcChckbxDoSubpixelLocalization );
+
 		final JSeparator sep3 = new JSeparator();
 		sep3.setMinimumSize( new Dimension( 5, 10 ) );
 		final GridBagConstraints gbcSeparator3 = new GridBagConstraints();
@@ -363,7 +379,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbcSeparator3.gridwidth = 2;
 		gbcSeparator3.insets = new Insets( 0, 0, 5, 0 );
 		gbcSeparator3.gridx = 0;
-		gbcSeparator3.gridy = 15;
+		gbcSeparator3.gridy = 16;
 		add( sep3, gbcSeparator3 );
 
 		final JLabel lblNavigation = new JLabel( "Navigation." );
@@ -373,7 +389,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbcLblNavigation.gridwidth = 2;
 		gbcLblNavigation.insets = new Insets( 5, 5, 5, 0 );
 		gbcLblNavigation.gridx = 0;
-		gbcLblNavigation.gridy = 16;
+		gbcLblNavigation.gridy = 17;
 		add( lblNavigation, gbcLblNavigation );
 
 		if ( null != groupHandle )
@@ -384,7 +400,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 			gbcGroupLocksPanel.insets = new Insets( 0, 0, 5, 0 );
 			gbcGroupLocksPanel.fill = GridBagConstraints.BOTH;
 			gbcGroupLocksPanel.gridx = 0;
-			gbcGroupLocksPanel.gridy = 17;
+			gbcGroupLocksPanel.gridy = 18;
 			add( groupLocksPanel, gbcGroupLocksPanel );
 		}
 
@@ -395,7 +411,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 		gbcPanelButtons.insets = new Insets( 5, 5, 0, 0 );
 		gbcPanelButtons.fill = GridBagConstraints.HORIZONTAL;
 		gbcPanelButtons.gridx = 0;
-		gbcPanelButtons.gridy = 19;
+		gbcPanelButtons.gridy = 20;
 		add( panelButtons, gbcPanelButtons );
 		panelButtons.setLayout( new BoxLayout( panelButtons, BoxLayout.X_AXIS ) );
 
@@ -417,6 +433,7 @@ public class SemiAutomaticTrackerConfigPanel extends JPanel
 			chckbxLinkOutgoing.setSelected( editedSettings.allowIfOutgoingLinks() );
 			chckbxContinueTracking.setSelected( editedSettings.continueIfLinked() );
 			chckbxDetectSpot.setSelected( editedSettings.detectSpot() );
+			chckbxDoSubpixelLocalization.setSelected( editedSettings.doSubpixelLocalization() );
 			repaint();
 		};
 		final ItemListener disabler = ( e ) -> {

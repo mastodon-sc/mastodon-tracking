@@ -34,6 +34,7 @@ import static org.mastodon.tracking.detection.DetectorKeys.KEY_RADIUS;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_ROI;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_SETUP_ID;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_THRESHOLD;
+import static org.mastodon.tracking.detection.DetectorKeys.KEY_DO_SUBPIXEL_LOCALIZATION;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_ALLOW_LINKING_IF_HAS_INCOMING;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_ALLOW_LINKING_IF_HAS_OUTGOING;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.KEY_ALLOW_LINKING_TO_EXISTING;
@@ -190,6 +191,7 @@ public class SemiAutomaticTracker
 		final boolean continueIfLinkExists = ( boolean ) settings.get( KEY_CONTINUE_IF_LINK_EXISTS );
 		final double neighborhoodFactor = Math.max( NEIGHBORHOOD_FACTOR, distanceFactor + 1. );
 		final boolean detectSpots = ( boolean ) settings.get( KEY_DETECT_SPOT );
+		final boolean doSubpixelLocalization = ( boolean ) settings.get( KEY_DO_SUBPIXEL_LOCALIZATION );
 
 		/*
 		 * Units.
@@ -441,6 +443,7 @@ public class SemiAutomaticTracker
 					detectorSettings.put( KEY_MIN_TIMEPOINT, Integer.valueOf( tp ) );
 					detectorSettings.put( KEY_MAX_TIMEPOINT, Integer.valueOf( tp ) );
 					detectorSettings.put( KEY_ROI, roi );
+					detectorSettings.put( KEY_DO_SUBPIXEL_LOCALIZATION, Boolean.valueOf( doSubpixelLocalization ) );
 
 					final DetectorOp detector = ( DetectorOp ) Inplaces.binary1( ops(), DoGDetectorOp.class,
 							detectionCreator, sources, detectorSettings );
