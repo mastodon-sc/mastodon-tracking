@@ -60,6 +60,7 @@ public class SemiAutomaticTrackerKeys
 		settings.put( KEY_ALLOW_LINKING_IF_HAS_OUTGOING, DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING );
 		settings.put( KEY_CONTINUE_IF_LINK_EXISTS, DEFAULT_CONTINUE_IF_LINK_EXISTS );
 		settings.put( KEY_DETECT_SPOT, DEFAULT_DETECT_SPOT );
+		settings.put( KEY_DO_SUBPIXEL_LOCALIZATION, DEFAULT_DO_SUBPIXEL_LOCALIZATION ); 
 		return settings;
 	}
 
@@ -95,6 +96,7 @@ public class SemiAutomaticTrackerKeys
 		ok = ok & checkParameter( settings, KEY_ALLOW_LINKING_IF_HAS_OUTGOING, Boolean.class, errorHolder );
 		ok = ok & checkParameter( settings, KEY_CONTINUE_IF_LINK_EXISTS, Boolean.class, errorHolder );
 		ok = ok & checkParameter( settings, KEY_DETECT_SPOT, Boolean.class, errorHolder );
+		ok = ok & checkParameter( settings, KEY_DO_SUBPIXEL_LOCALIZATION, Boolean.class, errorHolder );
 
 		// Check key presence.
 		final List< String > mandatoryKeys = new ArrayList< String >();
@@ -108,6 +110,7 @@ public class SemiAutomaticTrackerKeys
 		mandatoryKeys.add( KEY_ALLOW_LINKING_IF_HAS_OUTGOING );
 		mandatoryKeys.add( KEY_CONTINUE_IF_LINK_EXISTS );
 		mandatoryKeys.add( KEY_DETECT_SPOT );
+		mandatoryKeys.add( KEY_DO_SUBPIXEL_LOCALIZATION );
 		final List< String > optionalKeys = new ArrayList< String >();
 		optionalKeys.add( KEY_RESOLUTION_LEVEL );
 		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, errorHolder );
@@ -298,6 +301,23 @@ public class SemiAutomaticTrackerKeys
 	 * Default value for the {@link #KEY_DETECT_SPOT} parameter.
 	 */
 	public static final boolean DEFAULT_DETECT_SPOT = true;
+
+	/**
+	 * The key identifying the parameter setting whether we use sub-pixel
+	 * localization for spot position. Accepted values are {@link Boolean}s.
+	 * <p>
+	 * Currently used by:
+	 * <ul>
+	 * <li>{@link LogDetectorOp}
+	 * <li>{@link DogDetectorOp}
+	 * </ul>
+	 */
+	public static final String KEY_DO_SUBPIXEL_LOCALIZATION = "DO_SUBPIXEL_LOCALIZATION";
+
+	/**
+	 * Default value for the {@link #KEY_DO_SUBPIXEL_LOCALIZATION} parameter.
+	 */
+	public static final Boolean DEFAULT_DO_SUBPIXEL_LOCALIZATION = true;
 
 	/** Minimal size of neighborhoods, in spot diameter units. */
 	public static final double NEIGHBORHOOD_FACTOR = 2.;

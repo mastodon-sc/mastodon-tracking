@@ -38,6 +38,7 @@ import static org.mastodon.tracking.detection.DetectorKeys.DEFAULT_SETUP_ID;
 import static org.mastodon.tracking.detection.DetectorKeys.DEFAULT_THRESHOLD;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_ADD_BEHAVIOR;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_DETECTION_TYPE;
+import static org.mastodon.tracking.detection.DetectorKeys.KEY_DO_SUBPIXEL_LOCALIZATION;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_RADIUS;
@@ -502,6 +503,7 @@ public class DetectionUtil
 		ok = ok & checkParameter( settings, KEY_MAX_TIMEPOINT, Integer.class, errorHolder );
 		ok = ok & checkParameter( settings, KEY_RADIUS, Double.class, errorHolder );
 		ok = ok & checkParameter( settings, KEY_THRESHOLD, Double.class, errorHolder );
+		ok = ok & checkParameter( settings, KEY_DO_SUBPIXEL_LOCALIZATION, Boolean.class, errorHolder );
 //		ok = ok & checkParameter( settings, KEY_ADD_BEHAVIOR, String.class, errorHolder );
 
 		// Check key presence.
@@ -511,6 +513,7 @@ public class DetectionUtil
 		mandatoryKeys.add( KEY_MAX_TIMEPOINT );
 		mandatoryKeys.add( KEY_RADIUS );
 		mandatoryKeys.add( KEY_THRESHOLD );
+		mandatoryKeys.add( KEY_DO_SUBPIXEL_LOCALIZATION );
 		final List< String > optionalKeys = new ArrayList<>();
 		optionalKeys.add( KEY_ADD_BEHAVIOR );
 		optionalKeys.add( KEY_ROI );

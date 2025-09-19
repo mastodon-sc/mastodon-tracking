@@ -29,6 +29,7 @@
 package org.mastodon.tracking.detection;
 
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_DETECTION_TYPE;
+import static org.mastodon.tracking.detection.DetectorKeys.KEY_DO_SUBPIXEL_LOCALIZATION;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_MAX_TIMEPOINT;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_MIN_TIMEPOINT;
 import static org.mastodon.tracking.detection.DetectorKeys.KEY_RADIUS;
@@ -104,6 +105,7 @@ public class DoGDetectorOp
 		final double threshold = ( double ) settings.get( KEY_THRESHOLD );
 		final Interval roi = ( Interval ) settings.get( KEY_ROI );
 		final DetectionType detectionType = DetectionType.getOrDefault( ( String ) settings.get( KEY_DETECTION_TYPE ), DetectionType.MINIMA );
+		final boolean doSubpixelLocalization = ( boolean ) settings.get( KEY_DO_SUBPIXEL_LOCALIZATION );
 
 		statusService.showStatus( "DoG detection." );
 		for ( int tp = minTimepoint; tp <= maxTimepoint; tp++ )
@@ -209,7 +211,9 @@ public class DoGDetectorOp
 					threshold,
 					true );
 			dog.setExecutorService( threadService.getExecutorService() );
-			final ArrayList< RefinedPeak< Point > > refinedPeaks = dog.getSubpixelPeaks();
+			final ArrayList< RefinedPeak< Point > > refinedPeaks = doSubpixelLocalization ? 
+				dog.getSubpixelPeaks() :
+				dog.getPeaks().stream().map( p -> new RefinedPeak< Point >( p, p, 0, false ) ).collect( ArrayList::new, ArrayList::add, ArrayList::addAll );
 
 			final double[] pos = new double[ 3 ];
 			final RealPoint sp = RealPoint.wrap( pos );

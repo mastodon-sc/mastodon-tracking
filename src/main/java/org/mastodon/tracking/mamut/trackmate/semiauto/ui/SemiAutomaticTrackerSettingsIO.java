@@ -28,6 +28,7 @@
  */
 package org.mastodon.tracking.mamut.trackmate.semiauto.ui;
 
+import static org.mastodon.tracking.detection.DetectorKeys.DEFAULT_DO_SUBPIXEL_LOCALIZATION;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_ALLOW_LINKING_IF_HAS_INCOMING;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING;
 import static org.mastodon.tracking.mamut.trackmate.semiauto.SemiAutomaticTrackerKeys.DEFAULT_ALLOW_LINKING_TO_EXISTING;
@@ -121,6 +122,7 @@ public class SemiAutomaticTrackerSettingsIO
 			mapping.put( "allowIfOutgoingLinks", s.allowIfOutgoingLinks() );
 			mapping.put( "continueIfLinked", s.continueIfLinked() );
 			mapping.put( "detectSpot", s.detectSpot() );
+			mapping.put( "doSubpixelLocalization", s.doSubpixelLocalization() );
 
 			final Node node = representMapping( getTag(), mapping, getDefaultFlowStyle() );
 			return node;
@@ -152,6 +154,7 @@ public class SemiAutomaticTrackerSettingsIO
 			s.setAllowIfOutgoingLinks( getBooleanOrDefault( mapping, "allowIfOutgoingLinks", DEFAULT_ALLOW_LINKING_IF_HAS_OUTGOING ) );
 			s.setContinueIfLinked( getBooleanOrDefault( mapping, "continueIfLinked", DEFAULT_CONTINUE_IF_LINK_EXISTS ) );
 			s.setDetectSpot( getBooleanOrDefault( mapping, "detectSpot", DEFAULT_DETECT_SPOT ) );
+			s.setDoSubpixelLocalization( getBooleanOrDefault( mapping, "doSubpixelLocalization", DEFAULT_DO_SUBPIXEL_LOCALIZATION ) );
 
 			return s;
 		}
